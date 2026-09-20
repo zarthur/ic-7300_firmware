@@ -92,6 +92,7 @@ def main():
         evaluate('recorded_'+name,path,[],required=False,notes='Comparison corpus from pinned ft8_lib; no assumption of decoder parity')
     failed=[r['name'] for r in cases if r['required'] and not(r['expected_found'] and r['reference_found'])]
     result={'source_revision':revision(),'host':platform.platform(),'machine':platform.machine(),
+            'cpu':run(['sysctl','-n','machdep.cpu.brand_string']).stdout.strip() if sys.platform=='darwin' else platform.processor(),
             'compiler':run(['cc','--version']).stdout.splitlines()[0],
             'codec_executable_sha256':hashlib.sha256(exe.read_bytes()).hexdigest(),
             'wsjtx_decoder_path':str(jt9),'wsjtx_decoder_sha256':hashlib.sha256(jt9.read_bytes()).hexdigest(),

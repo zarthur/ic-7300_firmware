@@ -11,7 +11,7 @@ import re
 import struct
 import sys
 from capstone import Cs, CS_ARCH_ARM, CS_MODE_ARM
-from capstone.arm import ARM_OP_MEM, ARM_REG_PC
+from capstone.arm import ARM_OP_MEM, ARM_OP_IMM, ARM_REG_PC
 from firmware import revision
 
 BASE=0x20005000
@@ -23,8 +23,10 @@ TOKENS=['Firmware Update','Updating MAIN CPU firmware.','Updating DSP/FPGA firmw
 
 def evidence(app):
     cs=Cs(CS_ARCH_ARM,CS_MODE_ARM);cs.detail=True;cs.skipdata=True
-    references={}
+    references={}; md5_callers=[]
     for ins in cs.disasm(app[:0x185000],BASE):
+        if ins.id and ins.mnemonic in ('bl','blx') and ins.operands[0].type==ARM_OP_IMM and ins.operands[0].imm==0x2003c860:
+            md5_callers.append(hex(ins.address))
         if ins.id and ins.mnemonic=='ldr' and len(ins.operands)==2:
             op=ins.operands[1]
             if op.type==ARM_OP_MEM and op.mem.base==ARM_REG_PC:
@@ -48,7 +50,7 @@ def evidence(app):
         md5.append({'name':name,'locations':[hex(x) for x in offsets],'literal_loads':references.get(val,[])})
     return {'source_revision':revision(),'image_sha256':hashlib.sha256(app).hexdigest(),
             'base':hex(BASE),'confidence':'Validated reset vectors and loader destination; xrefs are candidates',
-            'strings':tokens,'md5_constants':md5}
+            'strings':tokens,'md5_constants':md5,'md5_init_callers':md5_callers}
 
 
 def main():

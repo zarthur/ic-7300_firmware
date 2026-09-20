@@ -1,29 +1,30 @@
 CC = cc
+BUILD ?= build
 CPPFLAGS = -Iprototype -Ithird_party/ft8_lib
 CFLAGS = -std=c11 -D_DEFAULT_SOURCE -D_DARWIN_C_SOURCE -O2 -g -Wall -Wextra
 LDLIBS = -lm
 DEP = third_party/ft8_lib
 LIBSRC = $(wildcard $(DEP)/ft8/*.c) $(DEP)/common/monitor.c $(DEP)/fft/kiss_fft.c $(DEP)/fft/kiss_fftr.c
-LIBOBJ = $(patsubst $(DEP)/%.c,build/lib/%.o,$(LIBSRC))
-OBJ = build/codec.o build/qso.o build/alloc.o build/station.o
+LIBOBJ = $(patsubst $(DEP)/%.c,$(BUILD)/lib/%.o,$(LIBSRC))
+OBJ = $(BUILD)/codec.o $(BUILD)/qso.o $(BUILD)/alloc.o $(BUILD)/station.o
 .PHONY: all test bootstrap
-all: build/ft8_proto build/test_qso build/test_codec
+all: $(BUILD)/ft8_proto $(BUILD)/test_qso $(BUILD)/test_codec
 bootstrap:
 	python3 tools/bootstrap.py
-build/lib/%.o: $(DEP)/%.c prototype/alloc.h
+$(BUILD)/lib/%.o: $(DEP)/%.c prototype/alloc.h
 	@mkdir -p $(dir $@)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -include prototype/alloc.h -Dmalloc=tracked_malloc -Dcalloc=tracked_calloc -Dfree=tracked_free -c $< -o $@
-build/%.o: prototype/%.c prototype/codec.h prototype/qso.h prototype/alloc.h prototype/station.h
-	@mkdir -p build
+$(BUILD)/%.o: prototype/%.c prototype/codec.h prototype/qso.h prototype/alloc.h prototype/station.h
+	@mkdir -p $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
-build/ft8_proto: build/main.o $(OBJ) $(LIBOBJ)
+$(BUILD)/ft8_proto: $(BUILD)/main.o $(OBJ) $(LIBOBJ)
 	$(CC) $(CFLAGS) $^ $(LDLIBS) -o $@
-build/test_qso: tests/test_qso.c build/qso.o
+$(BUILD)/test_qso: tests/test_qso.c $(BUILD)/qso.o
 	$(CC) $(CPPFLAGS) $(CFLAGS) $^ -o $@
-build/test_codec: tests/test_codec.c $(OBJ) $(LIBOBJ)
+$(BUILD)/test_codec: tests/test_codec.c $(OBJ) $(LIBOBJ)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $^ $(LDLIBS) -o $@
 test: all
-	python3 -m unittest discover -s tests -v
-	build/test_qso
-	build/test_codec
-	build/ft8_proto simulate
+	FT8_PROTO=$(BUILD)/ft8_proto python3 -m unittest discover -s tests -v
+	$(BUILD)/test_qso
+	$(BUILD)/test_codec
+	$(BUILD)/ft8_proto simulate
