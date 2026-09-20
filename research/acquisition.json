@@ -1,0 +1,40 @@
+{
+  "source_revision": "0779e926b95ba2873a6a9d016f88a8e121a24a4b",
+  "releases": [
+    {
+      "version": "140",
+      "page": "https://www.icomjapan.com/support/firmware_driver/3248/",
+      "url": "https://www.icomjapan.com/api/download.php?post_id=3248&fl=JTJGdXBsb2FkcyUyRnN1cHBvcnQlMkZmaXJtd2FyZV9kcml2ZXIlMkY3MzAwXzE0MC56aXA=",
+      "acquired_utc": "2026-09-20T16:02:17.463397+00:00",
+      "archive_bytes": 2863000,
+      "archive_sha256": "51d2900e7c2bf2e02524b8bc73b6796fd864435c28aed6811b0e521e450fb044",
+      "image_bytes": 3954089,
+      "image_sha256": "f71d7b0bca7cf2480e3324dbf35d74824a1a6f777f035a31c9957b809e20fc79"
+    },
+    {
+      "version": "141",
+      "page": "https://www.icomjapan.com/support/firmware_driver/3339/",
+      "url": "https://www.icomjapan.com/api/download.php?post_id=3339&fl=JTJGdXBsb2FkcyUyRnN1cHBvcnQlMkZmaXJtd2FyZV9kcml2ZXIlMkY3MzAwXzE0MS56aXA=",
+      "acquired_utc": "2026-09-20T16:02:20.463789+00:00",
+      "archive_bytes": 2866618,
+      "archive_sha256": "9c9c985a16605b2b1380a78f90e3a21aa30cb7d7e3be620abcd35aa593038b08",
+      "image_bytes": 3954089,
+      "image_sha256": "f0aacde50a02cb1f9c5a237deab5555ff124813787b0eef7dbc273e073132fbb"
+    },
+    {
+      "version": "142",
+      "page": "https://www.icomjapan.com/support/firmware_driver/4102/",
+      "url": "https://www.icomjapan.com/api/download.php?post_id=4102&fl=JTJGdXBsb2FkcyUyRnN1cHBvcnQlMkZmaXJtd2FyZV9kcml2ZXIlMkY3MzAwXzE0Mi56aXA=",
+      "acquired_utc": "2026-09-20T16:02:23.534823+00:00",
+      "archive_bytes": 2868098,
+      "archive_sha256": "6b4a5910555c5736ecacd954a88ee5df8afd996a8a89aa4888e85b1cc533606e",
+      "image_bytes": 3954089,
+      "image_sha256": "8cf5324a126f105cd2307c30b191b9dd8183f86b2c8bf229e61bf9a6a8c32f32"
+    }
+  ],
+  "mirror_comparison": {
+    "path": "/tmp/7300_142.dat",
+    "sha256": "8cf5324a126f105cd2307c30b191b9dd8183f86b2c8bf229e61bf9a6a8c32f32",
+    "matches_official_142": true
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "ft8_lib": {
+    "url": "https://github.com/kgoba/ft8_lib.git",
+    "revision": "9fec6ca39886edbf96f4f5e71edc76da5074e871",
+    "license": "MIT; embedded Kiss FFT retains its BSD-style notice",
+    "location": "third_party/ft8_lib"
+  }
+}
