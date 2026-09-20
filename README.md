@@ -11,6 +11,8 @@ Git. No radio access or flashing is part of this phase.
 The project is independent of Icom. Read [the legal and distribution policy](LEGAL.md),
 [security policy](SECURITY.md), and [hardware test policy](docs/TEST_POLICY.md)
 before contributing or attempting any hardware work.
+The initial analysis target and its fail-closed compatibility rules are recorded
+in the [supported target matrix](docs/SUPPORTED_TARGETS.md).
 
 Original project material is licensed under the [MIT License](LICENSE). Vendor
 and third-party material is not relicensed; see [third-party notices](THIRD_PARTY_NOTICES.md).
