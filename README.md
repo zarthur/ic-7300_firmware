@@ -8,6 +8,13 @@ This is a research repository, not installable radio firmware. Vendor firmware,
 extracted payloads, recordings, dependencies, and build outputs are kept outside
 Git. No radio access or flashing is part of this phase.
 
+The project is independent of Icom. Read [the legal and distribution policy](LEGAL.md),
+[security policy](SECURITY.md), and [hardware test policy](docs/TEST_POLICY.md)
+before contributing or attempting any hardware work.
+
+Original project material is licensed under the [MIT License](LICENSE). Vendor
+and third-party material is not relicensed; see [third-party notices](THIRD_PARTY_NOTICES.md).
+
 ## Layout
 
 - `tools/`: acquisition, container analysis, reproducibility, benchmarks
