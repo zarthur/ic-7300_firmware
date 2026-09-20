@@ -1,0 +1,498 @@
+{
+  "source_revision": {
+    "commit": "379976675a978eb3b29ce7c3cf5c5601387513c0",
+    "dirty": true
+  },
+  "image_sha256": "4686728c9d1f7249b6278a29686a40b8fa5e527bd2428a76a33cd9395178c9a4",
+  "base": "0x20005000",
+  "confidence": "Validated reset vectors and loader destination; xrefs are candidates",
+  "strings": [
+    {
+      "token": "Firmware Update",
+      "matches": [
+        {
+          "address": "0x203599a0",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x2018eebc"
+          ],
+          "pointer_loads": []
+        }
+      ]
+    },
+    {
+      "token": "Updating MAIN CPU firmware.",
+      "matches": [
+        {
+          "address": "0x2035e910",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x2032d170"
+          ],
+          "pointer_loads": []
+        }
+      ]
+    },
+    {
+      "token": "Updating DSP/FPGA firmware.",
+      "matches": [
+        {
+          "address": "0x2035e8f4",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x2032d1bc"
+          ],
+          "pointer_loads": []
+        }
+      ]
+    },
+    {
+      "token": "C:\\IC-7300\\VoiceTx\\voicetx1.wav",
+      "matches": [
+        {
+          "address": "0x2019e64c",
+          "literal_loads": [
+            {
+              "instruction": "0x20023240",
+              "pool": "0x200238fc"
+            },
+            {
+              "instruction": "0x200362dc",
+              "pool": "0x20036b14"
+            },
+            {
+              "instruction": "0x20047460",
+              "pool": "0x2004754c"
+            },
+            {
+              "instruction": "0x2004b7bc",
+              "pool": "0x2004bc88"
+            },
+            {
+              "instruction": "0x2005cf24",
+              "pool": "0x2005d9ac"
+            },
+            {
+              "instruction": "0x2005d008",
+              "pool": "0x2005d9ac"
+            },
+            {
+              "instruction": "0x2006a944",
+              "pool": "0x2006b37c"
+            },
+            {
+              "instruction": "0x2006b484",
+              "pool": "0x2006b37c"
+            }
+          ],
+          "pointer_locations": [
+            "0x200238fc",
+            "0x20036b14",
+            "0x2004754c",
+            "0x2004bc88",
+            "0x2005d9ac",
+            "0x2006b37c"
+          ],
+          "pointer_loads": []
+        }
+      ]
+    },
+    {
+      "token": "IC-7300 Voice Recorder Data",
+      "matches": [
+        {
+          "address": "0x2019e5ec",
+          "literal_loads": [
+            {
+              "instruction": "0x20068840",
+              "pool": "0x200689a8"
+            },
+            {
+              "instruction": "0x200694ec",
+              "pool": "0x200689a8"
+            }
+          ],
+          "pointer_locations": [
+            "0x200689a8"
+          ],
+          "pointer_loads": []
+        }
+      ]
+    },
+    {
+      "token": "IC-7300 Voice TX Data",
+      "matches": [
+        {
+          "address": "0x2019e608",
+          "literal_loads": [
+            {
+              "instruction": "0x20069750",
+              "pool": "0x2006a550"
+            },
+            {
+              "instruction": "0x2006ab28",
+              "pool": "0x2006a550"
+            }
+          ],
+          "pointer_locations": [
+            "0x2006a550"
+          ],
+          "pointer_loads": []
+        }
+      ]
+    },
+    {
+      "token": "Time Set",
+      "matches": [
+        {
+          "address": "0x2035a7d5",
+          "literal_loads": [],
+          "pointer_locations": [],
+          "pointer_loads": []
+        }
+      ]
+    },
+    {
+      "token": "Date",
+      "matches": [
+        {
+          "address": "0x2035a6c8",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x201900b8"
+          ],
+          "pointer_loads": []
+        },
+        {
+          "address": "0x2035c8a4",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x20192bf4",
+            "0x20192c34",
+            "0x20192c74"
+          ],
+          "pointer_loads": []
+        },
+        {
+          "address": "0x2035e27c",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x2032acd8"
+          ],
+          "pointer_loads": []
+        }
+      ]
+    },
+    {
+      "token": "CI-V",
+      "matches": [
+        {
+          "address": "0x2035996c",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x2018ee70",
+            "0x20192540",
+            "0x20195ec0"
+          ],
+          "pointer_loads": []
+        },
+        {
+          "address": "0x20359a50",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x2018ee6c",
+            "0x20192534",
+            "0x20195eb4"
+          ],
+          "pointer_loads": []
+        },
+        {
+          "address": "0x2035a524",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x20190054",
+            "0x20190058",
+            "0x2019005c",
+            "0x20190060",
+            "0x201909ac",
+            "0x201909b4"
+          ],
+          "pointer_loads": []
+        },
+        {
+          "address": "0x2035b760",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x201925f4"
+          ],
+          "pointer_loads": []
+        },
+        {
+          "address": "0x2035b78e",
+          "literal_loads": [],
+          "pointer_locations": [],
+          "pointer_loads": []
+        },
+        {
+          "address": "0x2035b7a4",
+          "literal_loads": [],
+          "pointer_locations": [],
+          "pointer_loads": []
+        },
+        {
+          "address": "0x2035b9dc",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x20192600"
+          ],
+          "pointer_loads": []
+        },
+        {
+          "address": "0x2035c308",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x201926c0",
+            "0x20196000"
+          ],
+          "pointer_loads": []
+        },
+        {
+          "address": "0x2035c490",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x201925c0"
+          ],
+          "pointer_loads": []
+        },
+        {
+          "address": "0x2035c8ac",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x20192674",
+            "0x20195fb4"
+          ],
+          "pointer_loads": []
+        },
+        {
+          "address": "0x2035c8c0",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x201924f4",
+            "0x20195e74"
+          ],
+          "pointer_loads": []
+        },
+        {
+          "address": "0x2035c8e8",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x20192574",
+            "0x20195ef4"
+          ],
+          "pointer_loads": []
+        },
+        {
+          "address": "0x2035c96c",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x20192640",
+            "0x20195f80"
+          ],
+          "pointer_loads": []
+        },
+        {
+          "address": "0x2035c97c",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x20192680",
+            "0x20195fc0"
+          ],
+          "pointer_loads": []
+        },
+        {
+          "address": "0x2035c990",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x20192500",
+            "0x20195e80"
+          ],
+          "pointer_loads": []
+        },
+        {
+          "address": "0x2035cb44",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x201926b4",
+            "0x20195ff4"
+          ],
+          "pointer_loads": []
+        },
+        {
+          "address": "0x2035ce00",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x201925b4"
+          ],
+          "pointer_loads": []
+        },
+        {
+          "address": "0x2035ceac",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x20192634",
+            "0x20195f74"
+          ],
+          "pointer_loads": []
+        },
+        {
+          "address": "0x2035cf00",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x20192580",
+            "0x20195f00"
+          ],
+          "pointer_loads": []
+        }
+      ]
+    },
+    {
+      "token": "PTT Port Function",
+      "matches": [
+        {
+          "address": "0x2035cc60",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x20192874"
+          ],
+          "pointer_loads": []
+        }
+      ]
+    },
+    {
+      "token": "USB SEND",
+      "matches": [
+        {
+          "address": "0x2035a370",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x2019006c"
+          ],
+          "pointer_loads": []
+        },
+        {
+          "address": "0x2035a414",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x20190074",
+            "0x20190078"
+          ],
+          "pointer_loads": []
+        },
+        {
+          "address": "0x2035a6fc",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x20190070"
+          ],
+          "pointer_loads": []
+        },
+        {
+          "address": "0x2035c164",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x20192774",
+            "0x20192780",
+            "0x20195d74",
+            "0x20195d80"
+          ],
+          "pointer_loads": []
+        },
+        {
+          "address": "0x2035f6d8",
+          "literal_loads": [],
+          "pointer_locations": [],
+          "pointer_loads": []
+        },
+        {
+          "address": "0x2035fb58",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x2032e1e8"
+          ],
+          "pointer_loads": []
+        }
+      ]
+    },
+    {
+      "token": "REF Adjust",
+      "matches": [
+        {
+          "address": "0x20359a8c",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x2018ee80",
+            "0x201921b4"
+          ],
+          "pointer_loads": []
+        },
+        {
+          "address": "0x2035f71d",
+          "literal_loads": [],
+          "pointer_locations": [],
+          "pointer_loads": []
+        }
+      ]
+    },
+    {
+      "token": "DSP TX TotalGain HF",
+      "matches": [
+        {
+          "address": "0x20359278",
+          "literal_loads": [],
+          "pointer_locations": [
+            "0x20188f5c"
+          ],
+          "pointer_loads": []
+        }
+      ]
+    }
+  ],
+  "md5_constants": [
+    {
+      "name": "MD5_T0",
+      "locations": [
+        "0x2003d290"
+      ],
+      "literal_loads": [
+        {
+          "instruction": "0x2003c8d0",
+          "pool": "0x2003d290"
+        }
+      ]
+    },
+    {
+      "name": "MD5_IV0",
+      "locations": [
+        "0x2003d280"
+      ],
+      "literal_loads": [
+        {
+          "instruction": "0x2003c86c",
+          "pool": "0x2003d280"
+        }
+      ]
+    },
+    {
+      "name": "MD5_IV1",
+      "locations": [
+        "0x2003d284"
+      ],
+      "literal_loads": [
+        {
+          "instruction": "0x2003c874",
+          "pool": "0x2003d284"
+        }
+      ]
+    }
+  ]
+}
