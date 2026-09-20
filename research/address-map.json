@@ -1,6 +1,6 @@
 {
   "source_revision": {
-    "commit": "379976675a978eb3b29ce7c3cf5c5601387513c0",
+    "commit": "d3ec9b0a1b67089cfa3fe3079746a5c6e9ffcbf5",
     "dirty": true
   },
   "image_sha256": "4686728c9d1f7249b6278a29686a40b8fa5e527bd2428a76a33cd9395178c9a4",
@@ -494,5 +494,11 @@
         }
       ]
     }
+  ],
+  "md5_init_callers": [
+    "0x2002580c",
+    "0x20025930",
+    "0x20025d94",
+    "0x20026040"
   ]
 }

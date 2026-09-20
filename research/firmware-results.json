@@ -1,0 +1,257 @@
+{
+  "source_revision": {
+    "commit": "d3ec9b0a1b67089cfa3fe3079746a5c6e9ffcbf5",
+    "dirty": true
+  },
+  "releases": [
+    {
+      "version": "140",
+      "roundtrip_identical": true,
+      "sha256": "f71d7b0bca7cf2480e3324dbf35d74824a1a6f777f035a31c9957b809e20fc79",
+      "parts": [
+        {
+          "name": "main",
+          "offset": 44,
+          "size": 2436080,
+          "decoded_size": null,
+          "sha256": "5648806fe364600fc1bb419c385e03412bda1f4076a3e8d9d853a803028a3ad8",
+          "md5": "48ecd5b61efa10de906ae3fe9eff1fc3"
+        },
+        {
+          "name": "dsp_program",
+          "offset": 2436140,
+          "size": 97862,
+          "decoded_size": 163592,
+          "sha256": "4c453465e6526051d5c7243df07b77bbaffd2fcef2621f447cccff7f3c614bbc",
+          "md5": "cd8e3f57a69dab42a066deea8653ff18"
+        },
+        {
+          "name": "dsp_data",
+          "offset": 2534018,
+          "size": 721836,
+          "decoded_size": 720648,
+          "sha256": "45f92c3c93aa73319ea6a1830c54cfdc055c4b6420dfbf89511f2d6a555c6da6",
+          "md5": "3d4d48cf9e950504a421c8f4c3b2d047"
+        },
+        {
+          "name": "fpga",
+          "offset": 3255870,
+          "size": 698201,
+          "decoded_size": 859412,
+          "sha256": "12bc584098adddba5ab380f67496eac33a1663055d351196569ebaf061596378",
+          "md5": "3fc92d77d14bbee91a1b810c61ac370a"
+        }
+      ],
+      "decoded": {
+        "application": {
+          "size": 3738388,
+          "consumed": 1681717,
+          "sha256": "91c44ef789f6c817797d4392445719000b30e9a5a15debc7d8fe2943fd943243"
+        },
+        "dsp_program": {
+          "size": 163592,
+          "consumed": 97862,
+          "sha256": "3093818ec5716abb00c16dd686a980c00812c88e73d0753b3c19e9f1d15429a1"
+        },
+        "dsp_data": {
+          "size": 720648,
+          "consumed": 721836,
+          "sha256": "c27f381f0355c731dacd6b4d6f27adce925900ce82efbef923329bd0f889a2cc"
+        },
+        "fpga": {
+          "size": 859412,
+          "consumed": 698201,
+          "sha256": "1f007133672d8c3eb038ef4ed98ad99815b371fa464422b0e6e8259d06150147"
+        }
+      }
+    },
+    {
+      "version": "141",
+      "roundtrip_identical": true,
+      "sha256": "f0aacde50a02cb1f9c5a237deab5555ff124813787b0eef7dbc273e073132fbb",
+      "parts": [
+        {
+          "name": "main",
+          "offset": 44,
+          "size": 2436080,
+          "decoded_size": null,
+          "sha256": "96f8e5cb13c75a5a9530f499a72c8b1b8789aa5bfe15f9731acc03f4e23e720a",
+          "md5": "40a9d7b1a6ba0d4f27a0b4065065206f"
+        },
+        {
+          "name": "dsp_program",
+          "offset": 2436140,
+          "size": 97862,
+          "decoded_size": 163592,
+          "sha256": "4c453465e6526051d5c7243df07b77bbaffd2fcef2621f447cccff7f3c614bbc",
+          "md5": "cd8e3f57a69dab42a066deea8653ff18"
+        },
+        {
+          "name": "dsp_data",
+          "offset": 2534018,
+          "size": 721836,
+          "decoded_size": 720648,
+          "sha256": "45f92c3c93aa73319ea6a1830c54cfdc055c4b6420dfbf89511f2d6a555c6da6",
+          "md5": "3d4d48cf9e950504a421c8f4c3b2d047"
+        },
+        {
+          "name": "fpga",
+          "offset": 3255870,
+          "size": 698201,
+          "decoded_size": 859412,
+          "sha256": "12bc584098adddba5ab380f67496eac33a1663055d351196569ebaf061596378",
+          "md5": "3fc92d77d14bbee91a1b810c61ac370a"
+        }
+      ],
+      "decoded": {
+        "application": {
+          "size": 3738388,
+          "consumed": 1678355,
+          "sha256": "9380582454eaa15c572310cf4f48e92083e54bf16b72211aa03ef59c44966f65"
+        },
+        "dsp_program": {
+          "size": 163592,
+          "consumed": 97862,
+          "sha256": "3093818ec5716abb00c16dd686a980c00812c88e73d0753b3c19e9f1d15429a1"
+        },
+        "dsp_data": {
+          "size": 720648,
+          "consumed": 721836,
+          "sha256": "c27f381f0355c731dacd6b4d6f27adce925900ce82efbef923329bd0f889a2cc"
+        },
+        "fpga": {
+          "size": 859412,
+          "consumed": 698201,
+          "sha256": "1f007133672d8c3eb038ef4ed98ad99815b371fa464422b0e6e8259d06150147"
+        }
+      }
+    },
+    {
+      "version": "142",
+      "roundtrip_identical": true,
+      "sha256": "8cf5324a126f105cd2307c30b191b9dd8183f86b2c8bf229e61bf9a6a8c32f32",
+      "parts": [
+        {
+          "name": "main",
+          "offset": 44,
+          "size": 2436080,
+          "decoded_size": null,
+          "sha256": "8046c641d2ec4f5fc16fc232a9c4b440c2bf24f975eaf5c99b754f36d3a8c2ed",
+          "md5": "77b15cf29087d72ac5d19a7550c3bd47"
+        },
+        {
+          "name": "dsp_program",
+          "offset": 2436140,
+          "size": 97862,
+          "decoded_size": 163592,
+          "sha256": "4c453465e6526051d5c7243df07b77bbaffd2fcef2621f447cccff7f3c614bbc",
+          "md5": "cd8e3f57a69dab42a066deea8653ff18"
+        },
+        {
+          "name": "dsp_data",
+          "offset": 2534018,
+          "size": 721836,
+          "decoded_size": 720648,
+          "sha256": "45f92c3c93aa73319ea6a1830c54cfdc055c4b6420dfbf89511f2d6a555c6da6",
+          "md5": "3d4d48cf9e950504a421c8f4c3b2d047"
+        },
+        {
+          "name": "fpga",
+          "offset": 3255870,
+          "size": 698201,
+          "decoded_size": 859412,
+          "sha256": "12bc584098adddba5ab380f67496eac33a1663055d351196569ebaf061596378",
+          "md5": "3fc92d77d14bbee91a1b810c61ac370a"
+        }
+      ],
+      "decoded": {
+        "application": {
+          "size": 3738392,
+          "consumed": 1676645,
+          "sha256": "4686728c9d1f7249b6278a29686a40b8fa5e527bd2428a76a33cd9395178c9a4"
+        },
+        "dsp_program": {
+          "size": 163592,
+          "consumed": 97862,
+          "sha256": "3093818ec5716abb00c16dd686a980c00812c88e73d0753b3c19e9f1d15429a1"
+        },
+        "dsp_data": {
+          "size": 720648,
+          "consumed": 721836,
+          "sha256": "c27f381f0355c731dacd6b4d6f27adce925900ce82efbef923329bd0f889a2cc"
+        },
+        "fpga": {
+          "size": 859412,
+          "consumed": 698201,
+          "sha256": "1f007133672d8c3eb038ef4ed98ad99815b371fa464422b0e6e8259d06150147"
+        }
+      }
+    }
+  ],
+  "diffs": [
+    {
+      "source_revision": {
+        "commit": "d3ec9b0a1b67089cfa3fe3079746a5c6e9ffcbf5",
+        "dirty": true
+      },
+      "a_sha256": "f71d7b0bca7cf2480e3324dbf35d74824a1a6f777f035a31c9957b809e20fc79",
+      "b_sha256": "f0aacde50a02cb1f9c5a237deab5555ff124813787b0eef7dbc273e073132fbb",
+      "a_bytes": 3954089,
+      "b_bytes": 3954089,
+      "changed_common_bytes": 1420917,
+      "extra_bytes": 0,
+      "first_difference": 65634,
+      "last_difference": 2436139,
+      "parts": [
+        {
+          "name": "main",
+          "equal": false
+        },
+        {
+          "name": "dsp_program",
+          "equal": true
+        },
+        {
+          "name": "dsp_data",
+          "equal": true
+        },
+        {
+          "name": "fpga",
+          "equal": true
+        }
+      ]
+    },
+    {
+      "source_revision": {
+        "commit": "d3ec9b0a1b67089cfa3fe3079746a5c6e9ffcbf5",
+        "dirty": true
+      },
+      "a_sha256": "f0aacde50a02cb1f9c5a237deab5555ff124813787b0eef7dbc273e073132fbb",
+      "b_sha256": "8cf5324a126f105cd2307c30b191b9dd8183f86b2c8bf229e61bf9a6a8c32f32",
+      "a_bytes": 3954089,
+      "b_bytes": 3954089,
+      "changed_common_bytes": 1421484,
+      "extra_bytes": 0,
+      "first_difference": 65580,
+      "last_difference": 2436139,
+      "parts": [
+        {
+          "name": "main",
+          "equal": false
+        },
+        {
+          "name": "dsp_program",
+          "equal": true
+        },
+        {
+          "name": "dsp_data",
+          "equal": true
+        },
+        {
+          "name": "fpga",
+          "equal": true
+        }
+      ]
+    }
+  ]
+}

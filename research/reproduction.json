@@ -1,0 +1,57 @@
+{
+  "tested_commit": "d3ec9b0a1b67089cfa3fe3079746a5c6e9ffcbf5",
+  "clean_after_reproduction": true,
+  "checks": [
+    {
+      "command": [
+        "git",
+        "checkout",
+        "--detach",
+        "d3ec9b0a1b67089cfa3fe3079746a5c6e9ffcbf5"
+      ],
+      "returncode": 0,
+      "stdout_tail": "",
+      "stderr_tail": "HEAD is now at d3ec9b0 Document reproducible workflow and verify malformed audio under sanitizers\n"
+    },
+    {
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "tools/bootstrap.py"
+      ],
+      "returncode": 0,
+      "stdout_tail": "ft8_lib 9fec6ca39886edbf96f4f5e71edc76da5074e871\n",
+      "stderr_tail": "Cloning into '/private/var/folders/5p/1hx0sf8966590kndtlmkj0l80000gn/T/ic7300-reproduce-ihgwlx90/repo/third_party/ft8_lib'...\n"
+    },
+    {
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "tools/acquire.py",
+        "--verify"
+      ],
+      "returncode": 0,
+      "stdout_tail": "140 3954089 f71d7b0bca7cf2480e3324dbf35d74824a1a6f777f035a31c9957b809e20fc79\n141 3954089 f0aacde50a02cb1f9c5a237deab5555ff124813787b0eef7dbc273e073132fbb\n142 3954089 8cf5324a126f105cd2307c30b191b9dd8183f86b2c8bf229e61bf9a6a8c32f32\n",
+      "stderr_tail": ""
+    },
+    {
+      "command": [
+        "make",
+        "-j4",
+        "test"
+      ],
+      "returncode": 0,
+      "stdout_tail": "LT_SOURCE -D_DARWIN_C_SOURCE -O2 -g -Wall -Wextra tests/test_qso.c build/qso.o -o build/test_qso\ncc -std=c11 -D_DEFAULT_SOURCE -D_DARWIN_C_SOURCE -O2 -g -Wall -Wextra build/main.o build/codec.o build/qso.o build/alloc.o build/station.o build/lib/ft8/constants.o build/lib/ft8/crc.o build/lib/ft8/decode.o build/lib/ft8/encode.o build/lib/ft8/ldpc.o build/lib/ft8/message.o build/lib/ft8/text.o build/lib/common/monitor.o build/lib/fft/kiss_fft.o build/lib/fft/kiss_fftr.o -lm -o build/ft8_proto\ncc -Iprototype -Ithird_party/ft8_lib -std=c11 -D_DEFAULT_SOURCE -D_DARWIN_C_SOURCE -O2 -g -Wall -Wextra tests/test_codec.c build/codec.o build/qso.o build/alloc.o build/station.o build/lib/ft8/constants.o build/lib/ft8/crc.o build/lib/ft8/decode.o build/lib/ft8/encode.o build/lib/ft8/ldpc.o build/lib/ft8/message.o build/lib/ft8/text.o build/lib/common/monitor.o build/lib/fft/kiss_fft.o build/lib/fft/kiss_fftr.o -lm -o build/test_codec\nFT8_PROTO=build/ft8_proto python3 -m unittest discover -s tests -v\nbuild/test_qso\nqso tests passed: completion, alternate exchange, parity, boundaries, retries, duplicates, cancel, clock jumps\nbuild/test_codec\ncodec tests passed: streaming loopback, symbol sync, sample continuity, bounds, cancellation\nbuild/ft8_proto simulate\nTX @ 500 ms: W9XYZ K1ABC FN42\nRX: K1ABC W9XYZ -12\nTX @ 30500 ms: W9XYZ K1ABC R-10\nRX: K1ABC W9XYZ RR73\nTX @ 60500 ms: W9XYZ K1ABC 73\n{\"elapsed_seconds\":0.000009,\"codec_peak_heap_bytes\":0,\"codec_live_heap_bytes\":0,\"maxrss_native\":1720320}\n",
+      "stderr_tail": "third_party/ft8_lib/ft8/decode.c:16:20: warning: unused variable 'db_power_sum' [-Wunused-const-variable]\n   16 | static const float db_power_sum[40] = {\n      |                    ^~~~~~~~~~~~\nthird_party/ft8_lib/ft8/decode.c:511:13: warning: unused function 'ft8_decode_multi_symbols' [-Wunused-function]\n  511 | static void ft8_decode_multi_symbols(const WF_ELEM_T* wf, int num_bins, int n_syms, int bit_idx, float* log174)\n      |             ^~~~~~~~~~~~~~~~~~~~~~~~\n2 warnings generated.\ntest_malformed_and_unsupported (test_cli.WavTests) ... ok\ntest_truncated_pcm (test_cli.WavTests) ... ok\ntest_declared_size_bound (test_firmware.FirmwareTests) ... ok\ntest_deterministic_report (test_firmware.FirmwareTests) ... ok\ntest_literals_overlap_zero_history_and_truncation (test_firmware.FirmwareTests) ... ok\ntest_parse_integrity (test_firmware.FirmwareTests) ... ok\ntest_roundtrip_preserves_opaque_trailer (test_firmware.FirmwareTests) ... ok\n\n----------------------------------------------------------------------\nRan 7 tests in 0.222s\n\nOK\nBlock size = 1920\nSubblock size = 960\nN_FFT = 3840\nBlock size = 1920\nSubblock size = 960\nN_FFT = 3840\n"
+    },
+    {
+      "command": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "tools/verify_firmware.py",
+        "--output",
+        "artifacts/firmware-results.json"
+      ],
+      "returncode": 0,
+      "stdout_tail": "140 all payload digests, decompression and roundtrip verified\n141 all payload digests, decompression and roundtrip verified\n142 all payload digests, decompression and roundtrip verified\n",
+      "stderr_tail": ""
+    }
+  ]
+}

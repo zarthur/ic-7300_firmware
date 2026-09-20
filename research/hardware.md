@@ -25,6 +25,11 @@ Primary chip references:
 - https://www.epsondevice.com/crystal/en/products/rtc/rx8803lc.html
 - https://esmt.com.tw/upload/pdf/ESMT/datasheets/EN25QH32A_Ver.C.pdf
 
+The ESMT flash datasheet link was found but could not be downloaded as a valid
+PDF on this host (certificate failure at the bare domain, invalid document from
+the www host). Flash identities above are verified from Icom's manual; detailed
+flash geometry/programming requirements remain pending primary datasheets.
+
 The 48 MHz crystal shown beside IC301 is not evidence that the CPU runs at
 48 MHz; clock/PLL registers need decoding. SRAM capacity is not free memory.
 The current floating-point decoder's ~236 KiB requested heap plus scratch,
