@@ -1,0 +1,13 @@
+/artifacts/
+/build/
+/third_party/
+/.venv/
+__pycache__/
+*.pyc
+*.gpr
+*.rep/
+*.zip
+*.dat
+*.bin
+*.wav
+.DS_Store
