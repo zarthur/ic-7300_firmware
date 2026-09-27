@@ -1,115 +1,65 @@
 # Automated development plan
 
-Reviewed 2026-09-27. This is the execution queue for the recurring development
-task, alongside the research roadmap in [NEXT_STEPS.md](NEXT_STEPS.md).
+Current direction: prepare the first minimal custom-firmware experiment under
+[FIRST_CUSTOM_FIRMWARE.md](FIRST_CUSTOM_FIRMWARE.md). This supersedes the earlier
+queue in NEXT_STEPS.md and its unconditional recovery requirement for #13.
+Use software and the existing computer/radio only; no hardware purchases,
+internal connections or physical modification. Actual radio firmware writes
+require a later explicit owner decision on the exact candidate and procedure.
 
-## Reviewed state
+## Active queue
 
-- GitHub: 33 open issues, no open PRs. Main has no branch protection and there is
-  no hosted CI workflow. The authenticated account has repository admin access.
-- Local base: `1ab637b`, on `main`, with 20 modified tracked files and 43 untracked
-  files. This substantial research baseline must be preserved and split into
-  reviewed changes; it is not the code currently available from GitHub main.
-- Fresh `make development-check` passed on the unchanged local source tree:
-  95 Python tests, zero skips, C QSO/codec tests, simulation, ASan/UBSan checks,
-  official-image round trips, repeated controller evidence, reference decoder
-  comparisons and whitespace checks. Evidence is local at
-  `artifacts/development-20260927T220429163603Z/report.json` and its sibling logs.
-  This validates the recorded dirty tree, not a future commit or hardware behavior.
-- Two independent review sub-agents assessed code and issue dependencies.
-  Known sensitivity gaps remain; a passing benchmark does not establish parity
-  with WSJT-X or feasibility on the radio processor.
-- The owner reports that the radio is powered on and connected. No device I/O
-  was performed during this review. Connection does not supply missing recovery,
-  native runtime, tuning or regional qualification evidence.
+1. Freeze and verify the baseline, target identity evidence and outstanding gaps.
+2. Delegate independent bounded research on the exact update/boot path, a harmless
+   same-length display-label site, and software-only restoration options.
+3. Review and implement a constrained local candidate builder only after the
+   exact patch policy and relevant acceptance evidence support it. Keep firmware
+   outputs and unpublished packing code local, subject to the distribution policy.
+4. Validate candidate-specific original-loader decode, integrity, protected bytes,
+   modeled write effects and failure cases, deterministic construction, and source
+   provenance. Resolve failed invariants and obtain independent review.
+5. Assemble the exact-image first-test decision package and present remaining
+   risks, including the possibility of a nonbooting radio with no demonstrated
+   software restoration path. Request the owner's candidate-specific decision.
+6. Do not autonomously install, open device interfaces, tune, transmit, or contact
+   third parties. No intentional corrupt-image or power-interruption tests.
 
-## Ordered execution queue
+Recovery research remains important, but lack of demonstrated independent recovery
+is not by itself a reason to stop preparatory work or suppress the decision package.
+It is an explicit risk for the owner's later decision, not something a PR merge
+or this automation may accept on their behalf. Issue #11 stays open until its
+physical acceptance evidence exists. Successful first boot does not close native
+FT8 audio, memory, scheduling or performance requirements.
 
-| Order | Work package | Acceptance and issue relationship |
-| --- | --- | --- |
-| 1 | Fix replay provenance | `tools/compare_receive.py` can return PASS after a decoder binary or slot changes during replay. The reviewer reproduced exit 0 with mismatching recorded hashes. Freeze inputs/executables or detect changes and fail closed; include manifest, cached reference and source provenance. Regression tests must mutate inputs/binaries during a run and demonstrate rejection. Supports #23 and all replay-based merge decisions. |
-| 2 | Reject unusable capture batches | `tools/capture_batch.py` can report PASS with zero exported slots. Require a nonempty validated slot inventory, consistent manifest hashes and usable audio before success. Test empty, missing and malformed slots with synthetic fixtures and no device access. Supports #15/#23. |
-| 3 | Consolidate reviewed baseline | Inventory dependencies between the existing 63 changed/untracked files. Split governance/checklist, target validation, updater research, receive tooling and codec experiments into focused branches/PRs. Stage explicit paths only. Review original analysis and scan for prohibited content. Do not publish patching-related tools pending the outstanding distribution gate. Validate each resulting branch independently. |
-| 4 | Add synthetic PR CI | After its dependencies are committed, bootstrap pinned codec sources, install pinned Python packages and run `make test-synthetic` in a clean runner. Never acquire official firmware or recordings in hosted CI. Upload only reviewed synthetic validation logs. Verify an actual passing PR run before relying on the check. |
-| 5 | Reduce cancellation resources | Keep cancellation desktop-only and opt-in. Measure peak memory and execution work; retain frozen-corpus gains with zero baseline losses and no new unconfirmed messages. Run synthetic controls and development replays, then the held-out acceptance corpus without tuning against holdout outcomes. Supports #23/#20; does not close target-port acceptance. |
-| 6 | Resolve bounded platform questions | Use independent read-only research agents for remaining selector-block consumers and cache/mapping helpers, then DSP/FPGA updater paths (#10). Trace native receive buffers, ownership, clocks and scheduling (#14/#15/#17/#19). Deliver reproducible bounded evidence and explicit unknowns, not speculative integration code. |
+## Per-run workflow and merge gate
 
-The first two findings are implemented with regression tests and independent
-review. Final study-runner provenance hardening and corpus validation are in progress.
+The heartbeat `ic-7300-development-and-pr-review` runs every two hours.
 
-## Per-run workflow
-
-The active task heartbeat is `ic-7300-development-and-pr-review`, every two hours.
-Each wakeup should make bounded progress on the first unblocked package:
-
-1. Refresh issues, PRs, remote refs, local status and this checkpoint. Reuse
-   existing work instead of opening duplicate branches or PRs.
-2. Preserve the owner's dirty worktree. Use `codex/` branches in isolated
-   worktrees for new changes. A worktree from HEAD does not contain the existing
-   uncommitted baseline: copy only explicitly reviewed dependencies when needed.
-   Never reset, clean, stash or wholesale commit the owner's changes.
-3. Assign concrete independent implementation/review subtasks as useful.
-   Give each implementation agent its own worktree; keep a single integration
-   owner. Freeze a tree while validation runs. Do not launch competing builds
-   or mutate shared replay inputs.
-4. Implement one reviewable increment, add meaningful regression coverage and
-   run the applicable checks. Resolve findings before publishing the PR.
-5. Open and attach a focused PR with issue links, exact revision, behavior,
-   tests, evidence limitations and remaining acceptance criteria. Do not use
-   closing keywords for partially satisfied issues.
-6. Have an independent reviewer inspect semantics, tests, scope and the actual
-   diff. Record actionable findings and resolve them. Test success alone is
-   insufficient for merge approval.
-7. Apply the merge gate below. Update this checkpoint with completed work,
-   merged PRs, revision-specific reports and the next bounded action.
-
-Notify the owner only for meaningful completion, a merge, failure, or a new
-blocker requiring action. If everything remaining depends on hardware or other
-missing evidence, record that once and stay quiet until the state changes.
-
-## Merge gate
-
-The owner authorizes approving and merging sensible PRs that pass tests.
-
-- Test the exact proposed revision in a clean checkout with pinned dependencies.
-  Run synthetic validation for code changes; use the full local profile for
-  firmware/emulation/codec changes and affected corpus replays for decoder work.
-  Do not accept skipped required tests or reuse reports from another source tree.
-- Inspect all required hosted checks and unresolved review findings. Until CI
-  exists, absent checks are not a pass: explicit local revision-bound evidence
-  and independent review are required. Documentation-only changes need link,
-  content and whitespace review, not irrelevant hardware or codec tests.
-- Recheck the PR head SHA, base compatibility and mergeability immediately before
-  merging; use head-SHA matching for the merge operation. Revalidate relevant
-  integration behavior if the base changed. Never bypass repository rules or
-  force-push shared branches.
-- Submit GitHub approval where the authenticated account is eligible. GitHub
-  self-approval restrictions must not be bypassed: use the independent review
-  evidence and merge only if repository rules permit it, or report the precise
-  missing reviewer requirement.
-- Check the publication boundary in CONTRIBUTING.md and LEGAL.md. Keep firmware,
-  extracted content, disassembly dumps, recordings, settings and station logs
-  out of commits and public evidence. Attach every created PR to this task.
-
-## Issue acceptance and human-dependent work
-
-- #9 is a near-term closure candidate after the checklist is adopted through a
-  reviewed merged change. #7 remains open for regional qualification despite
-  implemented exact-image validation.
-- #10 remains open for incomplete controller/cache, selector and DSP/FPGA
-  semantics. Desktop emulation is not physical controller verification.
-- #11–#13 need physically demonstrated application-independent recovery and the
-  exact reviewed candidate/procedure before a modified boot. Packing stays
-  disabled until its evidence gates pass.
-- #14/#22 require owned memory and scheduling measurements on the actual target;
-  USB receive and host benchmarks cannot close them.
-- #8/#33 retain the recorded distribution-review requirements. Do not infer
-  approval from general PR merge authorization.
-- #26–#30 retain their timing, interlock, operator and phased test prerequisites.
-  This automation performs desktop work, without serial/audio device I/O,
-  tuning, flashing or transmission. Prepare concrete procedures when hardware
-  work is the next dependency and obtain the specific authorization required by
-  TEST_POLICY.md. Do not contact the service provider on the owner's behalf.
+- Refresh issues, PRs, origin/main and the checkpoint. Start at the first unblocked
+  active package; do not redo completed provenance or CI work.
+- Use `/Users/arthur/Documents/projects/ic-7300-development` and fresh `codex/`
+  branches from current origin/main. Preserve the original dirty workspace at
+  `/Users/arthur/Documents/projects/ic-7300_firmware`. No reset, clean, blanket
+  staging or wholesale commit of that workspace.
+- Use isolated worktrees for parallel implementation, independent reviewers and a
+  single integration owner. Freeze sources and replay inputs during validation.
+- Open and attach focused PRs with issue links, source revision, tests, evidence
+  and limitations. Inspect actual Linux/macOS checks and applicable local full
+  checks/corpus tests. No missing or skipped required checks count as success.
+  Documentation-only changes need content/link/whitespace review; hosted checks
+  still apply. Resolve substantive findings before merging.
+- The owner authorizes normal passing PR approvals and merges. Recheck the exact
+  head SHA and base compatibility, use a head-SHA merge guard and respect branch
+  rules. Do not impersonate a reviewer or bypass GitHub self-approval restrictions.
+  Desktop PR approval is not firmware-installation approval.
+- Keep firmware, generated dumps, recordings, settings, station logs and personal
+  data local and ignored. Follow the existing publication boundary; general merge
+  authority does not authorize publishing patching tools pending review.
+- Close issues only when all acceptance criteria are met. Record partial progress
+  without closing #7, #10–#14 or native FT8 tasks on desktop evidence alone.
+- Update the checkpoint. Notify only on meaningful completion, merge, failure,
+  a concrete missing observation, or readiness for the first-test decision. Stay
+  quiet when unchanged. Prefer useful bounded research over repeated blocker reports.
 
 ## Checkpoint
 
@@ -139,11 +89,5 @@ The owner authorizes approving and merging sensible PRs that pass tests.
   The original dirty workspace is preserved. The durable integration checkout is
   `/Users/arthur/Documents/projects/ic-7300-development`; use fresh `codex/`
   branches from current `origin/main` there for subsequent work.
-- The synthetic CI workflow is being qualified on Ubuntu and macOS. Merge it
-  only after both actual PR jobs pass; thereafter inspect both checks per PR.
-
-Next bounded work: establish mode-qualified reachability for the five selector
-candidates using the experiment in `research/selector-candidates.md`, and
-investigate reusable template FFT work in cancellation with numerical equivalence
-and frozen-corpus gates. Keep native audio/runtime, recovery, regional and
-TX acceptance criteria open. No radio I/O occurred in this implementation run.
+- PR #41 merged after both Ubuntu and macOS hosted synthetic jobs passed.
+  Inspect both checks and independent review evidence before every future merge.

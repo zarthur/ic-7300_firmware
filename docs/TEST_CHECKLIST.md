@@ -14,7 +14,9 @@ data outside Git; reference hashes and local evidence instead.
   Mark all hardware fields N/A for desktop tests.
 - Procedure: commands or numbered steps, with evidence destinations:
 - Stop conditions and response: stop on unexpected results; for hardware,
-  document safe shutdown and recovery. Modified boots require prior recovery proof.
+  document phase-specific responses; do not interrupt an in-progress write.
+  Modified boots require candidate-specific owner approval under TEST_POLICY.md,
+  with recovery evidence or explicit acceptance of its unresolved limitations.
 - For future TX only: approved phase-specific plan, operator authorization,
   per-session arm, interlocks, watchdog, cancel/flush and independent monitoring:
 - Actual results, evidence, limitations and follow-up:

@@ -1,5 +1,10 @@
 # Next work plan — updated 2026-09-27
 
+Current execution priority is [the first custom-firmware plan](FIRST_CUSTOM_FIRMWARE.md).
+The roadmap below is historical context. Its hardware-purchase suggestions and
+unconditional recovery-proof gate are superseded by the software-only,
+candidate-specific owner-decision policy in TEST_POLICY.md.
+
 USB input capture and live FT8 decoding succeeded on 2026-09-27. After the antenna
 discussion, a 60-second repeat passed host continuity checks without clipping;
 the prototype decoded 9 messages across three slots versus WSJT-X's 12. The

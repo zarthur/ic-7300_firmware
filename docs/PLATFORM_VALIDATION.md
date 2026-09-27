@@ -30,7 +30,7 @@ independent way to observe normal receive operation without a route to PTT.
    if directly measured; a menu reinstall does not prove unbootable-image recovery.
 5. Sign off only the failure classes actually exercised. A recovery route that
    depends on a working application does not satisfy recovery from a failed
-   application boot. Such a gap blocks #13.
+   application boot. Such a gap must be disclosed in the candidate decision package.
 
 Stop on any hash/target mismatch, unavailable backup, unexpected prompt, unclear
 bank state, loss of observation or abnormal device behavior. Do not improvise
@@ -44,9 +44,10 @@ in a physical PASS.
 
 ## Visible-only proof (#13)
 
-Prerequisites: proven recovery for the intended failure class, verified packer and
-reviewed display-only site, exact target match, reviewed test record and backed-up
-settings. None is implied by generation of a candidate file.
+Prerequisites: verified packer and display-only site, exact target match, offline
+validation, reviewed test record and backed-up settings. Present recovery evidence
+and any unproven/unavailable restoration route for candidate-specific owner approval
+under [the first-test plan](FIRST_CUSTOM_FIRMWARE.md). File generation is not approval.
 
 1. Review the patch preimage and same-length replacement, decoded diff, compressed
    capacity, integrity report and unchanged protected regions.
@@ -55,19 +56,24 @@ settings. None is implied by generation of a candidate file.
 3. In a later approved hardware session, use the established installation path.
    Verify boot completion, diagnostic rendering, controls, normal receive/audio,
    and no unexpected TX indication or behavior. No FT8 audio injection is allowed.
-4. Execute the previously proven rollback procedure. Verify stock identification,
+4. Execute only the approved, applicable return-to-stock procedure. If no software
+   route is available in the observed state, stop and record that outcome. Verify stock identification,
    receive baseline and settings restoration; retain the local audit hashes.
 
-Stop if any prerequisite is missing or any behavior diverges. Record PASS only
-when boot, receive behavior and rollback are physically demonstrated. A desktop
-rendering guess or unchanged RF code is not acceptance evidence.
+Apply the phase-specific stop responses if a prerequisite is missing or behavior
+diverges; never interrupt an in-progress write as a generic stop response. Record
+boot, normal receive/UI behavior, and return-to-stock separately as PASS, FAIL or
+NOT TESTED. Unestablished recovery remains UNKNOWN. A successful first boot does
+not imply successful restoration; neither a rendering guess nor unchanged RF code
+is physical acceptance evidence.
 
 ## Runtime measurement worksheet (#14)
 
 First identify allocator ownership, stack bounds, timer source, task objects and
 priorities. Probes must not guess callable APIs or write into apparent unused
 memory. Use read-only observation where possible; any instrumentation image needs
-the same packer/recovery prerequisites. Bound and measure probe overhead.
+the current candidate-specific approval policy in TEST_POLICY.md, including
+explicit recovery limitations. Bound and measure probe overhead.
 
 Repeat a stock baseline and an instrumented run for: normal receive; receive with
 scope and UI activity; receive with SD recording; combined scope/UI/SD load. Use
@@ -117,14 +123,15 @@ Do not assume region, installed firmware or backup contents from the USB name.
 | Calibration/configuration storage locations and backup | Not established |
 | Recovery without application boot | Not demonstrated; main CPU debug connector J491 is a documented but unqualified lead |
 
-Prefer a documented bootloader/service recovery mechanism. If unavailable, the
-next step is qualified investigation of external recovery access, including exact
-part identification, electrical isolation, complete repeated readback and a
-restore/readback verification procedure. Opening the radio, attaching a programmer
-or performing a restoration needs a concrete board-specific plan. Do not power
-an unidentified in-circuit flash interface or improvise pin connections.
+Prioritize documented software bootloader/update restoration using existing
+interfaces. Earlier proposals for external recovery access, internal probes,
+programmers or physical modification are historical alternatives outside the
+owner's software-only scope. If software recovery remains unavailable, disclose
+that limitation in the candidate decision package rather than propose a hardware
+purchase or assume the stock update file provides complete restoration.
 
-No write test is scheduled while these prerequisites remain missing. The normal
+No write test is currently authorized. The owner may later accept unresolved
+recovery risk for an exact reviewed candidate under FIRST_CUSTOM_FIRMWARE.md. The normal
 SD update path and the two observed application source locations are insufficient
 recovery evidence. Offline emulation reports accompany, but cannot replace, a
 physical recovery demonstration.
