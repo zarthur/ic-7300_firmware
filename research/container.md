@@ -28,7 +28,10 @@ number. Its finer semantics are unresolved. Offset 16 contains seven LE32 words:
 
 Each payload is followed by its 16-byte MD5. Every digest matches all three
 official releases. Header + four payload/digest pairs + two trailer bytes covers
-the file exactly. Trailer `37 65` is constant; its meaning is unknown. ZIP CRC and
+the file exactly. Trailer `37 65` is constant. The v1.42 checker at 0x200247e4 compares it
+against a fixed tag; emulation confirms rejection on mismatch. It is not a
+computed checksum in this recovered check. Other versions’ device-side checks
+have not been traced; see [updater emulation](updater-emulation.md). ZIP CRC and
 payload MD5 are integrity checks, not proof of signed firmware or authenticity.
 No conclusion about acceptance of modified images follows from these checks.
 

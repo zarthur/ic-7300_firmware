@@ -1,0 +1,611 @@
+{
+  "schema_version": 1,
+  "source_revision": {
+    "commit": "1ab637bbb8c505091dc11934be3fb5063287b1dd",
+    "dirty": true
+  },
+  "image_sha256": "8cf5324a126f105cd2307c30b191b9dd8183f86b2c8bf229e61bf9a6a8c32f32",
+  "tool_sha256": {
+    "emulate_platform.py": "834920a14596ec740d4b64888842d63649a21792cc573d01b431997eb4a0ea45",
+    "packing.py": "e3ed843a8df3ff5a4148eec57f8a885b3d2b2d2ae6a8e8cd51b31580ee810c1a",
+    "firmware.py": "42b77e470e06c5645aadba0a56baee30ccb08727b8af904e78a107d23bd6b87a"
+  },
+  "unicorn": "2.1.4",
+  "original_decode": {
+    "bytes_written": 3738392,
+    "source_bytes_advanced": 1676646,
+    "executed": "original ARM loader at 0x2000425c",
+    "modeled": [
+      "private RAM and stack",
+      "return sentinel"
+    ],
+    "limits": {
+      "instructions": 150000000,
+      "wall_seconds": 30
+    },
+    "matches_host": true,
+    "host_consumed": 1676645
+  },
+  "envelope": {
+    "official": {
+      "accepted": true,
+      "executed": "original 0x200247e4 magic/trailer checker",
+      "modeled": [
+        "memcmp equality"
+      ],
+      "limitation": "not complete updater validation"
+    },
+    "bad_magic": {
+      "accepted": false,
+      "executed": "original 0x200247e4 magic/trailer checker",
+      "modeled": [
+        "memcmp equality"
+      ],
+      "limitation": "not complete updater validation"
+    },
+    "bad_trailer": {
+      "accepted": false,
+      "executed": "original 0x200247e4 magic/trailer checker",
+      "modeled": [
+        "memcmp equality"
+      ],
+      "limitation": "not complete updater validation"
+    },
+    "header_only": {
+      "accepted": true,
+      "executed": "original 0x200247e4 magic/trailer checker",
+      "modeled": [
+        "memcmp equality"
+      ],
+      "limitation": "not complete updater validation"
+    }
+  },
+  "bank_selection": {
+    "matching": {
+      "source": "0x18400004",
+      "destination": "0x20005000",
+      "decoded_length": 5678,
+      "marker_sha256": "90bd1bd7bda1258d5178beec951535815846bd76e47a2fe973b33fbf653d0006",
+      "executed": "original loader selector and 16-byte comparator",
+      "modeled": [
+        "persistent marker bytes",
+        "bank length words",
+        "decompressor interception"
+      ]
+    },
+    "erased": {
+      "source": "0x18010004",
+      "destination": "0x20005000",
+      "decoded_length": 1234,
+      "marker_sha256": "5ac6a5945f16500911219129984ba8b387a06f24fe383ce4e81a73294065461b",
+      "executed": "original loader selector and 16-byte comparator",
+      "modeled": [
+        "persistent marker bytes",
+        "bank length words",
+        "decompressor interception"
+      ]
+    },
+    "zero": {
+      "source": "0x18010004",
+      "destination": "0x20005000",
+      "decoded_length": 1234,
+      "marker_sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+      "executed": "original loader selector and 16-byte comparator",
+      "modeled": [
+        "persistent marker bytes",
+        "bank length words",
+        "decompressor interception"
+      ]
+    },
+    "one_bit_changed": {
+      "source": "0x18010004",
+      "destination": "0x20005000",
+      "decoded_length": 1234,
+      "marker_sha256": "e1825f2b88d98bf093a8cef33423b01f94cb651b6e9f60a2379f7477c661d3f6",
+      "executed": "original loader selector and 16-byte comparator",
+      "modeled": [
+        "persistent marker bytes",
+        "bank length words",
+        "decompressor interception"
+      ]
+    }
+  },
+  "persistent_record_matches_loader_marker": false,
+  "transfers": {
+    "changed": {
+      "return_code": 0,
+      "interrupted": null,
+      "changed_flag": 1,
+      "file_bytes_read": 80000,
+      "hashed_bytes_md5": "27b991da258f13e92ef0c809f01890da",
+      "flash_payload_equal": true,
+      "flash_sha256": "38eadcb34d8004ea2221c5833f94fdfdb1074b6fb78807f9b600319e6f6842a0",
+      "events": [
+        {
+          "operation": "read",
+          "requested": 65536,
+          "actual": 65536,
+          "status": 0
+        },
+        {
+          "operation": "compare",
+          "offset": 65536,
+          "length": 65536,
+          "different": true
+        },
+        {
+          "operation": "modeled_controller_transition",
+          "address": "0x20024cd0"
+        },
+        {
+          "operation": "erase",
+          "offset": 65536,
+          "length": 65536
+        },
+        {
+          "operation": "program",
+          "offset": 65536,
+          "length": 65536,
+          "modeled_error": false
+        },
+        {
+          "operation": "modeled_controller_transition",
+          "address": "0x20024850"
+        },
+        {
+          "operation": "read",
+          "requested": 14464,
+          "actual": 14464,
+          "status": 0
+        },
+        {
+          "operation": "compare",
+          "offset": 131072,
+          "length": 65536,
+          "different": true
+        },
+        {
+          "operation": "modeled_controller_transition",
+          "address": "0x20024cd0"
+        },
+        {
+          "operation": "erase",
+          "offset": 131072,
+          "length": 65536
+        },
+        {
+          "operation": "program",
+          "offset": 131072,
+          "length": 65536,
+          "modeled_error": false
+        },
+        {
+          "operation": "modeled_controller_transition",
+          "address": "0x20024850"
+        }
+      ],
+      "executed": "original 0x20024db8..0x20024ef4 ARM control flow",
+      "modeled": [
+        "file read/status mapping",
+        "MD5 update",
+        "memcmp/memset/divide",
+        "8 MiB flash bound, 64 KiB erase and programming",
+        "controller transitions"
+      ],
+      "not_established": [
+        "physical geometry",
+        "flash controller completion/errors",
+        "whole updater acceptance",
+        "bank activation",
+        "recoverability"
+      ]
+    },
+    "unchanged": {
+      "return_code": 0,
+      "interrupted": null,
+      "changed_flag": 0,
+      "file_bytes_read": 80000,
+      "hashed_bytes_md5": "27b991da258f13e92ef0c809f01890da",
+      "flash_payload_equal": true,
+      "flash_sha256": "38eadcb34d8004ea2221c5833f94fdfdb1074b6fb78807f9b600319e6f6842a0",
+      "events": [
+        {
+          "operation": "read",
+          "requested": 65536,
+          "actual": 65536,
+          "status": 0
+        },
+        {
+          "operation": "compare",
+          "offset": 65536,
+          "length": 65536,
+          "different": false
+        },
+        {
+          "operation": "read",
+          "requested": 14464,
+          "actual": 14464,
+          "status": 0
+        },
+        {
+          "operation": "compare",
+          "offset": 131072,
+          "length": 65536,
+          "different": false
+        }
+      ],
+      "executed": "original 0x20024db8..0x20024ef4 ARM control flow",
+      "modeled": [
+        "file read/status mapping",
+        "MD5 update",
+        "memcmp/memset/divide",
+        "8 MiB flash bound, 64 KiB erase and programming",
+        "controller transitions"
+      ],
+      "not_established": [
+        "physical geometry",
+        "flash controller completion/errors",
+        "whole updater acceptance",
+        "bank activation",
+        "recoverability"
+      ]
+    },
+    "short_read": {
+      "return_code": 4294967277,
+      "interrupted": null,
+      "changed_flag": 0,
+      "file_bytes_read": 65535,
+      "hashed_bytes_md5": "d41d8cd98f00b204e9800998ecf8427e",
+      "flash_payload_equal": false,
+      "flash_sha256": "9f9b02f5ee6cbef5e018c1ee424095fc21a842ea6968c0d36114b5930dab2ba1",
+      "events": [
+        {
+          "operation": "read",
+          "requested": 65536,
+          "actual": 65535,
+          "status": 0
+        }
+      ],
+      "executed": "original 0x20024db8..0x20024ef4 ARM control flow",
+      "modeled": [
+        "file read/status mapping",
+        "MD5 update",
+        "memcmp/memset/divide",
+        "8 MiB flash bound, 64 KiB erase and programming",
+        "controller transitions"
+      ],
+      "not_established": [
+        "physical geometry",
+        "flash controller completion/errors",
+        "whole updater acceptance",
+        "bank activation",
+        "recoverability"
+      ]
+    },
+    "read_error": {
+      "return_code": 4294967277,
+      "interrupted": null,
+      "changed_flag": 0,
+      "file_bytes_read": 65536,
+      "hashed_bytes_md5": "d41d8cd98f00b204e9800998ecf8427e",
+      "flash_payload_equal": false,
+      "flash_sha256": "9f9b02f5ee6cbef5e018c1ee424095fc21a842ea6968c0d36114b5930dab2ba1",
+      "events": [
+        {
+          "operation": "read",
+          "requested": 65536,
+          "actual": 65536,
+          "status": 1
+        }
+      ],
+      "executed": "original 0x20024db8..0x20024ef4 ARM control flow",
+      "modeled": [
+        "file read/status mapping",
+        "MD5 update",
+        "memcmp/memset/divide",
+        "8 MiB flash bound, 64 KiB erase and programming",
+        "controller transitions"
+      ],
+      "not_established": [
+        "physical geometry",
+        "flash controller completion/errors",
+        "whole updater acceptance",
+        "bank activation",
+        "recoverability"
+      ]
+    },
+    "cancel": {
+      "return_code": 4294967277,
+      "interrupted": null,
+      "changed_flag": 0,
+      "file_bytes_read": 0,
+      "hashed_bytes_md5": "d41d8cd98f00b204e9800998ecf8427e",
+      "flash_payload_equal": false,
+      "flash_sha256": "9f9b02f5ee6cbef5e018c1ee424095fc21a842ea6968c0d36114b5930dab2ba1",
+      "events": [],
+      "executed": "original 0x20024db8..0x20024ef4 ARM control flow",
+      "modeled": [
+        "file read/status mapping",
+        "MD5 update",
+        "memcmp/memset/divide",
+        "8 MiB flash bound, 64 KiB erase and programming",
+        "controller transitions"
+      ],
+      "not_established": [
+        "physical geometry",
+        "flash controller completion/errors",
+        "whole updater acceptance",
+        "bank activation",
+        "recoverability"
+      ]
+    },
+    "program_error": {
+      "return_code": 0,
+      "interrupted": null,
+      "changed_flag": 1,
+      "file_bytes_read": 80000,
+      "hashed_bytes_md5": "27b991da258f13e92ef0c809f01890da",
+      "flash_payload_equal": false,
+      "flash_sha256": "9f9b02f5ee6cbef5e018c1ee424095fc21a842ea6968c0d36114b5930dab2ba1",
+      "events": [
+        {
+          "operation": "read",
+          "requested": 65536,
+          "actual": 65536,
+          "status": 0
+        },
+        {
+          "operation": "compare",
+          "offset": 65536,
+          "length": 65536,
+          "different": true
+        },
+        {
+          "operation": "modeled_controller_transition",
+          "address": "0x20024cd0"
+        },
+        {
+          "operation": "erase",
+          "offset": 65536,
+          "length": 65536
+        },
+        {
+          "operation": "program",
+          "offset": 65536,
+          "length": 65536,
+          "modeled_error": true
+        },
+        {
+          "operation": "modeled_controller_transition",
+          "address": "0x20024850"
+        },
+        {
+          "operation": "read",
+          "requested": 14464,
+          "actual": 14464,
+          "status": 0
+        },
+        {
+          "operation": "compare",
+          "offset": 131072,
+          "length": 65536,
+          "different": true
+        },
+        {
+          "operation": "modeled_controller_transition",
+          "address": "0x20024cd0"
+        },
+        {
+          "operation": "erase",
+          "offset": 131072,
+          "length": 65536
+        },
+        {
+          "operation": "program",
+          "offset": 131072,
+          "length": 65536,
+          "modeled_error": true
+        },
+        {
+          "operation": "modeled_controller_transition",
+          "address": "0x20024850"
+        }
+      ],
+      "executed": "original 0x20024db8..0x20024ef4 ARM control flow",
+      "modeled": [
+        "file read/status mapping",
+        "MD5 update",
+        "memcmp/memset/divide",
+        "8 MiB flash bound, 64 KiB erase and programming",
+        "controller transitions"
+      ],
+      "not_established": [
+        "physical geometry",
+        "flash controller completion/errors",
+        "whole updater acceptance",
+        "bank activation",
+        "recoverability"
+      ]
+    },
+    "before_erase": {
+      "return_code": null,
+      "interrupted": "before_erase",
+      "changed_flag": 0,
+      "file_bytes_read": 65536,
+      "hashed_bytes_md5": "b1abcb6039a26dc5f2b1b91a1957054a",
+      "flash_payload_equal": false,
+      "flash_sha256": "9f9b02f5ee6cbef5e018c1ee424095fc21a842ea6968c0d36114b5930dab2ba1",
+      "events": [
+        {
+          "operation": "read",
+          "requested": 65536,
+          "actual": 65536,
+          "status": 0
+        },
+        {
+          "operation": "compare",
+          "offset": 65536,
+          "length": 65536,
+          "different": true
+        },
+        {
+          "operation": "modeled_controller_transition",
+          "address": "0x20024cd0"
+        }
+      ],
+      "executed": "original 0x20024db8..0x20024ef4 ARM control flow",
+      "modeled": [
+        "file read/status mapping",
+        "MD5 update",
+        "memcmp/memset/divide",
+        "8 MiB flash bound, 64 KiB erase and programming",
+        "controller transitions"
+      ],
+      "not_established": [
+        "physical geometry",
+        "flash controller completion/errors",
+        "whole updater acceptance",
+        "bank activation",
+        "recoverability"
+      ]
+    },
+    "after_erase": {
+      "return_code": null,
+      "interrupted": "after_erase",
+      "changed_flag": 0,
+      "file_bytes_read": 65536,
+      "hashed_bytes_md5": "b1abcb6039a26dc5f2b1b91a1957054a",
+      "flash_payload_equal": false,
+      "flash_sha256": "9f9b02f5ee6cbef5e018c1ee424095fc21a842ea6968c0d36114b5930dab2ba1",
+      "events": [
+        {
+          "operation": "read",
+          "requested": 65536,
+          "actual": 65536,
+          "status": 0
+        },
+        {
+          "operation": "compare",
+          "offset": 65536,
+          "length": 65536,
+          "different": true
+        },
+        {
+          "operation": "modeled_controller_transition",
+          "address": "0x20024cd0"
+        },
+        {
+          "operation": "erase",
+          "offset": 65536,
+          "length": 65536
+        }
+      ],
+      "executed": "original 0x20024db8..0x20024ef4 ARM control flow",
+      "modeled": [
+        "file read/status mapping",
+        "MD5 update",
+        "memcmp/memset/divide",
+        "8 MiB flash bound, 64 KiB erase and programming",
+        "controller transitions"
+      ],
+      "not_established": [
+        "physical geometry",
+        "flash controller completion/errors",
+        "whole updater acceptance",
+        "bank activation",
+        "recoverability"
+      ]
+    },
+    "after_program": {
+      "return_code": null,
+      "interrupted": "after_program",
+      "changed_flag": 0,
+      "file_bytes_read": 65536,
+      "hashed_bytes_md5": "b1abcb6039a26dc5f2b1b91a1957054a",
+      "flash_payload_equal": false,
+      "flash_sha256": "f7a07994312c0183e5bbaeba45896a82dacbe1c9e9ad2a751883cf5c7293b7c4",
+      "events": [
+        {
+          "operation": "read",
+          "requested": 65536,
+          "actual": 65536,
+          "status": 0
+        },
+        {
+          "operation": "compare",
+          "offset": 65536,
+          "length": 65536,
+          "different": true
+        },
+        {
+          "operation": "modeled_controller_transition",
+          "address": "0x20024cd0"
+        },
+        {
+          "operation": "erase",
+          "offset": 65536,
+          "length": 65536
+        },
+        {
+          "operation": "program",
+          "offset": 65536,
+          "length": 65536,
+          "modeled_error": false
+        }
+      ],
+      "executed": "original 0x20024db8..0x20024ef4 ARM control flow",
+      "modeled": [
+        "file read/status mapping",
+        "MD5 update",
+        "memcmp/memset/divide",
+        "8 MiB flash bound, 64 KiB erase and programming",
+        "controller transitions"
+      ],
+      "not_established": [
+        "physical geometry",
+        "flash controller completion/errors",
+        "whole updater acceptance",
+        "bank activation",
+        "recoverability"
+      ]
+    }
+  },
+  "preserved_tail_recompression": {
+    "bytes_written": 3738392,
+    "source_bytes_advanced": 1460360,
+    "executed": "original ARM loader at 0x2000425c",
+    "modeled": [
+      "private RAM and stack",
+      "return sentinel"
+    ],
+    "limits": {
+      "instructions": 150000000,
+      "wall_seconds": 30
+    },
+    "matches_host": true,
+    "source_bound": 1676645,
+    "recompressed_bytes": 1460358,
+    "image_generated": false,
+    "limitation": "Unmodified application only; not authorization for a patch region"
+  },
+  "recompression": {
+    "bytes_written": 3738392,
+    "source_bytes_advanced": 1460361,
+    "executed": "original ARM loader at 0x2000425c",
+    "modeled": [
+      "private RAM and stack",
+      "return sentinel"
+    ],
+    "limits": {
+      "instructions": 150000000,
+      "wall_seconds": 30
+    },
+    "matches_host": true,
+    "bytes": 1460358,
+    "sha256": "f709a8dc21503d19bc2b5bc4eec8df31541968047dcacd94ca92ea0835cf26c3",
+    "synthetic_lookahead_bytes": 3,
+    "original_consumed": 1676645,
+    "capacity_proven": false,
+    "image_generated": false
+  }
+}

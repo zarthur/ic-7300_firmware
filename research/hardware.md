@@ -15,6 +15,8 @@ revisions must be checked against the eventual development radio.
 | IC902 | EN25QH32A | DSP-side serial flash; distinct from main flash |
 | IC1351 | Altera EP4CE55F23I7N | Cyclone IV FPGA in the RF sample-processing path |
 | IC1401 | Microchip 23LC1024T | 1 Mbit (128 KiB) serial SRAM attached to FPGA, not general CPU heap |
+| IC351 | GT24C128B-2ZLI-TR | Separate main-board EEPROM; calibration/configuration ownership and backup coverage unresolved |
+| J491 | 10FLT-SM2-TB connector | Main CPU debug nets in service schematic; physical access and recovery unqualified |
 | IC381 | Epson RX-8803LC | I2C RTC with 1/100-second register and IRQ connection to CPU |
 
 Primary chip references:
@@ -48,3 +50,6 @@ RTC time against a monotonic hardware timer, and apply corrections only while
 TX is disabled. A time step invalidates pending TX. Measure drift and scheduling
 latency on hardware before selecting a resynchronization interval. No network
 or external computer is part of the intended operating path.
+
+See [recovery-access.md](recovery-access.md) for the later J491/EEPROM review and
+the distinction between adjustment mode, debug access and demonstrated recovery.

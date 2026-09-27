@@ -1,0 +1,78 @@
+import importlib.util
+import os
+from pathlib import Path
+import struct
+import sys
+import unittest
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools'))
+import emulate_platform as ep
+AVAILABLE=importlib.util.find_spec('unicorn') is not None
+IMAGE=os.environ.get('IC7300_TEST_IMAGE')
+
+
+@unittest.skipUnless(AVAILABLE,'Optional pinned Unicorn required')
+class EngineTests(unittest.TestCase):
+    def test_return_and_limits(self):
+        uc,u,a=ep.engine();uc.mem_map(0x1000,0x1000)
+        uc.mem_write(0x1000,struct.pack('<I',0xe12fff1e)) # synthetic bx lr
+        ep.execute(uc,0x1000)
+        uc.mem_write(0x1010,struct.pack('<I',0xeafffffe)) # synthetic b .
+        with self.assertRaisesRegex(ValueError,'limit'): ep.execute(uc,0x1010,budget=20)
+
+    def test_unmapped_peripheral_stops(self):
+        uc,u,a=ep.engine();uc.mem_map(0x1000,0x1000)
+        uc.mem_write(0x1000,struct.pack('<I',0xe5910000)) # synthetic ldr r0,[r1]
+        uc.reg_write(a.UC_ARM_REG_R1,0xf0000000)
+        with self.assertRaisesRegex(ValueError,'Emulation stopped'): ep.execute(uc,0x1000)
+
+
+@unittest.skipUnless(AVAILABLE and IMAGE,'Opt-in user-acquired firmware required')
+class FirmwareEmulationTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        _,cls.main,cls.app,_=ep.inputs(Path(IMAGE))
+
+    def test_loader_lookahead_and_roundtrip(self):
+        # Original literal-only LZSS fixture; no image packing tooling required.
+        data=b'ABCABCABC'
+        encoded=b'\xffABCABCAB\x01C'
+        actual,report=ep.decode_loader(self.main[0x4000:0x4650],encoded+b'\0'*3,len(data))
+        self.assertEqual(actual,data)
+        self.assertGreaterEqual(report['source_bytes_advanced'],len(encoded))
+        with self.assertRaises(ValueError): ep.decode_loader(self.main[0x4000:0x4650],b'\xff',100)
+
+    def test_magic_and_trailer_checker(self):
+        self.assertTrue(ep.validate_envelope(self.app,b'3wfU',b'\x37\x65')['accepted'])
+        self.assertTrue(ep.validate_envelope(self.app,b'3wfU')['accepted'])
+        for header,trailer in ((b'BAD!',b'\x37\x65'),(b'3wfU',b'xx')):
+            self.assertFalse(ep.validate_envelope(self.app,header,trailer)['accepted'])
+
+    def test_bank_selection_is_exact_marker_match(self):
+        loader=self.main[0x4000:0x4650]
+        marker=loader[0x564:0x574]
+        self.assertEqual(ep.select_bank(loader,marker)['source'],'0x18400004')
+        for value in (bytes(16),b'\xff'*16,bytes([marker[0]^1])+marker[1:]):
+            self.assertEqual(ep.select_bank(loader,value)['source'],'0x18010004')
+
+    def test_transfer_and_failure_paths(self):
+        payload=b'ABCD'*20000
+        good=ep.transfer(self.app,payload)
+        self.assertEqual(good['return_code'],0)
+        self.assertTrue(good['flash_payload_equal'])
+        self.assertEqual(good['changed_flag'],1)
+        same=ep.transfer(self.app,payload,initial_equal=True)
+        self.assertEqual(same['changed_flag'],0)
+        self.assertFalse(any(e['operation']=='erase' for e in same['events']))
+        for kwargs in ({'short_read':True},{'read_error':True},{'cancel':True}):
+            report=ep.transfer(self.app,payload,**kwargs)
+            self.assertNotEqual(report['return_code'],0)
+            self.assertFalse(any(e['operation'] in ('erase','program') for e in report['events']))
+        for stage in ('before_erase','after_erase','after_program'):
+            report=ep.transfer(self.app,payload,interrupt=stage)
+            self.assertEqual(report['interrupted'],stage)
+            self.assertIsNone(report['return_code'])
+        report=ep.transfer(self.app,payload,program_error=True)
+        self.assertFalse(report['flash_payload_equal'])
+        # This caller does not test the modeled programmer's return value.
+        self.assertEqual(report['return_code'],0)
+        with self.assertRaises(ValueError): ep.transfer(self.app,payload,destination=0xdead)
