@@ -396,3 +396,9 @@ It also does not establish selector-block ownership or DSP/FPGA behavior. Tests
 check the independently specified descriptor progression, both mask branches,
 clean/invalidate call modes, persistent polling without cleanup, and rejection of
 an unreviewed memory-write target. Report repeat comparison includes these runs.
+
+## Bounded selector candidate follow-up
+
+[Five candidate words have a conditional instruction interpretation](selector-candidates.md).
+Fifteen one-instruction trials match register-only effects; mode-qualified runtime
+reachability and complete selector-block ownership remain unresolved.
