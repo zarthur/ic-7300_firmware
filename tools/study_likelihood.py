@@ -74,6 +74,7 @@ def main():
                                'Host timing and heap are not on-radio qualification.'])
 
     identities = {}
+    captures = set()
 
     def protect(path):
         path = Path(path).resolve()
@@ -84,9 +85,11 @@ def main():
         return identities[path]['sha256']
 
     def verify():
-        require_unchanged(identities)
         if source_state() != report['source_before']:
             raise ValueError('Source changed during study')
+        require_unchanged(identities)
+        for capture in captures:
+            capture_slots(capture)
 
     def run(command, name, timeout=180):
         for argument in command:
@@ -118,6 +121,7 @@ def main():
             if protect(manifest_path) != prior['capture_manifest_sha256']:
                 raise ValueError('Reference capture manifest changed')
             manifest, slots = capture_slots(capture)
+            captures.add(capture)
             cached = {row['file']: row for row in prior['slots']}
             if set(cached) != {slot.name for slot in slots}:
                 raise ValueError('Reference slot inventory differs')
@@ -230,13 +234,12 @@ def main():
                 for item in variant['comparisons'])
             atomic_json(output / 'report.json', report)
         verify()
-        for _, prior in references:
-            capture_slots(Path(prior['capture']))
         report['artifact_sha256'] = {str(path): item['sha256'] for path, item in identities.items()}
         report['source_after'] = source_state()
         report['dependencies_after'], issues = dependency_state()
         if issues or report['dependencies_after'] != report['dependencies'] or report['source_before'] != report['source_after']:
             raise ValueError('Source/dependency changed during study')
+        verify()
         report['outcome'] = 'PASS'
     except (Exception, KeyboardInterrupt) as exc:
         report['outcome'] = 'FAIL'

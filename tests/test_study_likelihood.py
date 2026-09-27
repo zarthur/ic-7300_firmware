@@ -77,11 +77,22 @@ class LikelihoodStudyTests(unittest.TestCase):
                 path.write_bytes(b'synthetic fixture')
                 return False
 
+            dependency_checks = 0
+            def dependency_state():
+                nonlocal dependency_checks
+                dependency_checks += 1
+                if dependency_checks == 2:
+                    if mutation == 'late_audio':
+                        slot.write_bytes(b'changed during final dependency check')
+                    elif mutation == 'late_extra_slot':
+                        (slot.parent / '120015.wav').write_bytes(b'late extra slot')
+                return dependencies.copy(), []
+
             with patch.object(sys, 'argv', ['study_likelihood.py', '--reference', str(reference),
                     '--output', str(output), '--jt9', str(jt9), '--variant', 'baseline']), \
                     patch.object(study, 'ROOT', root), \
                     patch.object(study, 'source_state', side_effect=lambda: state.copy()), \
-                    patch.object(study, 'dependency_state', side_effect=lambda: (dependencies.copy(), [])), \
+                    patch.object(study, 'dependency_state', side_effect=dependency_state), \
                     patch.object(study, 'run_step', side_effect=run), \
                     patch.object(study, 'read_wav', return_value=[0.1] * 4), \
                     patch.object(study, 'write_wav', side_effect=write), redirect_stdout(io.StringIO()):
@@ -102,5 +113,14 @@ class LikelihoodStudyTests(unittest.TestCase):
             with self.subTest(mutation=mutation):
                 code, report, calls = self.run_study(mutation)
                 self.assertEqual((code, report['outcome']), (1, 'FAIL'))
+                self.assertIn('error', report)
+                self.assertIn('baseline-overlap-50-0.5-ideal-residual', calls)
+
+    def test_mutation_during_final_dependency_check_cannot_pass(self):
+        for mutation in ('late_audio', 'late_extra_slot'):
+            with self.subTest(mutation=mutation):
+                code, report, calls = self.run_study(mutation)
+                self.assertEqual((code, report['outcome']), (1, 'FAIL'))
+                self.assertIn('dependencies_after', report)
                 self.assertIn('error', report)
                 self.assertIn('baseline-overlap-50-0.5-ideal-residual', calls)
