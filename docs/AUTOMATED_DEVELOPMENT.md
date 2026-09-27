@@ -34,8 +34,8 @@ task, alongside the research roadmap in [NEXT_STEPS.md](NEXT_STEPS.md).
 | 5 | Reduce cancellation resources | Keep cancellation desktop-only and opt-in. Measure peak memory and execution work; retain frozen-corpus gains with zero baseline losses and no new unconfirmed messages. Run synthetic controls and development replays, then the held-out acceptance corpus without tuning against holdout outcomes. Supports #23/#20; does not close target-port acceptance. |
 | 6 | Resolve bounded platform questions | Use independent read-only research agents for remaining selector-block consumers and cache/mapping helpers, then DSP/FPGA updater paths (#10). Trace native receive buffers, ownership, clocks and scheduling (#14/#15/#17/#19). Deliver reproducible bounded evidence and explicit unknowns, not speculative integration code. |
 
-The first two findings are open at this checkpoint. Full-suite PASS does not
-invalidate these independently reproduced gaps in test coverage.
+The first two findings are implemented with regression tests and independent
+review. Final study-runner provenance hardening and corpus validation are in progress.
 
 ## Per-run workflow
 
@@ -113,6 +113,10 @@ The owner authorizes approving and merging sensible PRs that pass tests.
 
 ## Checkpoint
 
-2026-09-27: review and full baseline validation complete; no PRs available to
-approve or merge. Recurring task active. Next run: provenance regression fix,
-then empty-corpus rejection, followed by reviewed baseline consolidation and CI.
+2026-09-27: PRs #36 (governance), #37 (exact-image validation), and #38
+(offline updater/controller evidence) merged after independent review and
+applicable tests. Issue #9 closed; regional qualification keeps #7 open.
+The original dirty workspace is preserved. Integration continues on
+`codex/receive-validation` in `/Users/arthur/Documents/projects/ic-7300-development`.
+Receive validation and resource reduction are awaiting final study provenance
+checks and corpus acceptance; synthetic hosted CI follows.

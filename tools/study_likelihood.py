@@ -10,7 +10,7 @@ import os
 from pathlib import Path
 import sys
 
-from compare_receive import sha
+from compare_receive import sha, capture_slots, file_identity, require_unchanged
 from development_check import ROOT, atomic_json, dependency_state, run_step, source_state
 from compare_receive import parse_reference
 from validate_codec import read_wav, write_wav
@@ -73,9 +73,30 @@ def main():
                                'Reference matches are not ground truth; inspect prototype-only results.',
                                'Host timing and heap are not on-radio qualification.'])
 
+    identities = {}
+
+    def protect(path):
+        path = Path(path).resolve()
+        if path not in identities:
+            identities[path] = file_identity(path)
+        else:
+            require_unchanged({path: identities[path]})
+        return identities[path]['sha256']
+
+    def verify():
+        require_unchanged(identities)
+        if source_state() != report['source_before']:
+            raise ValueError('Source changed during study')
+
     def run(command, name, timeout=180):
+        for argument in command:
+            path = Path(str(argument))
+            if path.is_file():
+                protect(path)
+        verify()
         result = run_step(list(map(str, command)), output / (name + '.log'), os.environ.copy(), timeout)
         report['commands'].append(result)
+        verify()
         atomic_json(output / 'report.json', report)
         if result['outcome'] != 'PASS':
             raise RuntimeError(f'{name}: {result["outcome"]}')
@@ -84,27 +105,48 @@ def main():
         report['dependencies'], issues = dependency_state()
         if issues:
             raise ValueError('; '.join(issues))
+        protect(args.jt9)
         references = []
         for path in args.reference:
             path = path.resolve()
+            protect(path)
             prior = json.loads(path.read_text())
             if prior['outcome'] != 'PASS':
                 raise ValueError('Incomplete reference report')
+            capture = Path(prior['capture']).resolve()
+            manifest_path = capture / 'capture.json'
+            if protect(manifest_path) != prior['capture_manifest_sha256']:
+                raise ValueError('Reference capture manifest changed')
+            manifest, slots = capture_slots(capture)
+            cached = {row['file']: row for row in prior['slots']}
+            if set(cached) != {slot.name for slot in slots}:
+                raise ValueError('Reference slot inventory differs')
+            for slot in slots:
+                if protect(slot) != cached[slot.name]['sha256']:
+                    raise ValueError('Reference slot changed')
+            if prior['reference_sha256'] != identities[args.jt9.resolve()]['sha256']:
+                raise ValueError('Reference decoder changed')
+            verify()
             references.append((path, prior))
         report['reference_reports'] = [{'path': str(p), 'sha256': sha(p)} for p, _ in references]
         run(['cc', '--version'], 'compiler')
         build = output / 'build'
         run(['make', '-j4', f'BUILD={build}', 'all'], 'build')
+        protect(build / 'ft8_proto')
+        for obj in build.rglob('*.o'):
+            protect(obj)
         fixtures = output / 'fixtures'
         fixtures.mkdir()
         expected = ['CQ K1ABC FN42', 'CQ W9XYZ EN50']
         first = fixtures / 'first.wav'
         run([build / 'ft8_proto', 'generate', expected[0], first, '1000'], 'generate-first')
+        protect(first)
         samples = read_wav(first)
         cases = []
         for spacing in (14, 25, 50):
             second = fixtures / f'second-{spacing}.wav'
             run([build / 'ft8_proto', 'generate', expected[1], second, str(1000 + spacing)], f'generate-{spacing}')
+            protect(second)
             other = read_wav(second)
             for ratio in (0.25, 0.5):
                 name = f'overlap-{spacing}-{ratio}'
@@ -112,11 +154,13 @@ def main():
                 clipped = write_wav(wav, [0.8 * (a + ratio * b) for a, b in zip(samples, other)])
                 if clipped:
                     raise ValueError('Generated overlap fixture clipped')
+                protect(wav)
                 residual = fixtures / (name + '-ideal-residual_120000.wav')
                 # Oracle control only: exact transmitted waveform/amplitude are
                 # known here. This is not a receiver cancellation algorithm.
                 if write_wav(residual, [mixed - 0.8 * a for mixed, a in zip(read_wav(wav), samples)]):
                     raise ValueError('Ideal cancellation control clipped')
+                protect(residual)
                 sandbox = fixtures / name
                 sandbox.mkdir()
                 run([args.jt9.resolve(), '-8', '-p', '15', '-d', '3', '-a', sandbox, '-t', sandbox, wav], name + '-reference')
@@ -127,6 +171,7 @@ def main():
                                   ideal_residual_expected=[expected[1]]))
         report['synthetic_cases'] = cases
         original = ROOT / 'third_party/ft8_lib/ft8/decode.c'
+        protect(original)
         source = original.read_text()
         report['original_decode_sha256'] = sha(original)
         objects = sorted(build.rglob('*.o'))
@@ -145,6 +190,8 @@ def main():
                  '-c', copied, '-o', obj], name + '-compile')
             linked = [p for p in objects if p != build / 'lib/ft8/decode.o']
             run(['cc', *cflags, *linked, obj, '-lm', '-o', exe], name + '-link')
+            protect(exe)
+            protect(obj)
             variant = dict(name=name, scale=scale, cap=cap, softmax=softmax, source_sha256=sha(copied),
                            executable=str(exe), executable_sha256=sha(exe), comparisons=[], synthetic=[])
             report['variants'].append(variant)
@@ -153,7 +200,10 @@ def main():
                 run([sys.executable, ROOT / 'tools/compare_receive.py', '--capture', prior['capture'],
                      '--exe', exe, '--reference', path, '--jt9', args.jt9.resolve(),
                      '--output', comparison], f'{name}-capture-{index}')
+                protect(comparison / 'report.json')
                 result = json.loads((comparison / 'report.json').read_text())
+                if result['outcome'] != 'PASS':
+                    raise ValueError('Comparison report did not pass')
                 summary = result['summary']
                 if name == 'baseline' and (summary['new_reference_matches'] or summary['lost_reference_matches']):
                     raise ValueError('Fresh baseline does not reproduce prior matched messages')
@@ -179,9 +229,13 @@ def main():
                 item['new_reference_matches'] > 0 and item['lost_reference_matches'] == 0
                 for item in variant['comparisons'])
             atomic_json(output / 'report.json', report)
+        verify()
+        for _, prior in references:
+            capture_slots(Path(prior['capture']))
+        report['artifact_sha256'] = {str(path): item['sha256'] for path, item in identities.items()}
         report['source_after'] = source_state()
         report['dependencies_after'], issues = dependency_state()
-        if issues or report['source_before'] != report['source_after']:
+        if issues or report['dependencies_after'] != report['dependencies'] or report['source_before'] != report['source_after']:
             raise ValueError('Source/dependency changed during study')
         report['outcome'] = 'PASS'
     except (Exception, KeyboardInterrupt) as exc:

@@ -196,11 +196,10 @@ hardware validation; no physical acceptance is claimed.
 .venv/bin/python tools/platform_evidence.py artifacts/original/7300_142.dat --output artifacts/platform-evidence.json
 ```
 
-The separate `firmware.py pack BASE PATCH OUTPUT` command currently rejects all
-real-image output until updater semantics, capacity and patch regions are proven.
-The existing `rebuild` command still performs only byte-identical reconstruction.
+Custom-image packing is not distributed. The existing `rebuild` command performs
+only byte-identical reconstruction of a supported official image.
 
-Original-routine emulation and full-application recompression validation:
+Original-routine emulation and desktop validation:
 
 ```sh
 .venv/bin/python tools/emulate_platform.py artifacts/original/7300_142.dat --output artifacts/emulation-results.json

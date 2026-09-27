@@ -13,7 +13,7 @@ import study_cancellation as study
 
 
 class CancellationStudyTests(unittest.TestCase):
-    def run_study(self, *, tamper=None, termination='completed', empty=False):
+    def run_study(self, *, tamper=None, termination='completed', empty=False, recorded=False):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             exe = root / 'decoder'
@@ -29,6 +29,22 @@ class CancellationStudyTests(unittest.TestCase):
             fixtures = root / 'fixtures.json'
             fixtures.write_text(json.dumps(dict(cases=[] if empty else [dict(name='synthetic', path=str(audio),
                 sha256=study.sha(audio), expected=['CQ K1ABC FN42'], designated_overlap=False)])))
+            capture = root / 'capture'
+            (capture / 'slots').mkdir(parents=True)
+            capture_manifest = capture / 'capture.json'
+            reference = root / 'reference.json'
+            if recorded:
+                moved = capture / 'slots' / '120000.wav'
+                audio.rename(moved)
+                audio = moved
+                capture_manifest.write_text(json.dumps(dict(complete=True, continuity_ok=True,
+                    alignment_usable=True, wav_sha256={'slots/120000.wav': study.sha(audio)})))
+                reference.write_text(json.dumps(dict(outcome='PASS', capture=str(capture),
+                    capture_manifest_sha256=study.sha(capture_manifest), slots=[dict(file=audio.name,
+                        sha256=study.sha(audio), reference=[dict(message='CQ K1ABC FN42')],
+                        matched=['CQ K1ABC FN42'])])))
+            if tamper == 'audio-before-evaluation':
+                audio.write_bytes(b'changed before invocation')
             if tamper == 'source':
                 source_state['prototype/codec.c'] = 'modified'
             if tamper == 'executable':
@@ -42,15 +58,37 @@ class CancellationStudyTests(unittest.TestCase):
                 result = dict(termination=termination, baseline=[message], messages=[message],
                               new_messages=[], fits=[], limits={}, resources={})
                 (folder / 'result.json').write_text(json.dumps(result))
-                if tamper == 'executable-during-evaluation':
-                    exe.write_bytes(b'modified while worker ran')
+                mutable = {'executable-during-evaluation': exe,
+                           'audio-during-evaluation': audio,
+                           'candidate-during-evaluation': candidate_path,
+                           'fixtures-during-evaluation': fixtures,
+                           'reference-during-evaluation': reference,
+                           'capture-during-evaluation': capture_manifest}
+                if tamper in mutable:
+                    mutable[tamper].write_bytes(b'modified while worker ran')
+                if tamper == 'extra-slot-during-evaluation':
+                    (capture / 'slots/120015.wav').write_bytes(b'extra slot')
+                if tamper == 'restored-audio-during-evaluation':
+                    original = audio.read_bytes()
+                    audio.write_bytes(b'changed')
+                    audio.write_bytes(original)
+                if tamper == 'source-during-evaluation':
+                    source_state['prototype/codec.c'] = 'changed'
                 return dict(outcome='PASS')
 
+            dependency_calls = 0
+            def dependencies():
+                nonlocal dependency_calls
+                dependency_calls += 1
+                if tamper == 'audio-before-finalization' and dependency_calls == 2:
+                    audio.write_bytes(b'changed after worker checks')
+                return ({'modified': True}, []) if tamper == 'dependency' else ({}, [])
+
             with patch.object(sys, 'argv', ['study_cancellation.py', '--output', str(output),
-                    '--candidate', str(candidate_path), '--fixtures', str(fixtures), '--role', 'synthetic']), \
+                    '--candidate', str(candidate_path), '--reference' if recorded else '--fixtures',
+                    str(reference if recorded else fixtures), '--role', 'development' if recorded else 'synthetic']), \
                     patch.object(study, 'sources', return_value=source_state), \
-                    patch.object(study, 'dependency_state', return_value=({'modified': True}, [])
-                                 if tamper == 'dependency' else ({}, [])), \
+                    patch.object(study, 'dependency_state', side_effect=dependencies), \
                     patch.object(study.importlib.metadata, 'version', return_value='changed'
                                  if tamper == 'version' else 'fixture'), \
                     patch.object(study, 'execute', side_effect=execute) as command, \
@@ -79,7 +117,42 @@ class CancellationStudyTests(unittest.TestCase):
         code, report, calls = self.run_study(tamper='executable-during-evaluation')
         self.assertEqual((code, report['outcome']), (1, 'FAIL'))
         self.assertEqual(calls, 1)
-        self.assertIn('changed during evaluation', report['error'])
+        self.assertIn('Replay artifact changed', report['error'])
+
+    def test_mutated_evaluation_inputs_and_source_cannot_pass(self):
+        for tamper in ('audio-during-evaluation', 'candidate-during-evaluation',
+                       'fixtures-during-evaluation', 'restored-audio-during-evaluation',
+                       'source-during-evaluation'):
+            with self.subTest(tamper=tamper):
+                code, report, calls = self.run_study(tamper=tamper)
+                self.assertEqual((code, report['outcome']), (1, 'FAIL'))
+                self.assertEqual(calls, 1)
+                self.assertNotIn('synthetic_acceptance', report)
+
+    def test_recorded_inputs_mutated_during_worker_cannot_pass(self):
+        for tamper in ('reference-during-evaluation', 'capture-during-evaluation',
+                       'audio-during-evaluation', 'extra-slot-during-evaluation'):
+            with self.subTest(tamper=tamper):
+                code, report, calls = self.run_study(tamper=tamper, recorded=True)
+                self.assertEqual((code, report['outcome']), (1, 'FAIL'))
+                self.assertEqual(calls, 1)
+                self.assertNotIn('summary', report)
+
+    def test_changed_audio_refused_before_any_worker(self):
+        for recorded in (False, True):
+            with self.subTest(recorded=recorded):
+                code, report, calls = self.run_study(tamper='audio-before-evaluation', recorded=recorded)
+                self.assertEqual((code, report['outcome']), (1, 'FAIL'))
+                self.assertEqual(calls, 0)
+
+    def test_stable_recorded_inputs_pass(self):
+        code, report, calls = self.run_study(recorded=True)
+        self.assertEqual((code, report['outcome'], calls), (0, 'PASS', 1))
+
+    def test_final_gate_catches_mutation_after_worker_checks(self):
+        code, report, calls = self.run_study(tamper='audio-before-finalization')
+        self.assertEqual((code, report['outcome'], calls), (1, 'FAIL', 1))
+        self.assertIn('Replay artifact changed', report['error'])
 
     def test_empty_fixture_cannot_vacuously_pass(self):
         code, report, calls = self.run_study(empty=True)

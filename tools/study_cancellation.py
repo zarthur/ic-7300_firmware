@@ -12,7 +12,7 @@ import sys
 import numpy as np
 from scipy.signal import hilbert
 
-from compare_receive import capture_slots, sha
+from compare_receive import capture_slots, sha, file_identity, require_unchanged
 from development_check import ROOT, atomic_json, dependency_state, run_step
 from validate_codec import read_wav, write_wav
 
@@ -20,7 +20,7 @@ from validate_codec import read_wav, write_wav
 def sources():
     paths = sorted((ROOT / 'prototype').glob('*.[ch]')) + [ROOT / name for name in
         ('tools/cancellation.py', 'tools/study_cancellation.py', 'tools/compare_receive.py',
-         'tools/validate_codec.py', 'tools/development_check.py', 'Makefile')]
+         'tools/validate_codec.py', 'tools/development_check.py', 'tools/reporting.py', 'Makefile')]
     return {str(p.relative_to(ROOT)): sha(p) for p in paths}
 
 
@@ -155,11 +155,13 @@ def main():
         else:
             if not args.candidate or bool(args.fixtures) == bool(args.reference):
                 raise ValueError('Require --candidate and exactly one of --fixtures or --reference')
+            identities = {args.candidate: file_identity(args.candidate)}
             candidate = json.loads(args.candidate.read_text())
             exe = Path(candidate['executable'])
+            identities[exe] = file_identity(exe)
             if sources() != candidate['source_sha256'] or sha(exe) != candidate['executable_sha256']:
                 raise ValueError('Frozen candidate differs from current source or executable')
-            report['candidate_sha256'] = sha(args.candidate)
+            report['candidate_sha256'] = identities[args.candidate]['sha256']
             report['candidate'] = candidate
             state, issues = dependency_state()
             versions = {p: importlib.metadata.version(p) for p in ('numpy', 'scipy')}
@@ -167,13 +169,16 @@ def main():
                 raise ValueError('Frozen dependency state differs')
             items = []
             if args.fixtures:
-                report['fixtures_sha256'] = sha(args.fixtures)
+                identities[args.fixtures] = file_identity(args.fixtures)
+                report['fixtures_sha256'] = identities[args.fixtures]['sha256']
                 items = json.loads(args.fixtures.read_text())['cases']
             else:
+                identities[args.reference] = file_identity(args.reference)
                 prior = json.loads(args.reference.read_text())
                 if prior['outcome'] != 'PASS':
                     raise ValueError('Reference report incomplete')
                 capture = Path(prior['capture'])
+                identities[capture / 'capture.json'] = file_identity(capture / 'capture.json')
                 manifest, slots = capture_slots(capture)
                 if sha(capture / 'capture.json') != prior['capture_manifest_sha256']:
                     raise ValueError('Capture manifest changed')
@@ -187,17 +192,34 @@ def main():
                     items.append(dict(name=path.stem, path=str(path), sha256=sha(path),
                                       expected=sorted({r['message'] for r in row['reference']}),
                                       prior_matched=row['matched']))
-                report['reference_sha256'] = sha(args.reference)
+                report['reference_sha256'] = identities[args.reference]['sha256']
                 report['capture'] = str(capture)
             if not items:
                 raise ValueError('No input slots or fixtures; empty studies cannot pass')
             for item in items:
                 path = Path(item['path'])
-                if sha(path) != item['sha256']:
+                identity = file_identity(path)
+                if identity['sha256'] != item['sha256']:
                     raise ValueError('Input changed')
+                identities[path] = identity
+            if args.repeat:
+                identities[args.repeat] = file_identity(args.repeat)
+
+            def verify_inputs():
+                require_unchanged(identities)
+                if sources() != candidate['source_sha256']:
+                    raise ValueError('Candidate source changed during evaluation')
+                if args.reference and capture_slots(capture)[1] != slots:
+                    raise ValueError('Capture slot inventory changed during evaluation')
+
+            verify_inputs()
+            for item in items:
+                path = Path(item['path'])
+                verify_inputs()
                 folder = output / item['name']
                 command = execute([sys.executable, Path(__file__).resolve(), '--worker', path, '--exe', exe,
                                    '--output', folder], output / (item['name'] + '.log'))
+                verify_inputs()
                 result = json.loads((folder / 'result.json').read_text())
                 row = dict(input=item, result=result, evaluation=evaluate_result(result, item), command=command)
                 report['slots'].append(row)
@@ -229,6 +251,7 @@ def main():
                     raise ValueError('Repeated behavior differs')
             if report['errors']:
                 raise ValueError('One or more slots did not complete')
+            verify_inputs()
         report['outcome'] = 'PASS'
     except (Exception, KeyboardInterrupt) as exc:
         report.update(outcome='FAIL', error=f'{type(exc).__name__}: {exc}')
