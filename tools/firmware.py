@@ -17,10 +17,45 @@ import sys
 
 MAX_IMAGE = 16 * 1024 * 1024
 NAMES = ('main', 'dsp_program', 'dsp_data', 'fpga')
+TARGET_REGISTRY = Path(__file__).resolve().parents[1] / 'research/targets.json'
 
 
 def digest(b):
     return hashlib.sha256(b).hexdigest()
+
+
+def require_target(b, operation):
+    """Authorize exact bytes for an offline operation, independently of filenames."""
+    targets = json.loads(TARGET_REGISTRY.read_text())['targets']
+    sha = digest(b)
+    for target in targets:
+        if target['image_sha256'] == sha and target['model'] == 'IC-7300':
+            if operation not in target['operations']:
+                raise ValueError(f"Operation {operation} is unsupported for IC-7300 {target['version']}")
+            return target
+    raise ValueError(f'Unsupported image SHA-256: {sha}; only pinned original IC-7300 research images are allowed')
+
+
+def checked_image(path, operation):
+    data = read_image(path)
+    require_target(data, operation)
+    return data
+
+
+def trace_inputs(folder):
+    """Bind version-specific tracing to a verified source and decoded application.
+
+    Reconstruct in memory so extraction.json cannot authorize arbitrary bytes.
+    Return the validated buffers; callers must not re-read them before tracing.
+    """
+    source = rebuild(folder)
+    target = require_target(source, 'trace')
+    app = read_image(folder / 'application.decoded.bin')
+    if digest(app) != target['trace_payloads']['application']:
+        raise ValueError('Decoded application does not match the pinned trace target')
+    main = parse(source)[0]
+    boot = source[main['offset']:main['offset'] + main['size']]
+    return app, boot
 
 
 def revision():
@@ -121,7 +156,7 @@ def analyze(b):
     return dict(source_revision=revision(), bytes=len(b), sha256=digest(b),
                 header_hex=b[:44].hex(), header_ascii=b[4:16].decode('ascii', errors='replace'),
                 header_words=list(struct.unpack_from('<7I', b, 16)), parts=parts,
-                trailer_hex=b[-2:].hex(), trailer_interpretation='unknown',
+                trailer_hex=b[-2:].hex(), trailer_interpretation='preserved; updater semantics remain under investigation',
                 signatures=signatures, strings=strings(b),
                 entropy_64k=[dict(offset=i, entropy=round(entropy(b[i:i+65536]), 6)) for i in range(0, len(b), 65536)])
 
@@ -134,7 +169,7 @@ def write_report(report, prefix):
              '| Payload | File offset | Stored bytes | Decoded bytes | MD5 |', '|---|---:|---:|---:|---|']
     for p in report['parts']:
         lines.append(f"| {p['name']} | 0x{p['offset']:x} | {p['size']} | {p['decoded_size']} | {p['md5']} |")
-    lines += ['', 'All four MD5 values verified. Trailer semantics unknown; no signature validation established.',
+    lines += ['', 'All four MD5 values verified. Trailer preserved. No signature validation established.',
               '', 'Strings, signature candidates and block entropy are in the companion JSON.']
     prefix.with_suffix('.md').write_text('\n'.join(lines) + '\n')
 
@@ -200,12 +235,13 @@ def main():
     s = sub.add_parser('diff'); s.add_argument('a', type=Path); s.add_argument('b', type=Path)
     args = p.parse_args()
     try:
-        if args.command == 'analyze': write_report(analyze(read_image(args.image)), args.output)
-        elif args.command == 'extract': print(json.dumps(extract(read_image(args.image), args.output), indent=2))
+        if args.command == 'analyze': write_report(analyze(checked_image(args.image, 'analyze')), args.output)
+        elif args.command == 'extract': print(json.dumps(extract(checked_image(args.image, 'extract'), args.output), indent=2))
         elif args.command == 'rebuild':
             data = rebuild(args.folder)
+            require_target(data, 'rebuild')
             with args.output.open('xb') as f: f.write(data)
-        else: print(json.dumps(compare(read_image(args.a), read_image(args.b)), indent=2))
+        else: print(json.dumps(compare(checked_image(args.a, 'diff'), checked_image(args.b, 'diff')), indent=2))
     except (ValueError, OSError, KeyError, struct.error) as e:
         print(f'error: {e}', file=sys.stderr); return 1
     return 0

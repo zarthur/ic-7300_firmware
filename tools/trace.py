@@ -10,9 +10,7 @@ from pathlib import Path
 import re
 import struct
 import sys
-from capstone import Cs, CS_ARCH_ARM, CS_MODE_ARM
-from capstone.arm import ARM_OP_MEM, ARM_OP_IMM, ARM_REG_PC
-from firmware import revision
+from firmware import revision, trace_inputs
 
 BASE=0x20005000
 TOKENS=['Firmware Update','Updating MAIN CPU firmware.','Updating DSP/FPGA firmware.',
@@ -22,6 +20,8 @@ TOKENS=['Firmware Update','Updating MAIN CPU firmware.','Updating DSP/FPGA firmw
 
 
 def evidence(app):
+    from capstone import Cs, CS_ARCH_ARM, CS_MODE_ARM
+    from capstone.arm import ARM_OP_MEM, ARM_OP_IMM, ARM_REG_PC
     cs=Cs(CS_ARCH_ARM,CS_MODE_ARM);cs.detail=True;cs.skipdata=True
     references={}; md5_callers=[]
     for ins in cs.disasm(app[:0x185000],BASE):
@@ -55,15 +55,19 @@ def evidence(app):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('extracted',type=Path);p.add_argument('output',type=Path);args=p.parse_args()
-    app=(args.extracted/'application.decoded.bin').read_bytes()
+    try:
+        app,boot=trace_inputs(args.extracted)
+    except (ValueError, OSError, KeyError, struct.error) as e:
+        print(f'error: {e}',file=sys.stderr)
+        return 1
+    from capstone import Cs, CS_ARCH_ARM, CS_MODE_ARM
     result=evidence(app);args.output.parent.mkdir(parents=True,exist_ok=True)
     args.output.write_text(json.dumps(result,indent=2)+'\n')
     cs=Cs(CS_ARCH_ARM,CS_MODE_ARM);cs.skipdata=True
-    boot=(args.extracted/'main.stored.bin').read_bytes()
     blocks=[('boot',boot[:0x138],0x18000000),('loader',boot[0x4000:0x4650],0x20004000),('application_reset',app[:0x200],BASE)]
     out=args.extracted/'assembly';out.mkdir(exist_ok=True)
     for name,data,address in blocks:
         (out/(name+'.txt')).write_text('\n'.join(f'{i.address:08x} {i.bytes.hex():12} {i.mnemonic} {i.op_str}' for i in cs.disasm(data,address))+'\n')
 
 
-if __name__=='__main__':main()
+if __name__=='__main__':sys.exit(main())
