@@ -164,3 +164,22 @@ Final behavioral repeats matched exactly on the synthetic suite, the older
 replacement recording, and the new holdout. The package index is
 `artifacts/cancellation-package-20260927.json`. All capture and decoder processes
 have exited; all changes remain local and uncommitted.
+
+
+## Residual allocation follow-up — 2026-09-27
+
+The clipping/energy calculation now reuses one float64 residual buffer and uses
+minimum/maximum bounds instead of allocating an absolute-value array. With
+180,000 samples, isolated traced peak allocation fell from 2,883,160 to 1,442,584
+bytes and computed energy was identical. This measures that calculation only,
+not overall process RSS or native workspace feasibility.
+
+Regression coverage includes both clipping polarities, direct energy equality,
+input preservation and nonfinite-input rejection. The hardened study runner
+checks artifact identities before/after workers and before final PASS. Four
+39-slot corpora and all 14 synthetic cases reproduced previous behavioral results
+exactly, including fitted parameters and execution limits. There were no lost
+baseline matches or new unconfirmed messages. Detailed station data stays in
+ignored local reports; `artifacts/automation-final-behavior.json` records aggregate
+comparisons and `artifacts/automation-cancellation-memory.json` records allocation
+measurements. Cancellation remains opt-in and desktop-only.
