@@ -1,0 +1,49 @@
+{
+  "targets": [
+    {
+      "model": "IC-7300",
+      "version": "140",
+      "image_sha256": "f71d7b0bca7cf2480e3324dbf35d74824a1a6f777f035a31c9957b809e20fc79",
+      "development_base": false,
+      "regional_qualification": "pending",
+      "operations": [
+        "analyze",
+        "extract",
+        "diff",
+        "rebuild"
+      ],
+      "trace_payloads": {}
+    },
+    {
+      "model": "IC-7300",
+      "version": "141",
+      "image_sha256": "f0aacde50a02cb1f9c5a237deab5555ff124813787b0eef7dbc273e073132fbb",
+      "development_base": false,
+      "regional_qualification": "pending",
+      "operations": [
+        "analyze",
+        "extract",
+        "diff",
+        "rebuild"
+      ],
+      "trace_payloads": {}
+    },
+    {
+      "model": "IC-7300",
+      "version": "142",
+      "image_sha256": "8cf5324a126f105cd2307c30b191b9dd8183f86b2c8bf229e61bf9a6a8c32f32",
+      "development_base": true,
+      "regional_qualification": "pending",
+      "operations": [
+        "analyze",
+        "extract",
+        "diff",
+        "rebuild",
+        "trace"
+      ],
+      "trace_payloads": {
+        "application": "4686728c9d1f7249b6278a29686a40b8fa5e527bd2428a76a33cd9395178c9a4"
+      }
+    }
+  ]
+}
