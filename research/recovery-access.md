@@ -1,5 +1,11 @@
 # Recovery and backup access review — 2026-09-20
 
+Policy update, 2026-09-27: the findings below remain valid, but the earlier
+unconditional test prohibition and hardware-access proposals are superseded by
+[the software-only first-test plan](../docs/FIRST_CUSTOM_FIRMWARE.md). Unproven
+recovery must be disclosed for the owner's later decision on an exact candidate;
+it must not be represented as proven or accepted automatically.
+
 **Decision:** no demonstrated application-independent recovery route. Modified
 firmware testing remains blocked. A main-CPU debug connector is a concrete
 investigation lead; it is not yet a qualified programmer interface. No radio

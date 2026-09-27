@@ -12,25 +12,34 @@ to record prerequisites, steps, stop conditions and results.
 4. Supervised low-power on-air interoperability testing after a documented
    review of the applicable operating rules.
 
-Progression requires the preceding phase's acceptance criteria and a tested
-rollback/recovery procedure for image changes. Read-only stock observations may
-precede recovery proof. The owner has authorized planning around their single
-original IC-7300; a spare radio is not a prerequisite for this project. This
-exception does not authorize an unspecified firmware write. Back up settings
-before every image/update experiment and establish recovery coverage for
-firmware, calibration, configuration and bank metadata.
+Progression through receive, dummy-load and on-air phases still requires the
+preceding phase's acceptance criteria. The first custom-image recovery decision
+is governed by the specific policy below; it does not waive TX prerequisites.
 
-Before the first modified-image boot, demonstrate a recovery route that does
-not depend on the main application booting. Local emulation and a successful
-menu reinstall do not establish this. Present the exact image hash, offline
-validation, recovery evidence and procedure for the owner's specific hardware
-review before a write. If independent recovery cannot be demonstrated, stop
-before flashing; do not discover it by corruption or interrupted power.
+The owner permits planning around their single original IC-7300 using software
+and the existing setup only. No additional hardware or internal connections are
+part of this work. Read-only stock observations may precede recovery proof.
+Back up settings before any image/update experiment and document actual backup
+coverage for firmware, calibration, configuration and bank metadata.
 
-The initial experiment to establish recovery must have its own reviewed hardware
-plan and stop conditions, using an unmodified radio and official images. It cannot
-claim recovery is proven in advance or authorize a modified-image boot. No such
-hardware experiment is part of the current desktop phase.
+For the first modified-image experiment, follow
+[FIRST_CUSTOM_FIRMWARE.md](FIRST_CUSTOM_FIRMWARE.md). Build the exact candidate,
+complete applicable offline validation and independent review, and present the
+image hash, test procedure, restoration options and unresolved risks before
+requesting the owner's specific decision. Passing tests are not a guarantee.
+
+Owner clarification on 2026-09-27 supersedes the earlier unconditional requirement
+for demonstrated application-independent recovery before considering a first test.
+Prefer a proven software recovery route; if it remains unproven or unavailable,
+the owner may explicitly accept that risk for the exact candidate after reviewing
+the evidence. This policy does not itself authorize a firmware write, and an
+approval/merge of desktop code is not installation authorization. Do not claim
+recovery is proven or close its issue based on risk acceptance.
+
+Never deliberately corrupt firmware or interrupt power to discover recovery.
+Any physical recovery experiment requires its own concrete, reviewed procedure;
+no unspecified device command or write is authorized by a research plan. Define
+pre-write, in-progress and failed-boot responses before any installation.
 
 ## Mandatory controls for any future TX test
 
