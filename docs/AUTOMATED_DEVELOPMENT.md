@@ -113,10 +113,37 @@ The owner authorizes approving and merging sensible PRs that pass tests.
 
 ## Checkpoint
 
-2026-09-27: PRs #36 (governance), #37 (exact-image validation), and #38
-(offline updater/controller evidence) merged after independent review and
-applicable tests. Issue #9 closed; regional qualification keeps #7 open.
-The original dirty workspace is preserved. Integration continues on
-`codex/receive-validation` in `/Users/arthur/Documents/projects/ic-7300-development`.
-Receive validation and resource reduction are awaiting final study provenance
-checks and corpus acceptance; synthetic hosted CI follows.
+2026-09-27 implementation:
+
+- Merged #36 (governance; closed #9), #37 (exact-image validation), #38
+  (offline updater/controller harnesses), #39 (bounded selector probe), and #40
+  (receive capture/replay, provenance fixes, and cancellation studies).
+- Required capture batches now contain verified usable slots. Replay and both
+  study runners reject changed inputs, executables, manifests, generated artifacts
+  and source, including changes during final checks.
+- Full profile at `ca25a43` passed 100 Python tests with zero skips, C tests,
+  sanitizers, official-image round trips, repeated controller evidence and
+  reference comparisons. The final likelihood-only fix at `3540a79` passed the
+  complete synthetic profile; unchanged full-profile components retain their
+  prior evidence. Local reports: `artifacts/development-20260927T230317103904Z/`
+  and `artifacts/development-20260927T230543492387Z/`.
+- The frozen cancellation candidate passed 14 synthetic cases and four 39-slot
+  recordings. Behavior matched the previous candidate exactly, with no lost
+  baseline matches or new unconfirmed messages. Local index:
+  `artifacts/automation-final-behavior.json`. Isolated clipping/energy temporary
+  allocation fell from 2,883,160 to 1,442,584 bytes; this is not whole-fit RSS or
+  target-memory acceptance.
+- The selector probe passed 15 bounded trials. Its conditional Thumb semantics
+  narrow five candidate interpretations without proving runtime reachability.
+- Packing/recompression tooling and generated instruction/CFG dumps remain local.
+  The original dirty workspace is preserved. The durable integration checkout is
+  `/Users/arthur/Documents/projects/ic-7300-development`; use fresh `codex/`
+  branches from current `origin/main` there for subsequent work.
+- The synthetic CI workflow is being qualified on Ubuntu and macOS. Merge it
+  only after both actual PR jobs pass; thereafter inspect both checks per PR.
+
+Next bounded work: establish mode-qualified reachability for the five selector
+candidates using the experiment in `research/selector-candidates.md`, and
+investigate reusable template FFT work in cancellation with numerical equivalence
+and frozen-corpus gates. Keep native audio/runtime, recovery, regional and
+TX acceptance criteria open. No radio I/O occurred in this implementation run.
