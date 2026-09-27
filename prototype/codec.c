@@ -6,10 +6,32 @@
 #include <math.h>
 #include <string.h>
 
+/* Offline experiments may override these at build time; defaults are unchanged. */
+#ifndef FT8_RX_CANDIDATES
+#define FT8_RX_CANDIDATES 140
+#endif
+#ifndef FT8_RX_MIN_SCORE
+#define FT8_RX_MIN_SCORE 10
+#endif
+#ifndef FT8_RX_ITERATIONS
+#define FT8_RX_ITERATIONS 25
+#endif
+#ifndef FT8_RX_TIME_OSR
+#define FT8_RX_TIME_OSR 2
+#endif
+#ifndef FT8_RX_FREQ_OSR
+#define FT8_RX_FREQ_OSR 2
+#endif
+_Static_assert(FT8_RX_CANDIDATES > 0 && FT8_RX_CANDIDATES <= 1024, "bounded candidate workspace");
+_Static_assert(FT8_RX_ITERATIONS > 0 && FT8_RX_ITERATIONS <= 200, "bounded iteration count");
+_Static_assert(FT8_RX_MIN_SCORE >= 0 && FT8_RX_MIN_SCORE <= 255, "bounded sync threshold");
+_Static_assert(FT8_RX_TIME_OSR == 2 || FT8_RX_TIME_OSR == 4, "supported time subdivision");
+_Static_assert(FT8_RX_FREQ_OSR == 2 || FT8_RX_FREQ_OSR == 4, "supported frequency subdivision");
+
 void ft8_rx_init(ft8_rx *rx,int64_t utc) {
     memset(rx,0,sizeof(*rx)); rx->slot_utc_ms=utc;
     monitor_config_t cfg={.f_min=200,.f_max=3000,.sample_rate=FT8_RATE,
-        .time_osr=2,.freq_osr=2,.protocol=FTX_PROTOCOL_FT8};
+        .time_osr=FT8_RX_TIME_OSR,.freq_osr=FT8_RX_FREQ_OSR,.protocol=FTX_PROTOCOL_FT8};
     monitor_init(&rx->monitor,&cfg);
 }
 bool ft8_rx_push(ft8_rx *rx,const float *samples,size_t count,int64_t first) {
@@ -22,21 +44,40 @@ bool ft8_rx_push(ft8_rx *rx,const float *samples,size_t count,int64_t first) {
     return true;
 }
 int ft8_rx_finish(ft8_rx *rx,ft8_message_cb cb,void *user) {
-    ftx_candidate_t candidates[140]; ftx_message_t seen[50];int count=0;
-    int n=ftx_find_candidates(&rx->monitor.wf,140,candidates,10);
+    return ft8_rx_finish_observed(rx,cb,user,NULL,NULL);
+}
+int ft8_rx_finish_observed(ft8_rx *rx,ft8_message_cb cb,void *user,ft8_candidate_cb observe,void *observer_user) {
+    ftx_candidate_t candidates[FT8_RX_CANDIDATES]; ftx_message_t seen[50];int count=0;
+    int n=ftx_find_candidates(&rx->monitor.wf,FT8_RX_CANDIDATES,candidates,FT8_RX_MIN_SCORE);
     for(int i=0;i<n && count<50;i++) {
-        ftx_message_t message;ftx_decode_status_t status;
-        if(!ftx_decode_candidate(&rx->monitor.wf,&candidates[i],25,&message,&status)) continue;
+        const ftx_candidate_t *c=&candidates[i];
+        ft8_candidate_result diagnostic={.rank=i,.total=n,.sync_score=c->score,.unpack_status=-1,
+            .frequency_hz=(rx->monitor.min_bin+c->freq_offset+(float)c->freq_sub/rx->monitor.wf.freq_osr)/rx->monitor.symbol_period,
+            .time_offset_s=(c->time_offset+(float)c->time_sub/rx->monitor.wf.time_osr)*rx->monitor.symbol_period};
+        ftx_message_t message;ftx_decode_status_t status={0};
+        if(!ftx_decode_candidate(&rx->monitor.wf,c,FT8_RX_ITERATIONS,&message,&status)) {
+            diagnostic.ldpc_errors=status.ldpc_errors;
+            diagnostic.stage=status.ldpc_errors ? "ldpc" : "crc";
+            if(observe)observe(&diagnostic,observer_user);
+            continue;
+        }
         bool duplicate=false;
         for(int j=0;j<count;j++) if(!memcmp(seen[j].payload,message.payload,sizeof(message.payload))) duplicate=true;
-        if(duplicate) continue;
+        if(duplicate) {
+            diagnostic.stage="duplicate";if(observe)observe(&diagnostic,observer_user);continue;
+        }
         ft8_decoded result={0};ftx_message_offsets_t offsets;
-        if(ftx_message_decode(&message,NULL,result.text,&offsets)!=FTX_MESSAGE_RC_OK) continue;
+        diagnostic.unpack_status=ftx_message_decode(&message,NULL,result.text,&offsets);
+        if(diagnostic.unpack_status!=FTX_MESSAGE_RC_OK) {
+            diagnostic.stage="unpack";if(observe)observe(&diagnostic,observer_user);continue;
+        }
         seen[count++]=message;
-        const ftx_candidate_t *c=&candidates[i];
-        result.frequency_hz=(rx->monitor.min_bin+c->freq_offset+(float)c->freq_sub/2)/rx->monitor.symbol_period;
-        result.time_offset_s=(c->time_offset+(float)c->time_sub/2)*rx->monitor.symbol_period;
+        memcpy(result.payload,message.payload,sizeof(result.payload));
+        ft8_encode(message.payload,result.tones);
+        result.frequency_hz=diagnostic.frequency_hz;
+        result.time_offset_s=diagnostic.time_offset_s;
         result.sync_score=c->score;result.slot_utc_ms=rx->slot_utc_ms;
+        diagnostic.stage="decoded";if(observe)observe(&diagnostic,observer_user);
         cb(&result,user);
     }
     return count;

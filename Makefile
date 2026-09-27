@@ -7,8 +7,12 @@ DEP = third_party/ft8_lib
 LIBSRC = $(wildcard $(DEP)/ft8/*.c) $(DEP)/common/monitor.c $(DEP)/fft/kiss_fft.c $(DEP)/fft/kiss_fftr.c
 LIBOBJ = $(patsubst $(DEP)/%.c,$(BUILD)/lib/%.o,$(LIBSRC))
 OBJ = $(BUILD)/codec.o $(BUILD)/qso.o $(BUILD)/alloc.o $(BUILD)/station.o
-.PHONY: all test bootstrap
+.PHONY: all test bootstrap development-check test-synthetic
 all: $(BUILD)/ft8_proto $(BUILD)/test_qso $(BUILD)/test_codec
+development-check:
+	.venv/bin/python tools/development_check.py
+test-synthetic:
+	.venv/bin/python tools/development_check.py --profile synthetic
 bootstrap:
 	python3 tools/bootstrap.py
 $(BUILD)/lib/%.o: $(DEP)/%.c prototype/alloc.h

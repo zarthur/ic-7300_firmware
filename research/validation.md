@@ -1,5 +1,13 @@
 # Validation record
 
+This table is the initial desktop snapshot. Later stock update/CI-V observations
+and receive-capture attempts are recorded separately; it is not the current test
+count or hardware status. Current unattended verification uses
+`make test-synthetic` and `make development-check`, saving each run's counts,
+source fingerprints, dependency checks and terminal results under ignored
+`artifacts/development-*/report.json`. See the
+[controller follow-up](updater-emulation.md#controller-follow-up--2026-09-25).
+
 The tracked JSON snapshots include the generating source revision. A dirty flag
 may reflect result files being refreshed; inspect the commit alongside the
 executable hash. `reproduction.json` records a clean committed checkout test.

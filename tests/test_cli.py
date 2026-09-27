@@ -1,4 +1,5 @@
 import os
+import json
 from pathlib import Path
 import struct
 import subprocess
@@ -12,6 +13,23 @@ EXE=(ROOT/os.environ.get('FT8_PROTO','build/ft8_proto')).resolve()
 
 @unittest.skipUnless(EXE.exists(),'build the C prototype first')
 class WavTests(unittest.TestCase):
+    def test_candidate_inspection_preserves_decoded_messages(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/'synthetic.wav'
+            subprocess.run([EXE,'generate','CQ K1ABC FN42',path],capture_output=True,check=True)
+            outputs={}
+            for command in ('decode','inspect'):
+                result=subprocess.run([EXE,command,path],capture_output=True,text=True,check=True)
+                outputs[command]=[json.loads(line) for line in result.stdout.splitlines() if line.startswith('{')]
+            messages=lambda rows:[row for row in rows if 'message' in row]
+            self.assertEqual(messages(outputs['decode']),messages(outputs['inspect']))
+            self.assertIn('CQ K1ABC FN42',[row['message'] for row in messages(outputs['inspect'])])
+            candidates=[row for row in outputs['inspect'] if 'candidate_rank' in row]
+            self.assertTrue(candidates)
+            self.assertEqual([row['candidate_rank'] for row in candidates],list(range(len(candidates))))
+            self.assertTrue(any(row['stage']=='decoded' for row in candidates))
+            self.assertTrue(all(row['stage'] in ('decoded','duplicate','ldpc','crc','unpack') for row in candidates))
+
     def test_malformed_and_unsupported(self):
         with tempfile.TemporaryDirectory() as tmp:
             path=Path(tmp)/'bad.wav'

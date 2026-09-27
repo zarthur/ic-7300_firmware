@@ -8,6 +8,27 @@ as time zero; it does not infer UTC from the filename. `time_offset_s` is the
 decoder's candidate coordinate including its analysis-window delay, not a
 calibrated WSJT-X DT field. `sync_score` is explicitly not SNR.
 
+`ft8_proto inspect FILE.wav` emits the same decoded messages as `decode`, plus
+one diagnostic JSON row per attempted candidate: rank/total, frequency, candidate
+time, sync score, LDPC error count, unpack result and terminal stage (`ldpc`,
+`crc`, `duplicate`, `unpack`, `decoded`). `ft8_rx_finish_observed` exposes the
+optional observer callback; the original `ft8_rx_finish` API remains supported.
+Inspection timings include diagnostic output and are not a performance benchmark.
+
+`ft8_proto decode-payload FILE.wav` adds `payload_hex` and the 79 encoded `tones`
+to accepted decoded-message rows. These come directly from the decoded payload,
+not text re-encoding. The optional output supports the bounded desktop
+[cancellation experiment](../research/cancellation-study.md). Neither `decode`
+nor `inspect` enables cancellation, and their existing JSON output is preserved.
+The decoded-message C structure now carries payload/tones, so callers must rebuild.
+
+Offline builds may override `FT8_RX_CANDIDATES` (1–1024, default 140),
+`FT8_RX_MIN_SCORE` (0–255, default 10), `FT8_RX_ITERATIONS` (1–200, default 25),
+and `FT8_RX_TIME_OSR`/`FT8_RX_FREQ_OSR` (2 or 4, defaults 2). Use separate build
+directories and record flags/executable hashes. Larger settings have substantial
+memory/CPU costs and do not establish suitability for the radio. No receive
+defaults changed as part of the live-capture investigation.
+
 TX generates 79 symbols (151,680 samples / 12.64 seconds) in caller-sized chunks.
 The WAV adapter inserts 0.5 seconds of leading silence and pads to 15 seconds.
 Sampling is 12 kHz PCM16; adapting the radio's native rate requires validated

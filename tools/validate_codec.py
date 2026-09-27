@@ -44,7 +44,9 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--jt9',type=Path,default=Path('/Applications/wsjtx.app/Contents/MacOS/jt9'))
     p.add_argument('--output',type=Path,default=ROOT/'research/codec-results.json')
-    args=p.parse_args(); exe=ROOT/'build/ft8_proto'; work=ROOT/'artifacts/validation';work.mkdir(parents=True,exist_ok=True)
+    p.add_argument('--exe',type=Path,default=ROOT/'build/ft8_proto')
+    p.add_argument('--work',type=Path,default=ROOT/'artifacts/validation')
+    args=p.parse_args(); exe=args.exe.resolve(); work=args.work.resolve();work.mkdir(parents=True,exist_ok=True)
     jt9=args.jt9.resolve()
     if not jt9.is_file():raise SystemExit('Supply --jt9 PATH for required independent interoperability checks')
     cases=[]
@@ -85,12 +87,35 @@ def main():
     path=work/'freq_120000.wav';run([exe,'generate',messages[0],path,'1002.8']);evaluate('fractional_frequency',path,[messages[0]])
     other=work/'other_120000.wav';run([exe,'generate','CQ W9XYZ EN50',other,'1500']);second=read_wav(other)
     path=work/'overlap_120000.wav';write_wav(path,[0.5*(a+b) for a,b in zip(base,second)]);evaluate('overlap',path,[messages[0],'CQ W9XYZ EN50'])
+    close=work/'close_other_120000.wav';run([exe,'generate','CQ W9XYZ EN50',close,'1014'])
+    close_samples=read_wav(close)
+    path=work/'close_overlap_120000.wav';write_wav(path,[0.8*a+0.4*b for a,b in zip(base,close_samples)])
+    evaluate('close_overlap',path,[messages[0],'CQ W9XYZ EN50'],required=False,
+             notes='Synthetic 14 Hz spacing and 2:1 amplitude ratio; reproduces an interference limitation without station recordings.')
+    cases[-1]['required_prototype_messages']=[messages[0]]
+    cases[-1]['required_reference_messages']=[messages[0],'CQ W9XYZ EN50']
+    # Independent known-waveform control: the weak message is decodable alone.
+    # This separates overlap failure from unsupported payloads or amplitude alone.
+    path=work/'close_isolated_weak_120000.wav';write_wav(path,[0.4*b for b in close_samples])
+    evaluate('close_isolated_weak',path,['CQ W9XYZ EN50'])
+    for spacing in (25,50):
+        other=work/f'other_{spacing}_120000.wav';run([exe,'generate','CQ W9XYZ EN50',other,str(1000+spacing)])
+        path=work/f'overlap_{spacing}_120000.wav'
+        write_wav(path,[0.8*a+0.4*b for a,b in zip(base,read_wav(other))])
+        evaluate(f'overlap_{spacing}',path,[messages[0],'CQ W9XYZ EN50'],required=spacing==50,
+                 notes={'spacing_hz':spacing,'amplitude_ratio':2,'statistical_sensitivity_measurement':False})
+        if spacing==25:
+            cases[-1]['required_prototype_messages']=[messages[0]]
+            cases[-1]['required_reference_messages']=[messages[0],'CQ W9XYZ EN50']
     for seed in (1,2,3):
         rng=random.Random(seed);path=work/f'noise_{seed}_120000.wav';write_wav(path,[rng.gauss(0,0.07) for _ in range(180000)]);evaluate('noise_'+str(seed),path,[])
     for name in ('191111_110115','191111_110200','websdr_test9'):
         path=ROOT/f'third_party/ft8_lib/test/wav/{name}.wav'
         evaluate('recorded_'+name,path,[],required=False,notes='Comparison corpus from pinned ft8_lib; no assumption of decoder parity')
     failed=[r['name'] for r in cases if r['required'] and not(r['expected_found'] and r['reference_found'])]
+    failed += [r['name'] for r in cases if
+               any(m not in r['decoded'] for m in r.get('required_prototype_messages',[])) or
+               any(m not in r['wsjtx_decoded'] for m in r.get('required_reference_messages',[]))]
     result={'source_revision':revision(),'host':platform.platform(),'machine':platform.machine(),
             'cpu':run(['sysctl','-n','machdep.cpu.brand_string']).stdout.strip() if sys.platform=='darwin' else platform.processor(),
             'compiler':run(['cc','--version']).stdout.splitlines()[0],
