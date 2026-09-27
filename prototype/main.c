@@ -30,11 +30,23 @@ static bool wav_header(FILE *f,size_t *samples){
         remaining-=padded;
     }return false;
 }
-static void show(const ft8_decoded *d,void *unused){(void)unused;
+static void show(const ft8_decoded *d,void *payload){
     /* Codec message alphabet excludes JSON quotes/backslashes. */
-    printf("{\"message\":\"%s\",\"frequency_hz\":%.3f,\"time_offset_s\":%.3f,\"sync_score\":%d,\"slot_utc_ms\":%lld}\n",d->text,d->frequency_hz,d->time_offset_s,d->sync_score,(long long)d->slot_utc_ms);
+    printf("{\"message\":\"%s\",\"frequency_hz\":%.3f,\"time_offset_s\":%.3f,\"sync_score\":%d,\"slot_utc_ms\":%lld",d->text,d->frequency_hz,d->time_offset_s,d->sync_score,(long long)d->slot_utc_ms);
+    if(payload){
+        fputs(",\"payload_hex\":\"",stdout);
+        for(int i=0;i<10;i++)printf("%02x",d->payload[i]);
+        fputs("\",\"tones\":[",stdout);
+        for(int i=0;i<79;i++)printf("%s%d",i?",":"",d->tones[i]);
+        fputc(']',stdout);
+    }
+    fputs("}\n",stdout);
 }
-static int decode(const char *path){
+static void candidate(const ft8_candidate_result *c,void *unused){(void)unused;
+    printf("{\"candidate_rank\":%d,\"candidate_total\":%d,\"stage\":\"%s\",\"frequency_hz\":%.3f,\"time_offset_s\":%.3f,\"sync_score\":%d,\"ldpc_errors\":%d,\"unpack_status\":%d}\n",
+        c->rank,c->total,c->stage,c->frequency_hz,c->time_offset_s,c->sync_score,c->ldpc_errors,c->unpack_status);
+}
+static int decode(const char *path,bool inspect,bool payload){
     FILE *f=fopen(path,"rb");size_t count;if(!f)return 2;
     if(!wav_header(f,&count)){fclose(f);fputs("Expected bounded 12 kHz mono PCM16 WAV\n",stderr);return 2;}
     ft8_rx rx;ft8_rx_init(&rx,0);float samples[960];size_t done=0;
@@ -42,7 +54,7 @@ static int decode(const char *path){
         for(size_t i=0;i<n;i++){unsigned char b[2];if(fread(b,1,2,f)!=2){ft8_rx_free(&rx);fclose(f);return 2;}samples[i]=(int16_t)u16(b)/32768.f;}
         if(!ft8_rx_push(&rx,samples,n,done)){ft8_rx_free(&rx);fclose(f);return 2;}done+=n;
     }
-    fclose(f);double start=seconds();int n=ft8_rx_finish(&rx,show,NULL);double decode_s=seconds()-start;
+    fclose(f);double start=seconds();int n=ft8_rx_finish_observed(&rx,show,payload?&payload:NULL,inspect?candidate:NULL,NULL);double decode_s=seconds()-start;
     printf("{\"decoded_count\":%d,\"post_capture_decode_seconds\":%.6f,\"waterfall_bytes\":%d,\"rx_context_bytes\":%zu}\n",n,decode_s,rx.monitor.wf.max_blocks*rx.monitor.wf.block_stride, sizeof(rx));
     ft8_rx_free(&rx);return 0;
 }
@@ -68,12 +80,12 @@ static int simulate(void){
 }
 int main(int argc,char **argv){
     double start=seconds();int result=2;
-    if(argc==3&&!strcmp(argv[1],"decode"))result=decode(argv[2]);
+    if(argc==3&&(!strcmp(argv[1],"decode")||!strcmp(argv[1],"inspect")||!strcmp(argv[1],"decode-payload")))result=decode(argv[2],!strcmp(argv[1],"inspect"),!strcmp(argv[1],"decode-payload"));
     else if((argc==4||argc==5)&&!strcmp(argv[1],"generate")){
         char *end=NULL;float hz=argc==5?strtof(argv[4],&end):1000;
         if(argc==5&&(!end||*end))return 2;result=generate(argv[2],argv[3],hz);
     }else if(argc==2&&!strcmp(argv[1],"simulate"))result=simulate();
-    else fputs("Usage: ft8_proto decode FILE.wav | generate 'MESSAGE' FILE.wav [Hz] | simulate\n",stderr);
+    else fputs("Usage: ft8_proto decode FILE.wav | inspect FILE.wav | decode-payload FILE.wav | generate 'MESSAGE' FILE.wav [Hz] | simulate\n",stderr);
     struct rusage usage;getrusage(RUSAGE_SELF,&usage);
     printf("{\"elapsed_seconds\":%.6f,\"codec_peak_heap_bytes\":%zu,\"codec_live_heap_bytes\":%zu,\"maxrss_native\":%ld}\n",seconds()-start,tracked_peak(),tracked_live(),usage.ru_maxrss);
     return result;

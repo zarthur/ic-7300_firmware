@@ -6,7 +6,9 @@ sequencing and no external computer during operation.
 
 This is a research repository, not installable radio firmware. Vendor firmware,
 extracted payloads, recordings, dependencies, and build outputs are kept outside
-Git. No radio access or flashing is part of this phase.
+Git. Stock USB status reads have been demonstrated; input-only USB audio capture
+is now available for receive validation. Modified-image flashing remains blocked
+on recovery and platform evidence.
 
 The project is independent of Icom. Read [the legal and distribution policy](LEGAL.md),
 [security policy](SECURITY.md), and [hardware test policy](docs/TEST_POLICY.md)
@@ -74,7 +76,11 @@ existing extracted directory for tracing or choose a fresh destination. The
 verification command performs temporary extraction and is repeatable.
 
 `rebuild` preserves original compressed bytes and requires the original SHA-256;
-it is not a modified-image packer. The unknown two-byte trailer is preserved.
+it is not a modified-image packer. The two-byte trailer is preserved; its fixed-tag check is recovered for v1.42.
+Firmware commands accept only the exact research images in `research/targets.json`;
+renaming a file or updating acquisition metadata cannot authorize another image.
+Tracing verifies extracted inputs and supports only v1.42's pinned source and
+application, because the recorded addresses are version-specific.
 Ghidra import instructions and an annotation script are in [ghidra/](ghidra/).
 Ghidra was not installed during this phase; its script remains unexecuted.
 
@@ -97,7 +103,56 @@ Set `--jt9` to a separately installed WSJT-X decoder on other systems. No GUI or
 sound device is needed. Dependency and license details are in
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
+### Offline replay of a live receive capture
+
+`tools/compare_receive.py` verifies the capture manifest, continuity/alignment
+flags and every exported slot hash before replay. It saves candidate-stage
+diagnostics, exact-text matches/misses, WSJT-X signal measurements, executable
+hashes and decoder logs in a new local evidence directory. It opens no audio or
+serial device. Recordings and message lists must remain under ignored artifacts.
+
+```sh
+make -j4 BUILD=artifacts/rx-analysis-build all
+.venv/bin/python tools/compare_receive.py --capture artifacts/YOUR_CAPTURE --exe artifacts/rx-analysis-build/ft8_proto --output artifacts/YOUR_REPLAY
+```
+
+For an experimental executable, add `--reference artifacts/YOUR_REPLAY/report.json`
+and select another new output directory. Add `--require-no-regressions` to fail
+when any previously matched per-slot message is lost, even if total counts rise.
+Reuse requires the same capture manifest,
+slot hashes and reference decoder hash. PASS means replay completed, not decoder
+parity. Counts represent unique decoded text per slot; repeated transmissions in
+different slots count again. Candidate proximity alone does not establish why a
+particular signal was missed. See [the receive study](research/receive-study.md).
+
 ## Verification and development
+
+For unattended validation of the **current working tree**, including uncommitted
+work, run `make development-check`. This uses `.venv` and the default `full`
+profile: all Python tests without skips, C tests, official-image roundtrips,
+ASan/UBSan, malformed-WAV checks, repeat-verified controller evidence and the
+independent WSJT-X comparison. `make test-synthetic` explicitly selects the
+synthetic Python cases plus C and sanitizer checks; it needs neither firmware
+nor WSJT-X and clears any inherited firmware-test opt-in.
+
+Both profiles require the pinned research/audio packages and a clean pinned codec
+checkout. Full validation additionally requires the existing official images and
+WSJT-X. Preflight verifies package versions, actual dependency contents, and full
+profile image hashes. It does not install dependencies or download firmware.
+Missing prerequisites produce BLOCKED, not a partial PASS.
+
+Every run builds normal and sanitized binaries from scratch in its own ignored
+`artifacts/development-*` directory. Logs, benchmark workspaces, detailed firmware
+reports and temporary files also stay there. Atomic `report.json` records source
+fingerprints before/after, dependency and executable hashes, compiler versions,
+test counts/skips, terminal outcomes and unexecuted stages. Each step has a
+timeout; failure, interruption or changed source prevents PASS. No radio I/O or
+firmware write occurs. Use `.venv/bin/python tools/development_check.py --help`
+for profile, decoder/output paths and timeout configuration. Custom evidence
+directories must be outside tracked source (normally under `artifacts/`) and
+contain no whitespace because Make cannot handle those build paths.
+Benchmark success does not imply sensitivity parity. The synthetic profile is
+ready for a future CI job; no hosted workflow has been activated.
 
 ```sh
 make -j4 test
@@ -113,8 +168,8 @@ are separate because they require an installed WSJT-X executable. To refresh
 tracked result snapshots, omit `--output` on the verification/benchmark tools
 and review the changes. Reports record source commit and dirty-worktree status.
 
-Keep focused commits on the local `main` repository or use topic branches for
-experiments. No remote has been configured. Never add original/extracted firmware,
+Keep focused commits or use topic branches for experiments. The GitHub repository
+is `zarthur/ic-7300_firmware`. Never add original/extracted firmware,
 audio recordings, build output or Ghidra databases to Git; store reproducible
 instructions, hashes and annotations instead.
 
@@ -125,3 +180,59 @@ The ARM application is the preferred investigation target, with approximately
 audio buffer ownership, scheduling deadlines and acceptance of modified images
 remain unproven. The next milestone is recovery/updater research and resolving
 the recorder/playback paths, followed by receive-only hardware measurements.
+
+## Epic 1 desktop platform work
+
+See [the next-work plan](docs/NEXT_STEPS.md) and
+[automated results and manual steps](docs/RECEIVE_VALIDATION.md) for the current
+receive-only work session.
+
+[Platform evidence and packing status](research/platform.md) records updater and
+runtime candidates and remaining blockers. Packing/recompression results in the research notes are historical local work; that tooling is not published pending distribution review.
+[Recovery and measurement procedures](docs/PLATFORM_VALIDATION.md) prepare later
+hardware validation; no physical acceptance is claimed.
+
+```sh
+.venv/bin/python tools/platform_evidence.py artifacts/original/7300_142.dat --output artifacts/platform-evidence.json
+```
+
+The separate `firmware.py pack BASE PATCH OUTPUT` command currently rejects all
+real-image output until updater semantics, capacity and patch regions are proven.
+The existing `rebuild` command still performs only byte-identical reconstruction.
+
+Original-routine emulation and full-application recompression validation:
+
+```sh
+.venv/bin/python tools/emulate_platform.py artifacts/original/7300_142.dat --output artifacts/emulation-results.json
+IC7300_TEST_IMAGE=artifacts/original/7300_142.dat .venv/bin/python -m unittest discover -s tests -v
+```
+
+See [updater execution findings](research/updater-emulation.md) for the recovered
+fixed trailer tag, bank selector, decoder lookahead, modeled failures and remaining
+hardware blockers. Emulation runs entirely offline and does not open the radio.
+
+For bounded original flash-controller execution and a deterministic repeat check:
+
+```sh
+.venv/bin/python tools/controller.py artifacts/original/7300_142.dat --output artifacts/controller-results.json --verify-repeat
+```
+
+This executes erase/program/status-polling instructions with explicit MMIO
+responses. Stuck polling is reported as a harness limit, and unresolved runtime
+helpers remain visible. It does not establish physical recovery or acceptance.
+
+
+## Offline cancellation research
+
+The [bounded cancellation study](research/cancellation-study.md) fits decoded
+waveforms to saved audio and attempts a second decode after subtracting accepted
+fits. It preserves original-pass messages and records rejection reasons, limits,
+gains/losses and host memory/time. It is an opt-in desktop experiment whose sample
+buffers exceed the current embedded workspace target; receive defaults remain
+unchanged. No device playback or transmit path is used.
+
+`tools/study_cancellation.py` creates synthetic fixtures, freezes a fresh candidate,
+evaluates saved captures and verifies repeated behavior. The study documents exact
+commands, evidence locations and holdout handling. `tools/capture_batch.py` provides
+two bounded, explicitly requested input-only recordings with one retry per role;
+it is not invoked by either development-check profile.

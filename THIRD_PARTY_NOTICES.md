@@ -63,3 +63,14 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
 ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+## Unicorn research emulator
+
+The optional desktop routine harness uses separately installed Unicorn 2.1.4.
+Upstream identifies the engine as GPLv2; see the pinned
+[README](https://github.com/unicorn-engine/unicorn/blob/2.1.4/README.md) and
+[COPYING](https://github.com/unicorn-engine/unicorn/blob/2.1.4/COPYING).
+No Unicorn binary/source is vendored, shipped in a radio image, or linked into
+the C FT8 prototype. Its upstream license is not replaced by this repository's
+MIT license. Any future bundled distribution requires the existing dependency
+and distribution review.
