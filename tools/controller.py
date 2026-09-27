@@ -318,7 +318,7 @@ def main():
             raise ValueError('Repeated controller evidence differs')
         result['repeat_identical'] = True
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    from development_check import atomic_json
+    from reporting import atomic_json
     atomic_json(args.output, result)
     print(f'Controller evidence: {args.output}')
 
