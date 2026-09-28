@@ -186,3 +186,30 @@ The heartbeat `ic-7300-development-and-pr-review` runs every two hours.
 - Next inspect the bounded handshake writer, finish exact-candidate evidence and
   prepare owner observations/conditional restoration procedure. No radio I/O or
   firmware write is authorized. #11 and native performance remain open.
+
+
+2026-09-28 decision-package checkpoint:
+
+- PR #46 merged with exact-head independent review, full profile (136 Python
+  tests, zero skips) and Linux/macOS CI. Index `artifacts/pr46-validation-index.json`
+  and all indexed files reverified; historical helper hashes match recorded Git
+  commits. Do not reinterpret the pre-build baseline's `candidate_exists=false`
+  as current state.
+- Candidate/base selector routines and markers match, so retained selector
+  prefix/stall evidence applies. No new exhaustive selector sweep or repeated
+  full suite is needed solely to consolidate the unchanged evidence. Physical
+  torn writes, selector-block ownership and failed-boot recovery stay unknown.
+- The private conditional procedure and evidence matrix are in
+  `artifacts/decision-review-20260928T0808/DECISION_PACKAGE.md`. Current owner
+  radio/version/boot/receive/menu observations and current backup evidence remain
+  pending. The exact installation decision is NOT authorized; conditional stock
+  restoration is another write and must be explicitly included in that decision.
+- Manufacturer update/settings pages were visually reviewed. No software-only
+  hung-update or failed-boot remedy is established. The bounded handshake study
+  reached unresolved task/interrupt effects without fabricating completion.
+- Next: incorporate owner observations, verify backup paths/hashes/readability
+  when supplied and authorized, finalize the package manifest and seek the exact
+  candidate/procedure decision. Keep automated device I/O disabled. Do not repeat
+  broad UI scans, rebuild the same candidate, or run unchanged suites while only
+  owner observations are pending. Stay quiet unless new input, changed evidence,
+  a concrete failure or decision readiness warrants notification.

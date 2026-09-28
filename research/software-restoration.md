@@ -63,3 +63,25 @@ component identifiers and still validate the main payload. Header, payload and
 update are separately dispatched commands; the normal UI command producer is
 unresolved. This narrows the uncertainty without demonstrating same-version
 reinstallation or changing the failure-class matrix above.
+
+## Exact-candidate procedure review
+
+The retained manufacturer full manual (printed 15-5/15-6) documents the normal
+SD update path, final one-second YES confirmation, progress and automatic restart.
+Printed 8-4 documents settings export; 8-6 documents selective loading and the
+CI-V/REF Adjust effects of ALL. These pages were visually reviewed for the local
+conditional decision package. They do not endorse custom images or establish
+same-version acceptance. No media or radio operation was performed.
+
+The proposed procedure distinguishes pre-write cancellation, maintaining power
+and media during the write, and no improvised recovery after abnormal completion.
+There is no documented software-only response to a hung update or failed boot
+within the reviewed evidence. This limitation must be accepted or declined by the
+owner before an exact-candidate test, not discovered through an intentional
+interruption. Settings-load actions require their own scope review; no blind ALL
+restore is proposed.
+
+[Further bounded handshake inspection](update-handshake-boundaries.md) resolves
+six flags and a byte threshold without identifying a direct same-version
+rejection. It stops before interrupt/device effects; normal UI completion remains
+untested and no bypass is proposed.
