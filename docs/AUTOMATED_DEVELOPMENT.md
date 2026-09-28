@@ -161,3 +161,28 @@ The heartbeat `ic-7300-development-and-pr-review` runs every two hours.
   `Informaiton` proposal: both embedded fonts preserve advance and outer ink
   bounds. Next integrate descriptor/consumer and live-row evidence into a narrow
   policy review; static extents do not establish final rendered pixels.
+
+
+2026-09-28 exact local candidate increment:
+
+- PR #45 merged after independent review, full desktop profile (132 Python tests,
+  zero skips) and Linux/macOS CI. Index: `artifacts/pr45-validation-index.json`.
+- Independent policy reviews now justify only the two decoded bytes `ti` to `it`
+  in `Information` for local construction. This is separate from generic probe
+  results and not installation authority. Row translation is executed with an
+  explicitly synthetic list, leaving live population/rendering unknown.
+- A private candidate and durable audit exist under
+  `artifacts/first-candidate-20260928T0607/`. Separate-interpreter construction
+  produced identical bytes/audit; independent readback confirmed only the two
+  decoded bytes changed and protected regions/suffix are unchanged. Original
+  loader and stage-local header/payload checks passed. No packing source or
+  candidate image is published. The original dirty source is preserved.
+- Full-application transfer models now accept explicit modeled destination units.
+  Complete exact-candidate write/failure validation and final decision package
+  review remain required; use the local artifact index for completed runs.
+- [Eligibility predicates](../research/update-eligibility-predicates.md) resolve
+  seven RAM conditions without direct version/component reads. Normal entry and
+  handshake production remain unproven; same-version restoration is conditional.
+- Next inspect the bounded handshake writer, finish exact-candidate evidence and
+  prepare owner observations/conditional restoration procedure. No radio I/O or
+  firmware write is authorized. #11 and native performance remain open.

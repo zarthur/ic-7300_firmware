@@ -23,3 +23,14 @@ Follow-up correction: the formerly stubbed routine is a component-change flag ge
 Proceed only with offline candidate research. A candidate record must distinguish (1) uncompressed semantic edit, (2) compressed stored-byte diff, (3) whole erase-unit write footprint against a specified destination state, and (4) selector-block exposure. Unchanged boot must be verified against destination contents before claiming boot avoidance. Main-only intent cannot currently guarantee DSP/FPGA inactivity.
 
 Remaining uncertainties for candidate validation and the later owner decision: actual current/inactive bank bytes and padding; full selector-block ownership; physical controller/cache/mapping effects and readback; other-component update paths; exact candidate bounded decode/integrity evidence; application-independent software recovery (unproven, to be disclosed for the owner decision). Real-image packing, flashing and TX remain outside this work.
+
+## Full application and supplied destination model
+
+The read-only transfer harness accepts the complete stored application within a
+`0x3f0000` bank extent, or one boot erase unit. Callers may supply exactly the
+padded erase-unit span as modeled destination contents; it cannot be combined
+with `initial_equal`. This permits candidate comparisons against a specified
+stock payload without claiming those bytes are on the radio. Full equal-application
+testing covers 37 comparisons. A padding-only difference triggers a full-unit
+erase, even when all supplied payload bytes match. Unknown physical destination
+contents still require treating all scheduled units as possibly written.

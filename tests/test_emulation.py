@@ -12,6 +12,15 @@ IMAGE=os.environ.get('IC7300_TEST_IMAGE')
 
 @unittest.skipUnless(AVAILABLE,'Optional pinned Unicorn required')
 class EngineTests(unittest.TestCase):
+    def test_transfer_rejects_invalid_initial_state_before_execution(self):
+        for kwargs in ({'initial_content': b'A'},
+                       {'initial_content': bytes(65536), 'initial_equal': True},
+                       {'initial_content': bytearray(65536)},
+                       {'destination': 0, 'payload': bytes(65537)},
+                       {'destination': 0x400000, 'payload': bytes(0x3f0001)}):
+            options = dict(payload=b'A'); options.update(kwargs)
+            with self.assertRaises(ValueError): ep.transfer(b'', **options)
+
     def test_return_and_limits(self):
         uc,u,a=ep.engine();uc.mem_map(0x1000,0x1000)
         uc.mem_write(0x1000,struct.pack('<I',0xe12fff1e)) # synthetic bx lr
@@ -66,6 +75,22 @@ class FirmwareEmulationTests(unittest.TestCase):
         self.assertEqual(actual,data)
         self.assertGreaterEqual(report['source_bytes_advanced'],len(encoded))
         with self.assertRaises(ValueError): ep.decode_loader(self.main[0x4000:0x4650],b'\xff',100)
+
+    def test_full_application_transfer_and_explicit_destination_units(self):
+        payload = self.main[0x10000:]
+        result = ep.transfer(self.app, payload, destination=0x400000, initial_equal=True)
+        self.assertEqual(result['return_code'], 0)
+        self.assertEqual(result['file_bytes_read'], len(payload))
+        self.assertEqual(len([e for e in result['events'] if e['operation']=='compare']), 37)
+        self.assertFalse(any(e['operation']=='erase' for e in result['events']))
+        # Payload matches the stock bytes but a destination padding byte differs.
+        initial = b'A' + b'\xff' * 65535
+        result = ep.transfer(self.app, b'A', initial_content=initial)
+        self.assertFalse(any(e['operation']=='erase' for e in result['events']))
+        result = ep.transfer(self.app, b'A', initial_content=initial[:-1]+b'B')
+        self.assertEqual([e['length'] for e in result['events'] if e['operation']=='erase'], [65536])
+        self.assertTrue(result['flash_payload_equal'])
+        self.assertEqual(result['initial_state'], 'supplied erase units')
 
     def test_magic_and_trailer_checker(self):
         self.assertTrue(ep.validate_envelope(self.app,b'3wfU',b'\x37\x65')['accepted'])
