@@ -40,3 +40,12 @@ Trace the producers/eligibility logic for the command field +0x44 (commands 38,3
 ## Decision impact
 
 Software-restoration documentation can now say: matching component identifiers are accepted by the recovered header checker and main payload validation still runs, but normal same-version update selection/dispatch is unresolved. Stock 1.41 -> 1.42 upgrade remains the only observed hardware installation. Same-version reinstall, custom-to-stock restoration, failed-boot recovery, current backup coverage and physical write completion remain unproven. Keep the later exact-candidate owner decision and software-only scope unchanged.
+
+## UI producer follow-up
+
+[The bounded UI study](update-ui-producers.md) identifies original producers for
+all three commands. Main submission locally depends on handshake value 1; payload
+submission reaches two unresolved predicates. Seeded-state execution stops before
+unreviewed helpers and producers, so it does not prove normal same-version
+eligibility. The next questions are the two predicates and the handshake writer,
+not another broad search for command stores.

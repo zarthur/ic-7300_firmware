@@ -40,3 +40,11 @@ This narrows the caller-offset and character interpretation questions. Font/cach
 state, glyph widths and full rendering remain unexecuted, as does normal live row
 construction. The tool continues to return `patch_qualified=false`; these results
 do not approve an edit interval or establish successful on-screen layout.
+
+## Preferred smaller proposal
+
+[Static embedded-font metrics](label-font-metrics.md) favor `Informaiton`, a
+two-character transposition, over `Custom info`: it preserves glyph multiset,
+advance and outer ink bounds in both retained fonts. The isolated original ASCII
+parser evidence and existing label descriptor remain relevant. No application
+bytes have been changed and the patch policy still awaits qualification review.

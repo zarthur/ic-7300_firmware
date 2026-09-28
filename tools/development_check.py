@@ -22,6 +22,7 @@ SYNTHETIC_TESTS = (
     'test_platform_evidence', 'test_receive_capture', 'test_targets',
     'test_controller.ControllerModelTests', 'test_update_footprint.SyntheticFootprintTests',
     'test_updater_stages.ComponentDispatchModelTests',
+    'test_label_metrics.LabelMetricsModelTests',
     'test_display_label.DisplayLabelModelTests', 'test_update_dispatch.SyntheticDispatchTests',
 )
 STRICT_TESTS = '''import unittest
