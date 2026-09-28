@@ -83,7 +83,8 @@ class UpdaterStageTests(unittest.TestCase):
         result = stage.main_update(self.app, self.data)
         self.assertTrue(result['accepted'])
         self.assertIn('original component-change flag getter', result['executed'])
-        self.assertEqual(result['component_getter_indices'], [0, 1, 2])
+        # Original caller queries all flags at both 0x20025e88 and 0x20025f30.
+        self.assertEqual(result['component_getter_indices'], [0, 1, 2, 0, 1, 2])
         self.assertIn('component-change RAM flags initialized to zero', result['modeled'])
         self.assertNotIn('other components disabled', result['modeled'])
 
