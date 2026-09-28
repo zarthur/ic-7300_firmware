@@ -91,3 +91,27 @@ The heartbeat `ic-7300-development-and-pr-review` runs every two hours.
   branches from current `origin/main` there for subsequent work.
 - PR #41 merged after both Ubuntu and macOS hosted synthetic jobs passed.
   Inspect both checks and independent review evidence before every future merge.
+
+
+2026-09-28 first-candidate preparation:
+
+- PR #42 established the current first-test plan. Clean baseline `c1e787b`
+  passed the full desktop profile: 101 Python tests, zero skips, C tests,
+  sanitizers, official-image round trips, controller repeats and reference
+  comparisons. Local frozen manifest:
+  `artifacts/first-custom-baseline-20260928/baseline.json`.
+- [Updater footprint](../research/update-footprint.md) establishes full 64 KiB
+  writes for differing units, conditional boot preservation, and selector-block
+  exposure. DSP/FPGA no-touch behavior and physical destination contents remain
+  unknown. Read-only reproduction: `tools/update_footprint.py`.
+- [Software restoration](../research/software-restoration.md) distinguishes the
+  observed official upgrade from untested same-version/custom-to-stock return.
+  Failed-boot recovery remains unknown; #11 remains open.
+- The `Information` label has a bounded original-code text-path trace, but lower
+  rendering and live caller invariants are unresolved. `tools/display_label.py`
+  explicitly reports `patch_qualified=false`; no patch interval is approved.
+- Next: finish this label's renderer/caller qualification, inspect same-version
+  stock acceptance and other-component update paths, then review local packing
+  only after a qualified edit exists. Current-radio/market confirmation and
+  current backup coverage remain pending. No candidate image or installation
+  approval exists; all packing tools and firmware evidence remain local.
