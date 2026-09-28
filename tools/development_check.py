@@ -21,7 +21,8 @@ SYNTHETIC_TESTS = (
     'test_emulation.EngineTests', 'test_firmware',
     'test_platform_evidence', 'test_receive_capture', 'test_targets',
     'test_controller.ControllerModelTests', 'test_update_footprint.SyntheticFootprintTests',
-    'test_display_label.DisplayLabelModelTests',
+    'test_updater_stages.ComponentDispatchModelTests',
+    'test_display_label.DisplayLabelModelTests', 'test_update_dispatch.SyntheticDispatchTests',
 )
 STRICT_TESTS = '''import unittest
 suite = unittest.defaultTestLoader.discover('tests')

@@ -28,21 +28,24 @@ def _file_check(app, container, *, installed_ids=None, read_failure=None, seek_f
         uc.mem_write(0x203def00+index*13,value)
     if payload_flags is not None and (len(payload_flags)!=3 or any(v not in (0,1) for v in payload_flags)):
         raise ValueError('Three boolean component flags required')
-    uc.mem_write(0x2039013a,bytes(payload_flags) if payload_flags is not None else b'\xa5'*3)
+    uc.mem_write(0x2039013a,bytes(payload_flags) if payload_flags is not None else bytes(3) if main_selector is not None else b'\xa5'*3)
     if main_selector is not None and main_selector not in (0,1):
         raise ValueError('Invalid main-update selector')
     if transfer_failure not in (None,1,2): raise ValueError('Invalid transfer failure index')
     if main_selector is not None: uc.mem_write(0x20390398,bytes([main_selector]))
     contexts={};finalized=[];transfers=0
     events=[];position=0;reads=0
+    component_getter_indices=[]
     regs=(a.UC_ARM_REG_R0,a.UC_ARM_REG_R1,a.UC_ARM_REG_R2,a.UC_ARM_REG_R3)
     hooks={0x200bc5f4,0x200bc6a4,0x200bc754,0x200bc64c,0x200214b0,0x2017c81e}
     if payload_flags is not None or main_selector is not None:
         hooks.update((0x2003c860,0x2003d38c,0x2003d458,0x2017c618))
     if main_selector is not None:
-        hooks.update((0x20037604,0x20024db8,0x20024d60,0x20021ff0))
+        hooks.update((0x20037604,0x20024db8,0x20024d60))
     def hook(machine,address,size,user):
         nonlocal position,reads,transfers
+        if main_selector is not None and address == 0x20021ff0:
+            component_getter_indices.append(machine.reg_read(a.UC_ARM_REG_R0))
         if address in hooks:
             r0,r1,r2,r3=[uc.reg_read(reg) for reg in regs];result=0
             if address==0x200bc5f4:
@@ -66,7 +69,6 @@ def _file_check(app, container, *, installed_ids=None, read_failure=None, seek_f
             elif address==0x200bc64c: events.append({'operation':'close'})
             elif address==0x200214b0: result=r0
             elif address==0x20037604: events.append({'operation':'modeled_update_setup'})
-            elif address==0x20021ff0: result=0  # explicit model: other component updates disabled
             elif address==0x20024db8:
                 transfers+=1
                 if transfers==transfer_failure or position+r2>len(container):
@@ -97,18 +99,76 @@ def _file_check(app, container, *, installed_ids=None, read_failure=None, seek_f
                 result=int(bytes(uc.mem_read(r0,r2))!=bytes(uc.mem_read(r1,r2)))
             uc.reg_write(a.UC_ARM_REG_R0,result)
             uc.reg_write(a.UC_ARM_REG_PC,uc.reg_read(a.UC_ARM_REG_LR))
-        elif not any(lo<=address<hi for lo,hi in ([(0x20025ae4,0x20026130)] if main_selector is not None else [(0x20025650,0x20025ae4)] if payload_flags is not None else
+        elif not any(lo<=address<hi for lo,hi in ([(0x20025ae4,0x20026130),(0x20021ff0,0x2002200c)] if main_selector is not None else [(0x20025650,0x20025ae4)] if payload_flags is not None else
                  [(0x200253f4,0x20025604),(0x200247e4,0x20024850),(0x20006028,0x20006050),(0x200060d4,0x20006108)])):
             raise ValueError(f'Unmodeled updater-stage execution {address:#x}')
     uc.hook_add(u.UC_HOOK_CODE,hook);execute(uc,0x20025ae4 if main_selector is not None else 0x20025650 if payload_flags is not None else 0x200253f4)
     code=uc.reg_read(a.UC_ARM_REG_R0)
     return {'accepted':code==0,'return_code':code,'component_change_flags':list(uc.mem_read(0x2039013a,3)) if code==0 and main_selector is None else None,
             'finalized_md5':finalized,
-            'events':events,'executed':(['main-update caller control flow'] if main_selector is not None else ['payload read/hash/compare control flow'] if payload_flags is not None else
+            'component_getter_indices':component_getter_indices,
+            'events':events,'executed':(['main-update caller control flow'] + (['original component-change flag getter'] if component_getter_indices else []) if main_selector is not None else ['payload read/hash/compare control flow'] if payload_flags is not None else
             ['header precheck','character bitmap predicate','magic/trailer checker']),
             'modeled':['file open/read/seek/close','identity status translation','memcmp equality',
-                       'installed component identifiers in RAM']+(['MD5 context/update/finalize','unsigned progress division'] if payload_flags is not None or main_selector is not None else [])+(['main transfers and changed flags','update setup','other components disabled','activation routine call boundary'] if main_selector is not None else []),
+                       'installed component identifiers in RAM']+(['MD5 context/update/finalize','unsigned progress division'] if payload_flags is not None or main_selector is not None else [])+(['main transfers and changed flags','update setup','component-change RAM flags initialized to zero','activation routine call boundary'] if main_selector is not None else []),
             'not_established':['whole updater acceptance','installed radio RAM state','flash programming or activation']}
+
+
+
+def component_dispatch_boundary(app, flags):
+    """Execute the actual flag getter and stop before an unresolved handshake.
+
+    Caller entry/menu state is supplied. This is not an other-component writer
+    or proof of live installed identifiers; a nonzero flag is never acknowledged.
+    """
+    if len(flags) != 3 or any(value not in (0, 1) for value in flags):
+        raise ValueError('Three boolean component flags required')
+    if digest(app) != '4686728c9d1f7249b6278a29686a40b8fa5e527bd2428a76a33cd9395178c9a4':
+        raise ValueError('Component dispatch requires exact pinned v1.42 application')
+    uc, u, a = engine()
+    uc.mem_map(0x20000000, 0x600000)
+    uc.mem_write(APP_BASE, app)
+    local_flags = 0x205f0000
+    handshake = 0x20390308
+    uc.mem_write(0x2039013a, bytes(flags))
+    uc.mem_write(local_flags, b'\xa5' * 3)
+    uc.mem_write(handshake, b'\0')
+    uc.reg_write(a.UC_ARM_REG_R8, local_flags)
+    getter_indices, stopped = [], {}
+    instructions = 0
+
+    def hook(machine, address, size, user):
+        nonlocal instructions
+        instructions += 1
+        if address == 0x20021ff0:
+            getter_indices.append(machine.reg_read(a.UC_ARM_REG_R0))
+        if address == 0x20025f5c and machine.mem_read(handshake, 1) == b'\x02':
+            stopped.update(outcome='UNRESOLVED_HANDSHAKE', pc=hex(address))
+            machine.emu_stop()
+        elif address == 0x20037604:
+            # Same setup boundary model used by main_update; no peripheral effects.
+            machine.reg_write(a.UC_ARM_REG_PC, machine.reg_read(a.UC_ARM_REG_LR))
+        elif address == 0x20025f70:
+            stopped.update(outcome='ZERO_FLAGS_COMPONENT_LOOP', pc=hex(address))
+            machine.emu_stop()
+        elif not (0x20025f24 <= address < 0x20025f70 or 0x20021ff0 <= address < 0x2002200c):
+            raise ValueError(f'Unmodeled component dispatch execution {address:#x}')
+
+    uc.hook_add(u.UC_HOOK_CODE, hook)
+    uc.emu_start(0x20025f24, 0x08000000, count=1000, timeout=1000000)
+    if not stopped:
+        raise ValueError('Component dispatch did not reach a reviewed boundary')
+    return dict(stopped, flags=list(flags), getter_indices=getter_indices,
+                local_flags=list(uc.mem_read(local_flags, 3)),
+                handshake_address=hex(handshake), handshake_value=uc.mem_read(handshake, 1)[0],
+                instructions=instructions, limits=dict(instructions=1000, wall_seconds=1),
+                executed=['caller 0x20025f24..0x20025f70', 'flag getter 0x20021ff0..0x2002200c'],
+                modeled=['component flags and local workspace', 'initial handshake byte zero',
+                         'update setup return for zero flags'],
+                limitations=['No external handshake completion is fabricated.',
+                             'No selected component handler or hardware writes are executed.',
+                             'Flags are supplied, not measured installed-component identifiers.',
+                             'Unused local flag bytes remain synthetic sentinels after an early stop.'])
 
 
 def header_precheck(app, container, *, installed_ids=None, read_failure=None, seek_failure=False):
@@ -219,7 +279,9 @@ def report(path):
     main_updates={f'selector_{selector}_boot_{int(changed)}_corrupt_{int(corrupt)}':
         main_update(app,data,selector=selector,boot_changed=changed,corrupt_transfer=corrupt)
         for selector in (0,1) for changed in (False,True) for corrupt in (False,True)}
-    return {'schema_version':1,'main_update':main_updates,'payload_precheck':payloads,'source_revision':revision(),'image_sha256':digest(data),
+    return {'schema_version':1,
+            'component_dispatch_boundaries':[component_dispatch_boundary(app, tuple((bits >> i) & 1 for i in range(3))) for bits in range(8)],
+            'main_update':main_updates,'payload_precheck':payloads,'source_revision':revision(),'image_sha256':digest(data),
             'tool_sha256':{name:digest(Path(__file__).with_name(name).read_bytes())
                            for name in ('updater_stages.py','emulate_platform.py','firmware.py')},
             'unicorn':'2.1.4','precheck':checks,

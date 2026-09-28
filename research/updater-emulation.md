@@ -402,3 +402,15 @@ an unreviewed memory-write target. Report repeat comparison includes these runs.
 [Five candidate words have a conditional instruction interpretation](selector-candidates.md).
 Fifteen one-instruction trials match register-only effects; mode-qualified runtime
 reachability and complete selector-block ownership remain unresolved.
+
+## Exact loader byte bounds
+
+The desktop loader harness now checks source reads and output reads/writes
+against their exact byte intervals, including accesses crossing an interval end.
+Page-aligned mappings alone left prefix input padding and final output padding
+accessible. Synthetic ARM regressions cover these cases and a valid one-byte
+copy. Reports record the largest observed access end separately from the final
+source register; a register advance is not a measurement of all memory accesses.
+Every candidate still needs its own original-loader decode with its preserved
+suffix and bounded source span. These checks do not model physical memory/cache
+behavior or authorize candidate installation.

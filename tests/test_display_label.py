@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
-from display_label import BASE, LABEL, TABLE, INDEX, TEXT, describe_site, investigate, probe_original_menu
+from display_label import BASE, LABEL, TABLE, INDEX, TEXT, describe_site, investigate, probe_original_menu, probe_original_ascii_parser
 import display_label
 from firmware import checked_image
 
@@ -38,6 +38,8 @@ class DisplayLabelModelTests(unittest.TestCase):
     def test_structural_fixture_cannot_authorize_original_execution(self):
         with self.assertRaisesRegex(ValueError, 'exact pinned'):
             probe_original_menu(self.fixture())
+        with self.assertRaisesRegex(ValueError, 'exact pinned'):
+            probe_original_ascii_parser(self.fixture())
         with self.assertRaises(ValueError):
             investigate(b'synthetic unknown image')
 
@@ -75,3 +77,22 @@ class DisplayLabelImageTests(unittest.TestCase):
         self.assertEqual(report['probe']['subtype_dispatch'], '0x2008a70c')
         self.assertFalse(report['probe']['renderer_executed'])
         self.assertEqual(len(report['probe']['label_reads']), 12)
+
+        self.assertEqual(report['probe']['entry'], '0x20086510')
+        self.assertTrue(report['probe']['wrapper_forces_zero_offset'])
+        self.assertEqual(report['probe']['observed_selector_offsets'], [0])
+        self.assertIsNone(report['probe']['modeled_inputs']['text_offset'])
+        self.assertEqual(report['probe']['wrapper_coordinates'], [10, 38])
+        parser = report['ascii_parser_probe']
+        self.assertFalse(parser['application_modified'])
+        self.assertFalse(parser['actual_renderer_executed'])
+        self.assertFalse(parser['font_or_cache_modeled'])
+        self.assertEqual([case['text'] for case in parser['cases']], ['Information', 'Custom info'])
+        for case in parser['cases']:
+            self.assertEqual(case['codepoints'], list(case['text'].encode('ascii')))
+            self.assertEqual(case['returned_codepoints'], 11)
+            self.assertEqual(case['direct_ascii_branches'], 11)
+            self.assertEqual(case['read_past_declared_bytes'], 1)
+            self.assertTrue(case['guard_unchanged'])
+            self.assertTrue(case['application_read_only'])
+            self.assertEqual(case['output_writes'], [dict(offset=2*i, size=2) for i in range(11)])

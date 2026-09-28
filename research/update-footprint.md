@@ -16,7 +16,7 @@ Boot preservation is conditional on comparison with physical destination content
 
 For either selector, the separately executed persistent-record writer requests erasure of the entire 64 KiB block at offset 0x7f0000, then programs 16 marker bytes. Thus 65,520 additional erased bytes lie outside the programmed marker. Their ownership/preservation remains unresolved. A one-byte application diff does not avoid this selector-block exposure.
 
-DSP/FPGA exclusion is NOT established: the current main-update harness explicitly returns zero from the other-component handler. Header/payload selection flags and unchanged supplied component bytes are insufficient evidence about those unexecuted update paths. No no-touch claim for those components is justified.
+Follow-up correction: the formerly stubbed routine is a component-change flag getter, not the component handler. The harness now executes this getter with modeled zero RAM flags, allowing the main caller to skip component dispatch. Nonzero flags reach an unresolved handshake. Matching identifiers can produce zero flags in the separate header precheck, but live installed identifiers and normal command progression remain unverified. Unchanged supplied component bytes alone do not establish a physical no-touch claim.
 
 ## Candidate decision
 
