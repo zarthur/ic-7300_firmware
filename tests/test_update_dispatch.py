@@ -35,6 +35,17 @@ class SyntheticDispatchTests(unittest.TestCase):
                 probe.ui_transition(b'unknown application', 0x3b, 2, 0)
             engine.assert_not_called()
 
+    def test_eligibility_refuses_unknown_app_or_invalid_ram_stimulus(self):
+        with patch.object(probe, 'engine') as engine:
+            with self.assertRaisesRegex(ValueError, 'exact v1.42'):
+                probe.eligibility_predicate(b'unknown', {})
+            for values in ({0: 1}, {probe.ELIGIBILITY_SIGNED[0]: 256},
+                           {probe.ELIGIBILITY_UNSIGNED[0]: -1}, [],
+                           {probe.ELIGIBILITY_UNSIGNED[0]: True}):
+                with self.subTest(values=values), self.assertRaisesRegex(ValueError, 'Unreviewed'):
+                    probe.eligibility_predicate(b'unknown', values)
+            engine.assert_not_called()
+
     def test_mutation_prevents_successful_evidence(self):
         for change in ('image', 'restored_image', 'source', 'revision', None):
             with self.subTest(change=change), tempfile.TemporaryDirectory() as directory:
@@ -99,6 +110,19 @@ class FirmwareDispatchTests(unittest.TestCase):
             self.assertEqual(row['final_command'], row['initial_command'])
             self.assertFalse(row['actual_ui_reachability_proven'])
             self.assertFalse(row['producer_executed'])
+            self.assertLess(row['executed_instructions'], row['limits']['instructions'])
+
+    def test_original_eligibility_checks_unsigned_zero_and_signed_nonpositive(self):
+        cases = self.evidence['eligibility_predicate_cases']
+        self.assertEqual(len(cases), 10)
+        self.assertEqual(cases['all_zero']['result'], 1)
+        self.assertEqual(set(cases['all_zero']['original_entries_executed']),
+                         {'0x20059060', '0x20047f08', '0x2006a3f4', '0x2006be8c', '0x2000a23c'})
+        for name, row in cases.items():
+            self.assertEqual(row['result'], 0 if name.startswith('positive_') else 1)
+            self.assertEqual(row['modeled_helper_returns'], [])
+            self.assertFalse(row['actual_ui_reachability_proven'])
+            self.assertEqual(len(row['modeled_ram']), 7)
             self.assertLess(row['executed_instructions'], row['limits']['instructions'])
 
 

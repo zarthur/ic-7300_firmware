@@ -207,6 +207,54 @@ def probe_original_ascii_parser(app):
         actual_renderer_executed=False, font_or_cache_modeled=False, application_modified=False)
 
 
+def probe_original_row_translation(app):
+    """Run the original producer on a synthetic list item, not live UI state."""
+    if digest(app) != APP_SHA256:
+        raise ValueError('Row execution requires the exact pinned v1.42 application')
+    from unicorn import Uc, UC_ARCH_ARM, UC_MODE_ARM, UC_HOOK_CODE, UC_PROT_READ, UC_PROT_EXEC
+    from unicorn.arm_const import (UC_ARM_REG_R4, UC_ARM_REG_R5, UC_ARM_REG_R8,
+                                  UC_ARM_REG_R9, UC_ARM_REG_R10, UC_ARM_REG_PC)
+    word = lambda address: struct.unpack_from('<I', app, address - BASE)[0]
+    context, source = word(0x200426AC), word(0x200426B0)
+    if context != word(0x2008ABD8) or context != 0x203FF76C or source != 0x203DA12E:
+        raise ValueError('Unexpected producer/renderer literal relationship')
+    machine = Uc(UC_ARCH_ARM, UC_MODE_ARM)
+    machine.mem_map(BASE, (len(app) + 4095) & ~4095)
+    machine.mem_write(BASE, app)
+    machine.mem_protect(BASE, (len(app) + 4095) & ~4095, UC_PROT_READ | UC_PROT_EXEC)
+    machine.mem_map(0x203D0000, 0x30000)
+    machine.mem_write(0x203D0000, b'\xA5' * 0x30000)
+    machine.mem_write(source, struct.pack('<BBH', 1, 0, 0x3C))
+    for register, value in ((UC_ARM_REG_R4, 0), (UC_ARM_REG_R5, 0),
+            (UC_ARM_REG_R8, 1), (UC_ARM_REG_R9, context), (UC_ARM_REG_R10, source)):
+        machine.reg_write(register, value)
+    executed = []
+
+    def instruction(uc, address, size, unused):
+        if size != 4 or not 0x20042FA4 <= address < 0x20042FDC:
+            raise ValueError(f'Unexpected row-producer instruction: {address:#x}')
+        executed.append(address)
+
+    machine.hook_add(UC_HOOK_CODE, instruction)
+    machine.emu_start(0x20042FA4, 0x20042FDC, count=50)
+    row = bytes(machine.mem_read(context + 0xA4, 5))
+    if machine.reg_read(UC_ARM_REG_PC) != 0x20042FDC or row != b'\x01\xA5\x29\x00\x01':
+        raise ValueError('Original row translation did not produce descriptor 41')
+    guards = (bytes(machine.mem_read(context + 0xA3, 1)),
+              bytes(machine.mem_read(context + 0xA9, 1)))
+    if guards != (b'\xA5', b'\xA5'):
+        raise ValueError('Row-producer output guard changed')
+    return dict(outcome='PASS', entry='0x20042fa4', stop='0x20042fdc',
+        original_instruction_count=len(executed), application_read_only=True,
+        modeled_inputs=dict(list_type=1, list_id=0x3C, source_index=0, destination_row=0),
+        producer_source_list=hex(source), producer_and_renderer_context=hex(context),
+        renderer_row_base=hex(context + 0x9C), row_stride=84,
+        observed_row_type=row[0], observed_descriptor_index=struct.unpack_from('<H', row, 2)[0],
+        observed_row_flag=row[4], untouched_padding_and_guards=True,
+        live_list_population_observed=False, live_menu_state_observed=False,
+        renderer_executed=False, application_modified=False)
+
+
 def _investigate(image):
     target = require_target(image, 'trace')
     if target['version'] != '142':
@@ -220,10 +268,11 @@ def _investigate(image):
     site = describe_site(app)
     probe = probe_original_menu(app, through_wrapper=True)
     parser_probe = probe_original_ascii_parser(app)
+    row_probe = probe_original_row_translation(app)
     return dict(schema_version=1, outcome='PASS', meaning='Bounded investigation reproduced; not patch qualification',
         source_revision=revision(), image_sha256=digest(image), application_sha256=digest(app),
         tool_sha256=digest(Path(__file__).read_bytes()), compressed_bytes_consumed=consumed,
-        site=site, probe=probe, ascii_parser_probe=parser_probe, patch_qualified=False, approved_patch_interval=None,
+        site=site, probe=probe, ascii_parser_probe=parser_probe, row_translation_probe=row_probe, patch_qualified=False, approved_patch_interval=None,
         known_consumers=[
             dict(address='0x2003a860', fields='record +0 callback, +4 category',
                  finding='Menu dispatch uses descriptor metadata, not label bytes, on the examined path.'),
@@ -236,7 +285,7 @@ def _investigate(image):
             dict(address='0x200ab390', fields='record +4 category', finding='Layout selection uses metadata.')],
         unresolved=[
             'Full renderer 0x200ac6e0 -> 0x200aef70 remains unexecuted; glyph widths and initialized font/cache state are unresolved. Isolated ASCII parsing is covered.',
-            'Normal live menu row construction and language state are not established. The ordinary wrapper forces zero text offset once reached.',
+            'Original row translation is reproduced with synthetic list state; live list population and language state are not established. The ordinary wrapper forces zero text offset once reached.',
             'Pointer scans and bounded ARM paths do not enumerate all mixed-ISA, computed or aliased references.',
             'No candidate-specific loader/acceptance/write evidence exists; no image was modified or emitted.'])
 

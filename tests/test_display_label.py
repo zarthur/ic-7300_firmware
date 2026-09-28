@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
-from display_label import BASE, LABEL, TABLE, INDEX, TEXT, describe_site, investigate, probe_original_menu, probe_original_ascii_parser
+from display_label import BASE, LABEL, TABLE, INDEX, TEXT, describe_site, investigate, probe_original_menu, probe_original_ascii_parser, probe_original_row_translation
 import display_label
 from firmware import checked_image
 
@@ -40,6 +40,8 @@ class DisplayLabelModelTests(unittest.TestCase):
             probe_original_menu(self.fixture())
         with self.assertRaisesRegex(ValueError, 'exact pinned'):
             probe_original_ascii_parser(self.fixture())
+        with self.assertRaisesRegex(ValueError, 'exact pinned'):
+            probe_original_row_translation(self.fixture())
         with self.assertRaises(ValueError):
             investigate(b'synthetic unknown image')
 
@@ -83,6 +85,21 @@ class DisplayLabelImageTests(unittest.TestCase):
         self.assertEqual(report['probe']['observed_selector_offsets'], [0])
         self.assertIsNone(report['probe']['modeled_inputs']['text_offset'])
         self.assertEqual(report['probe']['wrapper_coordinates'], [10, 38])
+        row = report['row_translation_probe']
+        self.assertEqual(row['outcome'], 'PASS')
+        self.assertEqual(row['observed_row_type'], 1)
+        self.assertEqual(row['observed_descriptor_index'], 41)
+        self.assertEqual(row['observed_row_flag'], 1)
+        self.assertEqual(row['original_instruction_count'], 14)
+        self.assertEqual(row['producer_and_renderer_context'], '0x203ff76c')
+        self.assertEqual(row['renderer_row_base'], '0x203ff808')
+        self.assertEqual(row['modeled_inputs']['list_id'], 0x3C)
+        self.assertTrue(row['application_read_only'])
+        self.assertTrue(row['untouched_padding_and_guards'])
+        self.assertFalse(row['live_list_population_observed'])
+        self.assertFalse(row['live_menu_state_observed'])
+        self.assertFalse(row['renderer_executed'])
+        self.assertFalse(row['application_modified'])
         parser = report['ascii_parser_probe']
         self.assertFalse(parser['application_modified'])
         self.assertFalse(parser['actual_renderer_executed'])

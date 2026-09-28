@@ -159,7 +159,7 @@ def select_bank(loader, marker):
                 modeled=['persistent marker bytes','bank length words','decompressor interception'])
 
 
-def transfer(app, payload, *, destination=0x10000, initial_equal=False,
+def transfer(app, payload, *, destination=0x10000, initial_equal=False, initial_content=None,
              short_read=False, read_error=False, cancel=False, interrupt=None, program_error=False,
              controller_scenario=None):
     """Execute transfer control flow with explicit file/flash/callee models.
@@ -167,8 +167,13 @@ def transfer(app, payload, *, destination=0x10000, initial_equal=False,
     Flash size here is a model bound, not hardware qualification. Interrupt is
     before_erase, after_erase or after_program; no physical writes occur.
     """
-    if destination not in (0,0x10000,0x400000) or not 0 < len(payload) <= 0x20000:
-        raise ValueError('Unsupported synthetic transfer range')
+    capacity = 0x10000 if destination == 0 else 0x3f0000
+    if destination not in (0,0x10000,0x400000) or not 0 < len(payload) <= capacity:
+        raise ValueError('Unsupported modeled transfer range')
+    unit_span = (len(payload) + 0xffff) & ~0xffff
+    if initial_content is not None:
+        if initial_equal or not isinstance(initial_content, bytes) or len(initial_content) != unit_span:
+            raise ValueError('Initial content must cover exact erase-unit span without initial_equal')
     if interrupt not in (None,'before_erase','after_erase','after_program'):
         raise ValueError('Unknown interruption stage')
     controller_results = None
@@ -183,7 +188,9 @@ def transfer(app, payload, *, destination=0x10000, initial_equal=False,
     uc.mem_write(STACK+0xf000,struct.pack('<I',changed))
     uc.mem_write(0x20390317, bytes([bool(cancel)]))
     flash = bytearray(b'\xff'*0x800000)
-    if initial_equal:
+    if initial_content is not None:
+        flash[destination:destination+unit_span] = initial_content
+    elif initial_equal:
         flash[destination:destination+len(payload)] = payload
     events=[]; offset=0; md5=hashlib.md5(); stopped=None
     regs=(a.UC_ARM_REG_R0,a.UC_ARM_REG_R1,a.UC_ARM_REG_R2,a.UC_ARM_REG_R3)
@@ -257,7 +264,9 @@ def transfer(app, payload, *, destination=0x10000, initial_equal=False,
         execute(uc,0x20024db8)
     except ValueError:
         if stopped is None: raise
-    return {'return_code':None if stopped else uc.reg_read(a.UC_ARM_REG_R0),
+    return {'initial_state': 'supplied erase units' if initial_content is not None else 'equal payload with FF padding' if initial_equal else 'erased FF',
+            'initial_content_sha256':digest(initial_content) if initial_content is not None else None,
+            'return_code':None if stopped else uc.reg_read(a.UC_ARM_REG_R0),
             'interrupted':stopped,'changed_flag':uc.mem_read(changed,1)[0],
             'file_bytes_read':offset,'hashed_bytes_md5':md5.hexdigest(),
             'flash_payload_equal':None if stopped and stopped.startswith('controller_') else bytes(flash[destination:destination+len(payload)])==payload,

@@ -48,3 +48,19 @@ two-character transposition, over `Custom info`: it preserves glyph multiset,
 advance and outer ink bounds in both retained fonts. The isolated original ASCII
 parser evidence and existing label descriptor remain relevant. No application
 bytes have been changed and the patch policy still awaits qualification review.
+
+## Exact local construction policy review
+
+Independent review supports local construction of only `Information` to
+`Informaiton`: decoded half-open interval `[0x355773, 0x355775)`, bytes `ti` to
+`it`. Require the exact base/application hashes, full original label and NUL,
+unchanged descriptor, terminator and every other decoded byte. The generic probes
+remain non-authorizing; this narrow reviewed policy is distinct from their
+`patch_qualified=false` fields and grants no installation permission.
+
+A further bounded original-code producer probe translates numeric type 1/list ID
+`0x3c` to descriptor 41 in an 84-byte row. Producer and renderer refer to the same
+context. Its list contents are explicit synthetic inputs, not observed live RAM.
+Together with known metadata-based dispatch, ordinary ASCII parsing, and equal
+font extents, this supports the local edit while leaving live visibility, final
+raster behavior and residual indirect references disclosed.

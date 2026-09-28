@@ -97,6 +97,58 @@ def ui_transition(app, state, handshake, command):
                              'No unknown helper is modeled as success; stops do not constitute command submission.'])
 
 
+ELIGIBILITY_UNSIGNED = (0x203902a2, 0x2039027f, 0x20390285, 0x203da3d0, 0x20396ac8)
+ELIGIBILITY_SIGNED = (0x20390448, 0x20390449)
+
+
+def eligibility_predicate(app, overrides):
+    """Execute original local eligibility helpers with explicitly modeled RAM."""
+    allowed = ELIGIBILITY_UNSIGNED + ELIGIBILITY_SIGNED
+    if not isinstance(overrides, dict) or any(address not in allowed or type(value) is not int
+            or not 0 <= value <= 255 for address, value in overrides.items()):
+        raise ValueError('Unreviewed eligibility stimulus')
+    if digest(app) != APP_SHA256:
+        raise ValueError('Eligibility probe requires the exact v1.42 application')
+    machine, u, a = engine()
+    machine.mem_map(0x20000000, 0x600000)
+    machine.mem_write(APP_BASE, app)
+    for address in allowed:
+        machine.mem_write(address, bytes([overrides.get(address, 0)]))
+    bounds = ((0x20059060, 0x2005908c), (0x20047f08, 0x20047f68),
+              (0x2006a3f4, 0x2006a400), (0x2006be8c, 0x2006be98),
+              (0x2000a23c, 0x2000a248))
+    instructions = 0
+    helpers = []
+
+    def code(uc, address, width, user):
+        nonlocal instructions
+        if not any(lo <= address < hi for lo, hi in bounds):
+            raise ValueError('Unreviewed eligibility execution')
+        instructions += 1
+        if address in tuple(lo for lo, _ in bounds):
+            helpers.append(hex(address))
+
+    machine.hook_add(u.UC_HOOK_CODE, code)
+    machine.emu_start(0x20059060, RETURN, count=300, timeout=1000000)
+    if machine.reg_read(a.UC_ARM_REG_PC) != RETURN:
+        raise ValueError('Eligibility predicate did not return within limits')
+    return dict(result=machine.reg_read(a.UC_ARM_REG_R0),
+                modeled_ram={hex(address): overrides.get(address, 0) for address in allowed},
+                original_entries_executed=helpers, executed_instructions=instructions,
+                limits=dict(instructions=300, wall_seconds=1), modeled_helper_returns=[],
+                actual_ui_reachability_proven=False,
+                limitations=['Seven RAM bytes are seeded; their live values and producers are not established.',
+                             'No command, confirmation or handshake progression is executed.'])
+
+
+def eligibility_cases(app):
+    cases = [('all_zero', {})]
+    cases.extend((f'positive_{address:x}', {address: 1})
+                 for address in ELIGIBILITY_UNSIGNED + ELIGIBILITY_SIGNED)
+    cases.extend((f'negative_{address:x}', {address: 255}) for address in ELIGIBILITY_SIGNED)
+    return {name: eligibility_predicate(app, values) for name, values in cases}
+
+
 def _report(image):
     data, _, app, _ = inputs(image)  # Exact hash/version trace gate before execution.
     import capstone
@@ -114,6 +166,7 @@ def _report(image):
                 equal_component_payload=payload_precheck(app, data, flags=tuple(headers['equal']['component_change_flags'])),
                 dispatch_cases={str(command): dispatch(app, command) for command in COMMANDS},
                 ui_transition_cases=[ui_transition(app, *case) for case in UI_CASES],
+                eligibility_predicate_cases=eligibility_cases(app),
                 same_version_reinstall_proven=False,
                 limitations=[
                     'Installed component identifiers are synthetic RAM stimuli, not public Main CPU version state.',
@@ -121,6 +174,7 @@ def _report(image):
                     'Header/payload checks execute separately with file/hash/comparison helpers modeled.',
                     'Dispatch command and local UI states are seeded; normal UI entry and producer eligibility remain unproven.',
                     'Dispatch stops before the callee; no coherent end-to-end installation path is simulated.',
+                    'Executed eligibility predicates read seven modeled RAM bytes, not public-version/component identifiers; upstream eligibility remains unproven.',
                     'No same-version installation, custom-to-stock restoration, component writes or recovery is established.'])
 
 
