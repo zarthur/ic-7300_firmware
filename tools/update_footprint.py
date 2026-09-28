@@ -65,7 +65,7 @@ def _report(image):
                     'Initial flash is synthetic: erased FF or exact payload plus erased padding; no bank readback exists.',
                     'Erase/program and file services are models; physical completion and cache effects are unproven.',
                     'Caller transfer flags are substitutions; these scenarios are not a coherent whole-machine update.',
-                    'Other-component handler is disabled in the caller model; DSP/FPGA inactivity is unproven.',
+                    'Caller executes the component-change getter with modeled zero RAM flags; live flags and DSP/FPGA inactivity remain unproven.',
                     'Selector erases 64 KiB and programs 16 bytes; remaining block ownership is unresolved.',
                     'No recovery, packing, modified boot, or TX authorization follows.'])
 

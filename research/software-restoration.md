@@ -55,3 +55,11 @@ Region qualification remains open under #7. An unknown board/flash revision alon
 Combine this matrix with package 2A's candidate-specific updater trace and package 2B's qualified display site. For a same-version return-to-stock proposal, inspect the existing version/component-identifier acceptance evidence and retained manufacturer instructions; report any unresolved same-version behavior rather than guessing a force/recovery sequence. No additional broad scan is needed for package 2C now.
 
 The owner decision package must say plainly: a failed boot could leave the radio unusable with the available computer/radio setup, and no tested independent software restoration is presently demonstrated. A later explicit decision may accept that exact-candidate risk; neither this assessment nor passing/merged desktop PRs does so. During any subsequently authorized update, follow the reviewed updater procedure without power interruption or improvised retries. After failed boot, stop unless a previously reviewed applicable software procedure exists.
+
+## Component equality follow-up
+
+[Bounded original-code checks](same-version-acceptance.md) accept matching
+component identifiers and still validate the main payload. Header, payload and
+update are separately dispatched commands; the normal UI command producer is
+unresolved. This narrows the uncertainty without demonstrating same-version
+reinstallation or changing the failure-class matrix above.

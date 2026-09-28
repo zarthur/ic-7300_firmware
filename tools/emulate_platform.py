@@ -67,12 +67,38 @@ def decode_loader(loader, compressed, size, *, budget=150000000):
     uc.mem_map(OUTPUT, (size+4095) & ~4095, u.UC_PROT_READ | u.UC_PROT_WRITE)
     for reg, value in [(a.UC_ARM_REG_R0,OUTPUT),(a.UC_ARM_REG_R1,source),(a.UC_ARM_REG_R2,size)]:
         uc.reg_write(reg,value)
-    execute(uc, 0x2000425c, budget)
+    violations = []
+    accesses = {'source_read_end': 0, 'output_write_end': 0, 'output_read_end': 0}
+
+    def bounds(machine, access, address, width, value, unused):
+        if SOURCE <= address < SOURCE + span:
+            valid = source <= address and address + width <= source + len(compressed)
+            accesses['source_read_end'] = max(accesses['source_read_end'], address + width - source)
+        else:
+            valid = OUTPUT <= address and address + width <= OUTPUT + size
+            key = 'output_write_end' if access == u.UC_MEM_WRITE else 'output_read_end'
+            accesses[key] = max(accesses[key], address + width - OUTPUT)
+        if not valid:
+            violations.append((address, width))
+            machine.emu_stop()
+
+    uc.hook_add(u.UC_HOOK_MEM_READ, bounds, begin=SOURCE, end=SOURCE + span - 1)
+    uc.hook_add(u.UC_HOOK_MEM_READ | u.UC_HOOK_MEM_WRITE, bounds, begin=OUTPUT,
+                end=OUTPUT + ((size + 4095) & ~4095) - 1)
+    try:
+        execute(uc, 0x2000425c, budget)
+    except ValueError:
+        if violations:
+            raise ValueError(f'Loader access outside exact byte bounds: {violations}') from None
+        raise
+    if violations:
+        raise ValueError(f'Loader access outside exact byte bounds: {violations}')
     written = uc.reg_read(a.UC_ARM_REG_R0)
     if written != size:
         raise ValueError(f'Unexpected loader output length {written}')
     return bytes(uc.mem_read(OUTPUT,size)), {'bytes_written':written,
             'source_bytes_advanced':uc.reg_read(a.UC_ARM_REG_R1)-source,
+            'access_bounds': accesses, 'exact_byte_bounds_checked': True,
             'executed':'original ARM loader at 0x2000425c',
             'modeled':['private RAM and stack', 'return sentinel'],
             'limits':{'instructions':budget,'wall_seconds':30}}

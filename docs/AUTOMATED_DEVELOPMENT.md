@@ -115,3 +115,22 @@ The heartbeat `ic-7300-development-and-pr-review` runs every two hours.
   only after a qualified edit exists. Current-radio/market confirmation and
   current backup coverage remain pending. No candidate image or installation
   approval exists; all packing tools and firmware evidence remain local.
+
+
+2026-09-28 bounded follow-up:
+
+- PR #43 merged after independent review, full desktop validation (114 Python
+  tests, zero skips), and both hosted jobs. The integration checkout is clean at
+  `e4dfee3`; its tree matches the tested PR head. Local acceptance index:
+  `artifacts/first-custom-baseline-20260928/pr43-validation-index.json`.
+- The next read-only checks exercise the ordinary label wrapper/ASCII parser,
+  separate updater command dispatch, and real component-change flag getter.
+  [Same-version acceptance](../research/same-version-acceptance.md) remains
+  conditional on unresolved UI command production. No physical recovery claim.
+- Original-loader byte-range guards now reject mapped-page padding accesses.
+  Retained local packing review identified a durability-ordering requirement for
+  the future publisher; it remains blocked and unpublished.
+- Next bounded questions: glyph/font layout for the proposed label, normal update
+  command eligibility with matching identifiers, and any selected component
+  handshake. No candidate exists. Target/market confirmation and current backup
+  observations remain pending; do not re-ask broad approval or perform device I/O.

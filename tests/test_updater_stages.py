@@ -33,12 +33,58 @@ def payload_spec(container, flags):
     return True
 
 
+class ComponentDispatchModelTests(unittest.TestCase):
+    def test_invalid_flags_and_unknown_application_rejected(self):
+        for flags in ((), (0, 0), (0, 0, 2), (0, 0, 0, 0)):
+            with self.subTest(flags=flags), self.assertRaises(ValueError):
+                stage.component_dispatch_boundary(b'original synthetic data', flags)
+        with self.assertRaisesRegex(ValueError, 'exact pinned'):
+            stage.component_dispatch_boundary(b'original synthetic data', (0, 0, 0))
+
+
 @unittest.skipUnless(IMAGE and importlib.util.find_spec('unicorn'),'Opt-in pinned source and Unicorn required')
 class UpdaterStageTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.data,cls.main,cls.app,_=inputs(Path(IMAGE))
         cls.installed=[cls.data[4+i*4:8+i*4] for i in range(3)]
+
+    def test_component_flags_come_from_identifier_comparison(self):
+        for changed in (None, 0, 1, 2):
+            installed = self.installed.copy()
+            expected = [0, 0, 0]
+            if changed is not None:
+                installed[changed] = b'0.00' if installed[changed] != b'0.00' else b'9.99'
+                expected[changed] = 1
+            result = stage.header_precheck(self.app, self.data, installed_ids=installed)
+            self.assertTrue(result['accepted'])
+            self.assertEqual(result['component_change_flags'], expected)
+
+    def test_actual_flag_getter_stops_before_nonzero_handshake(self):
+        for bits in range(8):
+            flags = tuple((bits >> i) & 1 for i in range(3))
+            with self.subTest(flags=flags):
+                result = stage.component_dispatch_boundary(self.app, flags)
+                if bits:
+                    first = flags.index(1)
+                    self.assertEqual(result['outcome'], 'UNRESOLVED_HANDSHAKE')
+                    self.assertEqual(result['pc'], '0x20025f5c')
+                    self.assertEqual(result['getter_indices'], list(range(first + 1)))
+                    self.assertEqual(result['local_flags'], list(flags[:first + 1]) + [165] * (2 - first))
+                    self.assertEqual(result['handshake_value'], 2)
+                else:
+                    self.assertEqual(result['outcome'], 'ZERO_FLAGS_COMPONENT_LOOP')
+                    self.assertEqual(result['getter_indices'], [0, 1, 2])
+                    self.assertEqual(result['local_flags'], [0, 0, 0])
+                    self.assertEqual(result['handshake_value'], 0)
+                self.assertLess(result['instructions'], result['limits']['instructions'])
+
+    def test_main_update_executes_real_getter_with_zero_flags(self):
+        result = stage.main_update(self.app, self.data)
+        self.assertTrue(result['accepted'])
+        self.assertIn('original component-change flag getter', result['executed'])
+        self.assertIn('component-change RAM flags initialized to zero', result['modeled'])
+        self.assertNotIn('other components disabled', result['modeled'])
 
     def test_precheck_matches_independent_spec(self):
         cases=[self.data,b'BAD!'+self.data[4:],self.data[:-2]+b'xx',self.data[:3],self.data[:-1]]

@@ -26,6 +26,32 @@ class EngineTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'Emulation stopped'): ep.execute(uc,0x1000)
 
 
+    def test_loader_rejects_access_hidden_in_page_padding(self):
+        def loader(*words):
+            return bytes(0x25c) + struct.pack('<' + 'I' * len(words), *words)
+        # Write one byte beyond a one-byte output, then return the expected size.
+        code = loader(0xe5c02001, 0xe3a00001, 0xe12fff1e)
+        with self.assertRaisesRegex(ValueError, 'exact byte bounds'):
+            ep.decode_loader(code, b'A', 1)
+        # A word store starts in range but crosses the byte-sized output end.
+        code = loader(0xe5802000, 0xe3a00001, 0xe12fff1e)
+        with self.assertRaisesRegex(ValueError, 'exact byte bounds'):
+            ep.decode_loader(code, b'A', 1)
+        # Read before the supplied source, inside the mapped prefix padding.
+        code = loader(0xe5513001, 0xe3a00001, 0xe12fff1e)
+        with self.assertRaisesRegex(ValueError, 'exact byte bounds'):
+            ep.decode_loader(code, b'A', 1)
+        # Output reads must not consume mapped padding either.
+        code = loader(0xe5d03001, 0xe5c03000, 0xe3a00001, 0xe12fff1e)
+        with self.assertRaisesRegex(ValueError, 'exact byte bounds'):
+            ep.decode_loader(code, b'A', 1)
+        # In-range copy still succeeds and reports the observed access extents.
+        code = loader(0xe5d13000, 0xe5c03000, 0xe3a00001, 0xe12fff1e)
+        result, report = ep.decode_loader(code, b'A', 1)
+        self.assertEqual(result, b'A')
+        self.assertEqual(report['access_bounds'], {'source_read_end': 1, 'output_write_end': 1, 'output_read_end': 0})
+
+
 @unittest.skipUnless(AVAILABLE and IMAGE,'Opt-in user-acquired firmware required')
 class FirmwareEmulationTests(unittest.TestCase):
     @classmethod
