@@ -134,3 +134,30 @@ The heartbeat `ic-7300-development-and-pr-review` runs every two hours.
   command eligibility with matching identifiers, and any selected component
   handshake. No candidate exists. Target/market confirmation and current backup
   observations remain pending; do not re-ask broad approval or perform device I/O.
+
+
+2026-09-28 layout and eligibility increment:
+
+- PR #44 merged after exact-head independent review, Linux/macOS CI and the full
+  desktop profile (125 Python tests, zero skips). Local index:
+  `artifacts/pr44-validation-index.json`. Baseline `8f8e921` has the identical
+  tested tree; saved report hashes rechecked before this increment.
+- [UI producer mapping](../research/update-ui-producers.md) narrows normal update
+  eligibility to two payload predicates and the writer of handshake value 1.
+  Seeded-state traces do not establish normal same-version installation.
+- The exact stock-update record supports local preparation while market remains
+  UNKNOWN; resolve concrete compatibility conflicts, retain current-observation
+  and exact-owner-decision requirements before installation.
+- Local unpublished packing copy fixes audit-name durability and error-cleanup
+  ordering. Independent review and nine synthetic primitive/durability tests
+  passed; the historical unpublished CLI test is excluded, not counted as pass.
+  Local record: `artifacts/local-packing-review-20260928T0407/validation-final.json`.
+  The original dirty tool is unchanged and real-image policy remains blocked.
+- No candidate exists; full exact-candidate acceptance/write/failure checks and
+  the owner's decision package remain outstanding. Recovery #11 and native
+  performance remain open.
+
+- [Font metrics](../research/label-font-metrics.md) favor the two-character
+  `Informaiton` proposal: both embedded fonts preserve advance and outer ink
+  bounds. Next integrate descriptor/consumer and live-row evidence into a narrow
+  policy review; static extents do not establish final rendered pixels.

@@ -4,12 +4,15 @@ import argparse
 from pathlib import Path
 import struct
 
-from emulate_platform import APP_BASE, engine, inputs
+from emulate_platform import APP_BASE, RETURN, engine, inputs
 from firmware import digest, revision
 from reporting import atomic_json
 from updater_stages import header_precheck, payload_precheck
 
 COMMANDS = {38: 0x200253f4, 39: 0x20025650, 11: 0x20025ae4}
+APP_SHA256 = '4686728c9d1f7249b6278a29686a40b8fa5e527bd2428a76a33cd9395178c9a4'
+UI_CASES = ((0x35, 0, 0), (0x39, 0, 0), (0x3a, 0, 0),
+            (0x3a, 0, 39), (0x3b, 0, 0), (0x3b, 1, 0))
 TOOL_FILES = ('update_dispatch.py', 'emulate_platform.py', 'updater_stages.py',
               'firmware.py', 'reporting.py')
 
@@ -44,6 +47,56 @@ def dispatch(app, command):
                 modeled=['command field at synthetic context +0x44', 'private RAM/register state'])
 
 
+def ui_transition(app, state, handshake, command):
+    """Execute one reviewed UI turn with seeded state, stopping before producers."""
+    if (state, handshake, command) not in UI_CASES:
+        raise ValueError('Unreviewed UI stimulus')
+    if digest(app) != APP_SHA256:
+        raise ValueError('UI probe requires the exact v1.42 application')
+    machine, u, a = engine()
+    machine.mem_map(0x20000000, 0x600000)
+    machine.mem_write(APP_BASE, app)
+    ui, context, signal = 0x20390368, 0x2039011c, 0x20390308
+    machine.mem_write(ui, bytes([state]))
+    machine.mem_write(signal, bytes([handshake]))
+    machine.mem_write(context + 0x44, struct.pack('<I', command))
+    stop = {}
+    instructions = 0
+    boundaries = {0x20022f78: 'header-command producer',
+                  0x20059090: 'unresolved payload eligibility predicate',
+                  0x20022fc0: 'main-update command producer'}
+
+    def code(uc, address, width, user):
+        nonlocal instructions
+        if address in boundaries:
+            stop.update(reason='unexecuted helper boundary', pc=hex(address),
+                        boundary=boundaries[address])
+            uc.emu_stop()
+        elif not (0x2005b2a0 <= address < 0x2005b4d0 or 0x20023414 <= address < 0x2002344c):
+            raise ValueError('Unreviewed UI execution')
+        else:
+            instructions += 1
+
+    machine.hook_add(u.UC_HOOK_CODE, code)
+    machine.emu_start(0x2005b2a0, RETURN, count=300, timeout=1000000)
+    pc = machine.reg_read(a.UC_ARM_REG_PC)
+    if not stop:
+        if pc != RETURN:
+            raise ValueError('UI turn did not finish within limits')
+        stop.update(reason='returned', pc=hex(pc))
+    final_command = struct.unpack('<I', machine.mem_read(context + 0x44, 4))[0]
+    if final_command != command:
+        raise ValueError('Bounded UI probe unexpectedly wrote a command')
+    return dict(initial_ui_state=hex(state), initial_handshake=handshake,
+                initial_command=command, final_ui_state=hex(machine.mem_read(ui, 1)[0]),
+                final_command=final_command, stop=stop, executed_instructions=instructions,
+                limits=dict(instructions=300, wall_seconds=1),
+                actual_ui_reachability_proven=False, producer_executed=False,
+                modeled=['seeded UI state, command status and handshake', 'private RAM/register state'],
+                limitations=['Normal UI entry, confirmations and handshake origin are unestablished.',
+                             'No unknown helper is modeled as success; stops do not constitute command submission.'])
+
+
 def _report(image):
     data, _, app, _ = inputs(image)  # Exact hash/version trace gate before execution.
     import capstone
@@ -60,12 +113,13 @@ def _report(image):
                 header_cases=headers,
                 equal_component_payload=payload_precheck(app, data, flags=tuple(headers['equal']['component_change_flags'])),
                 dispatch_cases={str(command): dispatch(app, command) for command in COMMANDS},
+                ui_transition_cases=[ui_transition(app, *case) for case in UI_CASES],
                 same_version_reinstall_proven=False,
                 limitations=[
                     'Installed component identifiers are synthetic RAM stimuli, not public Main CPU version state.',
                     'Numeric-difference cases test identifier equality behavior, not authorized downgrade acceptance.',
                     'Header/payload checks execute separately with file/hash/comparison helpers modeled.',
-                    'Command state is injected; UI/event producer and command progression are unexecuted.',
+                    'Dispatch command and local UI states are seeded; normal UI entry and producer eligibility remain unproven.',
                     'Dispatch stops before the callee; no coherent end-to-end installation path is simulated.',
                     'No same-version installation, custom-to-stock restoration, component writes or recovery is established.'])
 

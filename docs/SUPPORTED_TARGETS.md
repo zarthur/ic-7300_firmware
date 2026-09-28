@@ -38,3 +38,20 @@ This confirms the stock update path on that radio, not flash readback, regional
 qualification or failed-application recovery. Firmware 1.42 remains the research
 base; there is no supported custom install image or proven recovery procedure.
 Real-image packing stays disabled and TX is not authorized. Region-specific compatibility and operator rules remain open work.
+
+## Local first-candidate preparation
+
+The recorded successful owner update with the exact pinned image is sufficient
+for continued offline preparation on that base while the market remains UNKNOWN.
+It does not qualify geographic variants generally or authorize installation.
+Before local construction, resolve any concrete compatibility conflict discovered
+by research (a different required image, region-dependent patch semantics, changed
+radio or incompatible component identifiers). An unknown market label alone is
+not such a conflict. The display site and exact candidate must still pass the
+gates in [FIRST_CUSTOM_FIRMWARE.md](FIRST_CUSTOM_FIRMWARE.md).
+
+Before presenting the installation decision, assemble current stock observations,
+backup coverage and conditional restoration steps. The owner's later explicit
+decision must identify the same original radio and exact candidate. Unknown
+market qualification, unproven failed-boot recovery and uncovered storage remain
+disclosed; #7 and #11 stay open.
