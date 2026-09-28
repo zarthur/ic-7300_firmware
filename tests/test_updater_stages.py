@@ -83,8 +83,17 @@ class UpdaterStageTests(unittest.TestCase):
         result = stage.main_update(self.app, self.data)
         self.assertTrue(result['accepted'])
         self.assertIn('original component-change flag getter', result['executed'])
+        self.assertEqual(result['component_getter_indices'], [0, 1, 2])
         self.assertIn('component-change RAM flags initialized to zero', result['modeled'])
         self.assertNotIn('other components disabled', result['modeled'])
+
+    def test_failure_before_component_dispatch_does_not_claim_getter_execution(self):
+        for options in ({'transfer_failure': 1}, {'transfer_failure': 2}, {'corrupt_transfer': True}):
+            with self.subTest(options=options):
+                result = stage.main_update(self.app, self.data, **options)
+                self.assertFalse(result['accepted'])
+                self.assertEqual(result['component_getter_indices'], [])
+                self.assertNotIn('original component-change flag getter', result['executed'])
 
     def test_precheck_matches_independent_spec(self):
         cases=[self.data,b'BAD!'+self.data[4:],self.data[:-2]+b'xx',self.data[:3],self.data[:-1]]

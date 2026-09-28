@@ -35,6 +35,7 @@ def _file_check(app, container, *, installed_ids=None, read_failure=None, seek_f
     if main_selector is not None: uc.mem_write(0x20390398,bytes([main_selector]))
     contexts={};finalized=[];transfers=0
     events=[];position=0;reads=0
+    component_getter_indices=[]
     regs=(a.UC_ARM_REG_R0,a.UC_ARM_REG_R1,a.UC_ARM_REG_R2,a.UC_ARM_REG_R3)
     hooks={0x200bc5f4,0x200bc6a4,0x200bc754,0x200bc64c,0x200214b0,0x2017c81e}
     if payload_flags is not None or main_selector is not None:
@@ -43,6 +44,8 @@ def _file_check(app, container, *, installed_ids=None, read_failure=None, seek_f
         hooks.update((0x20037604,0x20024db8,0x20024d60))
     def hook(machine,address,size,user):
         nonlocal position,reads,transfers
+        if main_selector is not None and address == 0x20021ff0:
+            component_getter_indices.append(machine.reg_read(a.UC_ARM_REG_R0))
         if address in hooks:
             r0,r1,r2,r3=[uc.reg_read(reg) for reg in regs];result=0
             if address==0x200bc5f4:
@@ -103,7 +106,8 @@ def _file_check(app, container, *, installed_ids=None, read_failure=None, seek_f
     code=uc.reg_read(a.UC_ARM_REG_R0)
     return {'accepted':code==0,'return_code':code,'component_change_flags':list(uc.mem_read(0x2039013a,3)) if code==0 and main_selector is None else None,
             'finalized_md5':finalized,
-            'events':events,'executed':(['main-update caller control flow','original component-change flag getter'] if main_selector is not None else ['payload read/hash/compare control flow'] if payload_flags is not None else
+            'component_getter_indices':component_getter_indices,
+            'events':events,'executed':(['main-update caller control flow'] + (['original component-change flag getter'] if component_getter_indices else []) if main_selector is not None else ['payload read/hash/compare control flow'] if payload_flags is not None else
             ['header precheck','character bitmap predicate','magic/trailer checker']),
             'modeled':['file open/read/seek/close','identity status translation','memcmp equality',
                        'installed component identifiers in RAM']+(['MD5 context/update/finalize','unsigned progress division'] if payload_flags is not None or main_selector is not None else [])+(['main transfers and changed flags','update setup','component-change RAM flags initialized to zero','activation routine call boundary'] if main_selector is not None else []),
