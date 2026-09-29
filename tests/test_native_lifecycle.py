@@ -18,6 +18,10 @@ class SyntheticLifecycleTests(unittest.TestCase):
         for channel, statuses in (('other',[0]),('receive_ch3',[]),('receive_ch3',[True]),('receive_ch3',[-1]),('receive_ch3',[1<<32])):
             with self.assertRaises(ValueError):lifecycle.decision_probe(b'unknown',channel,statuses)
         with self.assertRaises(ValueError):lifecycle.queue_reset_probe(b'unknown','flush',8,0)
+        with self.assertRaisesRegex(ValueError, 'exact pinned'):
+            lifecycle.configuration_probe(b'unknown', [0])
+        for modes in ([], [True], [-1], [1 << 32], ['0']):
+            with self.assertRaises(ValueError): lifecycle.configuration_probe(b'unknown', modes)
 
     def test_source_mutation_invalidates_evidence(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -57,5 +61,21 @@ class FirmwareLifecycleTests(unittest.TestCase):
                 self.assertEqual((row['producer'],row['consumer']),(0,0))
                 self.assertTrue(row['payload_unchanged'])
                 self.assertEqual(row['writes'],[{'offset':576,'size':1},{'offset':577,'size':1}])
+
+    def test_fifo_configuration_does_not_write_tdm_mode(self):
+        for row in lifecycle.configuration_probe(self.app, [0, 1, 0x100, 0x101, 0xffffffff]):
+            stages = row['stages']
+            self.assertEqual([s['name'] for s in stages],
+                             ['setup', 'clear_status', 'start_prefix', 'stop_prefix'])
+            for stage in stages:
+                self.assertEqual(stage['ssitdmr'], row['input_mode'])
+                self.assertEqual(stage['other_ssitdmr'], row['input_mode'])
+            # Actual stores separate FIFO reset (bits 1:0) from enabling
+            # reception, and status +0x14 from TDM mode +0x20.
+            self.assertEqual([s['ssifcr'] for s in stages], [0xc3, 0xc3, 0xcc, 0xc0])
+            self.assertEqual([s['ssicr'] & 3 for s in stages], [0, 0, 3, 0])
+            self.assertEqual(stages[1]['writes'], [
+                {'address': a, 'value': 0} for a in
+                (0xe820b004, 0xe820b804, 0xe820b014, 0xe820b814)])
 
 if __name__=='__main__':unittest.main()

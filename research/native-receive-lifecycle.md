@@ -49,6 +49,32 @@ or queue state unchanged. Callee effects and physical stop/start completion are
 outside the bounded call-flow walk. Aligned direct cross-reference candidates
 identify the three handler branches into restart; indirect callers remain possible.
 
+## FIFO configuration boundaries
+
+The tool also executes four separate original store slices against private
+memory at the peripheral addresses. This records configuration writes without
+inventing hardware completion, FIFO contents or successful synchronization:
+
+| Slice | Original writes relevant to SSIF0 |
+| --- | --- |
+| `0x2005fe54..0x2005fe64` | SSICR=`0x002b0030`, SSIFCR=`0xc3`: receive/transmit disabled, both FIFO resets asserted |
+| `0x2005fefc..0x2005ff14` | Clear SSISR (`+4`) and SSIFSR (`+0x14`) for SSIF0 and SSIF1 |
+| `0x20060044..0x2006005c` | SSIFCR=`0xcc`, SSICR=`0x3c2b0033`, SSIFTDR=0: release FIFO reset, enable receive/transmit and FIFO requests |
+| `0x2006050c..0x20060524` | SSIFCR=`0xc0`, SSICR=`0x022b0030`: disable requests and receive/transmit, without asserting FIFO reset in this prefix |
+
+Renesas register table 19.2 places **SSIFSR at `+0x14` and SSITDMR at `+0x20`**.
+The earlier interface-map description of `+0x14` as a mode register was wrong.
+Tests seed both channels' SSITDMR with zero, nonzero mode bits and all-one data;
+all four slices preserve these words. Clearing FIFO status therefore does not
+establish normal two-channel mode. Module-reset behavior or other initialization
+must qualify that mode separately.
+
+The status-clear slice receives the base registers established earlier in setup.
+Intervening pin configuration, helpers and hardware waits are not executed.
+Exact writes and preservation of surrounding bytes are checked. The start
+prefix precedes delay and sync-input polling before DMA enable; neither these
+stores nor the FIFO reset alone prove which channel occupies the first DMA word.
+
 ## Queue lifecycle is different
 
 Original initialization `0x2005fac4` sets the A queue's producer and consumer

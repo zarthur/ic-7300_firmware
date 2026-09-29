@@ -64,6 +64,59 @@ def queue_reset_probe(app, operation, producer, consumer):
     return result
 
 
+def configuration_probe(app, mode_values):
+    """Execute separate original store slices in synthetic register memory.
+
+    Deliberately retain supplied SSITDMR values, including non-default modes.
+    No peripheral effects, waits, pin setup or DMA enable are simulated.
+    """
+    if not isinstance(mode_values, (list, tuple)) or not mode_values or any(
+            type(v) is not int or not 0 <= v <= 0xffffffff for v in mode_values):
+        raise ValueError('Require nonempty uint32 mode fixtures')
+    base = 0xe820b000
+    h = Isolated(app, [(0x2005fe54, 0x2005fe68), (0x2005fefc, 0x2005ff18),
+                      (0x20060044, 0x20060060), (0x2006050c, 0x20060528)],
+                 [(base, 0x24), (base+0x800, 0x24)])
+    boundaries = [
+        ('setup', 0x2005fe54, 0x2005fe68, [(base, 0x2b0030), (base+0x10, 0xc3)]),
+        ('clear_status', 0x2005fefc, 0x2005ff18,
+         [(base+4, 0), (base+0x804, 0), (base+0x14, 0), (base+0x814, 0)]),
+        ('start_prefix', 0x20060044, 0x20060060,
+         [(base+0x10, 0xcc), (base, 0x3c2b0033), (base+0x18, 0)]),
+        ('stop_prefix', 0x2006050c, 0x20060528,
+         [(base+0x10, 0xc0), (base, 0x22b0030)])]
+    rows = []
+    for mode in mode_values:
+        for region in (base, base+0x800):
+            h.uc.mem_write(region, b'\xa5'*32+struct.pack('<I', mode))
+        stages = []
+        for name, entry, stop, expected_writes in boundaries:
+            before = {r: bytearray(h.uc.mem_read(r, 0x24)) for r in (base, base+0x800)}
+            if name == 'clear_status':
+                h.uc.reg_write(h.a.UC_ARM_REG_R11, base)
+                h.uc.reg_write(h.a.UC_ARM_REG_R1, base+0x810)
+            h.accesses.clear()
+            h.run(entry, stop=stop)
+            writes = [(a, n) for k, a, n in h.accesses if k == h.u.UC_MEM_WRITE]
+            if writes != [(a, 4) for a, _ in expected_writes] or any(
+                    k == h.u.UC_MEM_READ for k, _, _ in h.accesses):
+                raise ValueError('Unexpected SSIF configuration access')
+            for region, expected in before.items():
+                for a, value in expected_writes:
+                    if region <= a < region+len(expected):
+                        struct.pack_into('<I', expected, a-region, value)
+                if bytes(h.uc.mem_read(region, len(expected))) != bytes(expected):
+                    raise ValueError('Unexpected SSIF register or guard change')
+            stages.append({'name': name,
+                           'writes': [{'address': a, 'value': v} for a, v in expected_writes],
+                           'ssicr': struct.unpack('<I', h.uc.mem_read(base, 4))[0],
+                           'ssifcr': struct.unpack('<I', h.uc.mem_read(base+0x10, 4))[0],
+                           'ssitdmr': struct.unpack('<I', h.uc.mem_read(base+0x20, 4))[0],
+                           'other_ssitdmr': struct.unpack('<I', h.uc.mem_read(base+0x820, 4))[0]})
+        rows.append({'input_mode': mode, 'stages': stages})
+    return rows
+
+
 def tool_hashes():
     return dict(receive_hashes(), native_lifecycle=digest(Path(__file__).read_bytes()))
 
@@ -75,6 +128,7 @@ def _report(image):
             'handler_decisions': {name: decision_probe(app, name, statuses) for name in HANDLERS},
             'queue_resets': {f'{op}_{w}_{r}': queue_reset_probe(app, op, w, r)
                              for op in ('initialize','flush') for w in range(8) for r in range(8)},
+            'configuration': configuration_probe(app, [0, 1, 0x100, 0x101, 0xffffffff]),
             'original_flow': {name: walk(app, APP_BASE, lo, hi) for name, lo, hi in (
                 ('cold_start',0x200605fc,0x20060614), ('shared_restart',RESTART,0x200605fc),
                 ('service_gate_and_dispatch',0x20005bd4,0x20005bf0))},
@@ -82,6 +136,7 @@ def _report(image):
                        'Handler execution stops before acknowledgment/cache/data processing or at shared restart entry.',
                        'The shared restart body is statically walked; its callees and physical completion are not simulated.',
                        'Queue reset tests execute original stores only in private synthetic RAM.',
+                       'Configuration slices execute separately against synthetic register memory; waits, reset effects and DMA startup are not simulated.',
                        'Aligned direct callers are evidence, not an exhaustive indirect-call inventory.']}
 
 
