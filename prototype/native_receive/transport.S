@@ -21,18 +21,18 @@ receive_transport:
     mov r7, r3
     ldr r0, [r7, #4]
     cmp r0, #1
-    bhi passthrough
+    bhi .Ltransport_passthrough
     ldr r0, [r6]
     cmp r0, #2
-    bne passthrough
+    bne .Ltransport_passthrough
     dmb sy
     ldr r0, [r6, #4]
     cmp r0, #512
-    bne invalid
+    bne .Ltransport_invalid
     ldr r8, [r7]
     movw r0, #470
     cmp r8, r0
-    bhs invalid
+    bhs .Ltransport_invalid
     add r1, r8, r8, lsl #1
     lsl r1, r1, #6
     movw r2, #0x6010
@@ -56,23 +56,23 @@ receive_transport:
     movt r10, #0x811c
     movw r11, #0x193
     movt r11, #0x100
-payload:
+.Ltransport_payload:
     ldrb ip, [r1], #1
     strb ip, [r0], #1
     eor r10, r10, ip
     mul r10, r10, r11
     subs r2, r2, #1
-    bne payload
+    bne .Ltransport_payload
     str r10, [r4, #20]
     rsb r2, r9, #192
     mov r1, #0
     cmp r2, #0
-    beq published
-padding:
+    beq .Ltransport_published
+.Ltransport_padding:
     strb r1, [r0], #1
     subs r2, r2, #1
-    bne padding
-published:
+    bne .Ltransport_padding
+.Ltransport_published:
     add r8, r8, #1
     str r8, [r7]
     movw r0, #470
@@ -83,18 +83,18 @@ published:
     str r0, [r7, #4]
     mov r0, r4
     pop {r4-r11, ip, pc}
-invalid:
+.Ltransport_invalid:
     mov r0, #3
     str r0, [r7, #4]
-passthrough:
+.Ltransport_passthrough:
     mov r0, r4
     mov r1, r5
     mov r2, #216
-original:
+.Ltransport_original:
     ldrb r3, [r1], #1
     strb r3, [r0], #1
     subs r2, r2, #1
-    bne original
+    bne .Ltransport_original
     mov r0, r4
     pop {r4-r11, ip, pc}
 .size receive_transport, .-receive_transport
