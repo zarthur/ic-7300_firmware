@@ -84,6 +84,12 @@ class FirmwareReceiveTests(unittest.TestCase):
         cls.result = probe.report(Path(IMAGE))
         _, _, cls.app, _ = probe.inputs(Path(IMAGE))
 
+    def test_second_queue_meter_owns_its_read_cursor(self):
+        for name, expected in [('negative_full_scale',32767),('hold_peak',100),('silence',0),('empty',123)]:
+            result = self.result['second_queue_meter'][name]
+            self.assertEqual(result['peak'],expected)
+            self.assertEqual(result['cursors'],[0,7,0] if name=='empty' else [1,7,1])
+
     def test_original_recording_header_writer(self):
         row = self.result['record_format_writer']
         self.assertEqual(row['r0'], 24)

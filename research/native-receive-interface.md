@@ -83,7 +83,7 @@ pre/post-AF gain placement.
 | Coherency | Acknowledges status/rearms, invalidates eighteen 32-byte cache lines with a barrier for each | A future hook must respect this ordering and finish before the bank is reused. |
 | Extraction `0x20060690..0x200606d4` | For `i=0..35`, retains upper 16 bits of words at bank offsets `16*i` and `16*i+4`; ignores words `+8/+12` | Two planar 72-byte arrays at `0x203fc48a` and `0x203fc4d2`; every other stereo frame omitted. The low eight valid bits of each 24-bit word are discarded. |
 | First queue | Base `0x203fbdc0`, eight 72-byte slots; producer byte `+0x240`, consumer byte `+0x241` | Original producer/consumer own these cursors. A new consumer cannot share/advance them. |
-| Second queue | Base `0x203fc002`, eight 72-byte slots; producer `+0x240`, read cursors `+0x241/+0x242` | Separate cursor selection exists here; no unused cursor has been established for an adapter. |
+| Second queue | Base `0x203fc002`, eight 72-byte slots; producer `+0x240`, read cursors `+0x241/+0x242` | Both cursors have consumers: recording and peak metering; see the [ownership follow-up](native-receive-memory.md). |
 | Recorder publication | `0x20066f18`: 1914 slots of 220 bytes at `0x204a0600`; 216-byte payload at slot+4; producer halfword `0x205072da`, consumer `0x205072d8` | Metadata/recording gates make this unsuitable as an assumed uninterrupted PCM feed. |
 
 The 16-bit samples are stored little-endian; downstream arithmetic treats them
@@ -159,7 +159,8 @@ before the queue pushes** at `0x200606d4`. A prospective adapter copies samples;
 it never changes original cursors, DMA registers, buffer ownership, recorder
 state, or the returned register/stack state. Decoder, filesystem and UI work
 must remain outside this interrupt path. Storage requires an owned region or
-verified allocator; none is designated by this map.
+verified allocation context; the [memory study](native-receive-memory.md) maps
+a shared allocator and padding candidate, but does not reserve either for capture.
 
 A diagnostic block needs a version, continuity epoch, monotonically increasing
 sequence/sample index, raw timer observation, timer frequency/epoch validity,

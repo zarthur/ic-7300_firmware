@@ -44,3 +44,8 @@ restart at the file reader or mistake this milestone for the whole goal.
 The [timing follow-up](../research/native-receive-timing.md) recovers intended
 clock scale and rollover semantics. Delay-timer reuse and pending interrupts
 prevent treating the recovered raw values as a continuous acquisition clock.
+
+The [memory/cursor follow-up](../research/native-receive-memory.md) identifies
+the shared allocator and occupied framebuffer, tests allocation failure/reuse,
+and verifies both second-queue cursors have consumers. Qualify diagnostic
+placement and export next; no native capture has been collected yet.

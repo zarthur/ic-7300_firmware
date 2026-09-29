@@ -21,7 +21,7 @@ SYNTHETIC_TESTS = (
     'test_emulation.EngineTests', 'test_firmware',
     'test_platform_evidence', 'test_receive_capture', 'test_targets',
     'test_recorder_interface.SyntheticRecorderTests', 'test_native_receive.SyntheticReceiveTests',
-    'test_native_timing.SyntheticTimingTests',
+    'test_native_timing.SyntheticTimingTests', 'test_native_memory.SyntheticMemoryTests',
     'test_controller.ControllerModelTests', 'test_update_footprint.SyntheticFootprintTests',
     'test_updater_stages.ComponentDispatchModelTests',
     'test_label_metrics.LabelMetricsModelTests',
