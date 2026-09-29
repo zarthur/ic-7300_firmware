@@ -2,8 +2,9 @@
 
 **Decision: pursue Cortex-A9 integration, conditional on recovering audio APIs,
 memory ownership and scheduling headroom.** Offline results support a compact
-FT8 implementation, but do not yet establish a bootable custom image or real-time
-operation inside Icom firmware.
+FT8 implementation. The separately authorized display-only candidate has booted
+and shown its changed label, with normal receiving reported by the owner; this
+does not establish real-time FT8 operation inside Icom firmware.
 
 ## Established evidence
 
@@ -61,15 +62,15 @@ not callable APIs. Reproduce pointer searches with tools/trace.py.
 | Update validation | MD5 init 0x2003c860; transform 0x2003c890; update 0x2003d38c; finalize candidate 0x2003d458 | Fully recover validation and write ordering |
 | Update flow | MD5 init callers 0x2002580c, 0x20025930, 0x20025d94, 0x20026040; file seek 0x2c and 16-byte comparisons visible | Determine header/trailer tests and bank selection |
 | Flash destination | At 0x20025de0..0x20025df4 selects 0x400000 or 0x10000; loader selects 0x18400000 or 0x18010000 | Possible alternate image banks; do not assume rollback/recovery |
-| Receive recording | [Bounded stored-audio study](recorder-interface.md) classifies 0x20068840 and nearby fields as file metadata; original format checker accepts tested mono PCM16 at 8 kHz | Live PCM rate, producer buffers and DMA ownership remain unknown; classify next task boundary at 0x2006bfd4 |
+| Receive recording | [Native path study](native-receive-interface.md) follows 0x2006bfd4 file playback to the separate recording producer, SSIF0 DMA and PCM16 queues | Resolve channel/gain semantics, timer/sample alignment and owned diagnostic capture storage; nominal 48 kHz is inferred, not measured |
 | Voice playback | 0x2006a90c scans eight voice files; literal load 0x2006a944 and calls 0x20068c50/0x20068dfc | Recover stream format, queue ownership, start/stop and sample rate |
 | GUI/settings | Firmware Update, Time Set, PTT and voice controls have string/table references in address-map.json | Decode widget descriptors, callbacks and persistence layout |
 | DSP transport | Service diagram signals and recorder paths | Recover framing, handshakes and data ownership |
 | RTC/timers/scheduler | RTC identified; reset vector and startup calls mapped | Locate driver, timer frequency, task creation and priority scheme |
 | TX/PTT | Voice playback and PTT UI references | Recover transmit lifecycle and cancellation callback |
 
-Full audio buffer addresses, task priorities, allocation regions, RTC driver and
-transmit entry points have not been identified. Ghidra import support is supplied
+Receive DMA/queue addresses are now mapped; task priorities, owned adapter
+allocation, RTC driver and transmit entry points remain unresolved. Ghidra import support is supplied
 but Ghidra was unavailable; the script remains unexecuted. Capstone validates the
 recorded instruction evidence and xref candidates, not a complete decompilation.
 
@@ -94,15 +95,13 @@ output completion before advancing terminal QSO states.
 
 Use [the active work queue](../docs/NEXT_STEPS.md) and
 [first-test policy](../docs/FIRST_CUSTOM_FIRMWARE.md) for current execution order.
-The local display-only candidate has a reviewed conditional decision draft;
-current-radio observations, backup evidence and an exact owner decision remain
-pending. The earlier unconditional independent-recovery prerequisite is superseded
-by that candidate-specific policy; recovery itself remains unproven.
+The authorized display-only test and wrap-up are complete; see
+[first-custom-boot.md](first-custom-boot.md). Stock return and failed-boot recovery
+remain unproven.
 
-1. Finish readiness evidence for the existing visible-only experiment. Preserve
-   unresolved physical effects and restoration limits in the exact decision.
-2. Resolve one recorder-to-buffer path: sample format/rate, ownership, lifecycle,
-   task and timestamp boundaries. A host USB stream is not the native interface.
+1. Preserve the display test's private manifests and current installed-image record.
+2. Complete [native receive interface recovery](native-receive-interface.md): the
+   static data path is mapped, but channel/gain and acquisition timing are open.
 3. Design bounded codec/adapter storage, then measure available RAM, stack peaks
    and execution time on target under radio load through separately authorized
    instrumentation. The estimated 384 KiB codec workspace is not proven free RAM.
@@ -111,7 +110,6 @@ by that candidate-specific policy; recovery itself remains unproven.
 5. Plan timed transmission separately after audio/PTT, timing, operator-control
    and measurement requirements are satisfied.
 
-Codec interoperability and container extraction are demonstrated. Spare runtime
-resources, native audio integration, physical modified-image acceptance and
-failed-boot recovery remain unproven. The private candidate is not an authorized
-installation or a supported release.
+Codec interoperability, container extraction and one exact display-only image
+installation are demonstrated. Spare runtime resources, native audio integration
+and failed-boot recovery remain unproven. No supported firmware release exists.
