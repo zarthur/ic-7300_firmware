@@ -56,7 +56,7 @@ live receive subscription.
 
 ```mermaid
 flowchart TD
-    DSP["DSP / board DR_AF serial net"] --> SSI["SSIF0 RX FIFO 0xe820b01c"]
+    DSP["DSP / board DX_REC serial net"] --> SSI["SSIF0 RX FIFO 0xe820b01c"]
     SSI --> DMA["DMAC channel 3: two 576-byte banks"]
     DMA --> EX["0x20060614: acknowledge, invalidate cache, split"]
     EX --> A["stream A: 36 × 16-bit samples"]
@@ -68,9 +68,25 @@ flowchart TD
     RING --> FILE["file worker / SD writer"]
 ```
 
-The DR_AF name belongs to the physical serial wire, which carries both extracted
-streams. It does not by itself identify stream A/B as receive/transmit or prove
-pre/post-AF gain placement.
+The DX_REC name belongs to the physical serial wire, which carries both extracted
+streams. The earlier DR_AF label here was incorrect: the service schematic
+(PDF page 64) connects DX_REC to CPU pin 190, P2_10, and DR_AF to pin 191,
+P2_11. The Renesas hardware manual's pin table (PDF page 94, printed 1-32)
+identifies function 4 on these pins as SSIRxD0 and SSITxD0 respectively.
+The DSP schematic (service PDF page 66) connects DX_REC through R924 to
+DSP pin 116; DR_AF connects to pin 117. This is a schematic connection,
+not a measurement of every fitted board revision. The net name does not by
+itself identify stream A/B as receive/transmit or prove pre/post-AF gain placement.
+
+Private DSP configuration analysis places pin 116 on transmit serializer 4.
+The conditional output-transfer model associates that serializer with context
+offsets 384 and 416, whose reviewed conversion suffix repeats adjacent samples.
+That repetition is compatible with native samples having no adjacent duplicates:
+the CPU extraction below drops alternate stereo frames. Original extraction
+tested with repeated synthetic frames yields distinct samples for both pair
+phases and both channel orders. Thus absence of duplicates in native A cannot
+exclude this DSP source without accounting for CPU decimation. Transfer/FIFO
+ordering, frame polarity and full producer behavior still require qualification.
 
 ## Format, DMA and buffer ownership
 

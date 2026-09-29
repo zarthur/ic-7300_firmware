@@ -138,6 +138,24 @@ class FirmwareReceiveTests(unittest.TestCase):
             self.assertEqual(bytes.fromhex(result['stream_a_hex']), expected_a)
             self.assertEqual(bytes.fromhex(result['stream_b_hex']), expected_b)
 
+    def test_duplicate_wire_frames_do_not_imply_duplicate_native_samples(self):
+        # Model repetition upstream of the actual CPU extractor. Both possible
+        # pair phases must survive alternate-frame omission without repeating
+        # native samples; this does not assert a physical DSP channel order.
+        channels = [[-15000+701*i for i in range(37)],
+                    [12000-619*i for i in range(37)]]
+        for bank in (0, 1):
+            for phase in (0, 1):
+                for swap in (False, True):
+                    ordered = channels[::-1] if swap else channels
+                    words = [((c[(frame+phase)//2] & 65535) << 16) | 0x5a00
+                             for frame in range(72) for c in ordered]
+                    result = probe.split_probe(self.app, bank, struct.pack('<144I', *words))
+                    for field, expected in zip(('stream_a_hex', 'stream_b_hex'), ordered):
+                        actual = struct.unpack('<36h', bytes.fromhex(result[field]))
+                        self.assertEqual(actual, tuple(expected[:36]), (bank, phase, swap, field))
+                        self.assertTrue(all(a != b for a, b in zip(actual, actual[1:])))
+
     def test_publication_wrap_disable_and_next_slot_invalidation(self):
         for index in (0, 1913):
             for enabled in (0, 1):
