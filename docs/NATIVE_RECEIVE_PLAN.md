@@ -25,13 +25,14 @@ whole objective.
 6. Validate affected tests and the full desktop profile, review evidence against
    each required property, and integrate documented results with passing CI.
 
-This work opens no radio, audio, serial, or firmware-write interface. Existing
-approval covered the completed display-only test; any new target instrumentation
-requires a concrete separately reviewed scope. Hardware observations cannot be
+The original offline investigation opened no radio, audio, serial, or firmware-write
+interface. The subsequent exact receive diagnostic was separately approved and
+installed by the owner; the first target result is linked below. Further changes
+require a concrete scope appropriate to their effects. Hardware observations cannot be
 fabricated by emulation. Keep the goal active if required interface properties
 remain unresolved and continue from the next evidence-backed boundary.
 
-## First milestone
+## Milestones (each records the evidence available at that stage)
 
 The [interface map](../research/native-receive-interface.md) completes initial
 classification and establishes a reproducible live DMA-to-recorder chain. The
@@ -77,3 +78,10 @@ qualifies original selection and byte copying across partial 4 KiB writes, ring
 wrap and file-tag changes. All 470 synthetic fragments reconstruct exactly after
 batching. Submission/completion and actual SD output remain target observations;
 this is not a whole-recorder simulation.
+
+The [first target capture](../research/native-receive-target-capture.md) now passes
+complete WAV and carrier validation: 512 blocks, alternating banks, timer-relative
+48 kHz cadence and 3,024 exact recorder samples identifying stream A at unity gain
+in USB-D. Owner reports normal restart/reception at 7.074 MHz with no settings
+changes. Continue with gain/control dependence and lifecycle/discontinuity
+semantics; do not mistake this bounded success for all-mode/runtime qualification.
