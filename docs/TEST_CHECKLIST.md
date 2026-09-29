@@ -45,5 +45,4 @@ data outside Git; reference hashes and local evidence instead.
 - Limitations: synthetic tracing validation is covered; no radio, recovery,
   regional qualification or real-time feasibility is established.
 - Outcome: PASS for desktop acceptance, recorded by Codex. Human hardware approval
-  is not implied. Issue #7 regional qualification and #8 qualified legal review
-  remain outstanding.
+  is not implied. Issue #7 regional qualification remains outstanding.

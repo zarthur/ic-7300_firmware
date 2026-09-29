@@ -29,7 +29,7 @@ Commands fail closed for unknown or altered images, including unregistered
 regional and IC-7300MK2 images. Recognizing a research image does not qualify any
 regional radio for installation. Adding a target
 requires a separately reviewed issue covering provenance, image format, recovery
-evidence, safety tests, and legal/distribution impact.
+evidence and safety tests.
 
 ## Present scope
 

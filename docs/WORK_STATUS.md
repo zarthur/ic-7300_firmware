@@ -10,7 +10,7 @@ replace their acceptance criteria. See [the ordered work queue](NEXT_STEPS.md).
 | Issue | Established progress | Remaining acceptance / next action |
 | --- | --- | --- |
 | [#7](https://github.com/zarthur/ic-7300_firmware/issues/7) Target matrix | Published original-model matrix; exact-image gates; observed official update | Same-radio/current pre-install versions and no modifications confirmed; regional qualification remains incomplete. |
-| [#8](https://github.com/zarthur/ic-7300_firmware/issues/8) Distribution review | License, notices and publication boundary exist | Qualified review remains pending; keep packing tools, images and private evidence unpublished. |
+| [#8](https://github.com/zarthur/ic-7300_firmware/issues/8) Distribution review | License and third-party notices retained | Closed as not planned; legal review is deferred and may be revisited if needed. |
 | [#10](https://github.com/zarthur/ic-7300_firmware/issues/10) Updater semantics | Container checks, loader, selector and bounded transfer/controller/UI traces | Complete acceptance specification across supported targets; physical/task effects and complete selector-block ownership remain unknown. |
 | [#11](https://github.com/zarthur/ic-7300_firmware/issues/11) Recovery | Failure-class matrix and conditional software restoration assessment | Successful physical recovery procedure is not demonstrated; same-version/custom-to-stock return is untested. Risk acceptance does not complete this issue. |
 | [#12](https://github.com/zarthur/ic-7300_firmware/issues/12) Packer | Private constrained candidate builder/audit reviewed for one exact edit | General deterministic packer acceptance and distribution remain incomplete; preserve the narrow local policy. |
@@ -34,13 +34,13 @@ replace their acceptance criteria. See [the ordered work queue](NEXT_STEPS.md).
 | [#30](https://github.com/zarthur/ic-7300_firmware/issues/30) Phased interoperability | Desktop and stock receive comparisons | Native receive-only, dummy-load and supervised on-air phases after all TX prerequisites. |
 | [#31](https://github.com/zarthur/ic-7300_firmware/issues/31) Regression/HIL plan | Checklist, Linux/macOS synthetic CI, full desktop profile and candidate matrix | Complete firmware-keyed hardware coverage and explicit untested/failure cases. |
 | [#32](https://github.com/zarthur/ic-7300_firmware/issues/32) Operator documentation | Conditional procedure and restoration limits reviewed | Incorporate current evidence; complete applicable fresh-user dry run without claiming untested restoration. |
-| [#33](https://github.com/zarthur/ic-7300_firmware/issues/33) Prerelease | Reproducibility and provenance tooling exist | Controlled release remains downstream of validation, documentation and distribution review. |
+| [#33](https://github.com/zarthur/ic-7300_firmware/issues/33) Prerelease | Reproducibility and provenance tooling exist | Controlled release remains downstream of validation, documentation and dependency license/notice checks. |
 
 ## Epic roll-up
 
 | Issue / epic | Status |
 | --- | --- |
-| [#1 / Epic 0](https://github.com/zarthur/ic-7300_firmware/issues/1) Governance | #9 is closed; #7/#8 remain open. |
+| [#1 / Epic 0](https://github.com/zarthur/ic-7300_firmware/issues/1) Governance | #9 is closed; #8 is closed as not planned, to revisit if needed; #7 remains open. |
 | [#2 / Epic 1](https://github.com/zarthur/ic-7300_firmware/issues/2) Platform | Desktop evidence advanced; hardware acceptance for #10–#14 remains incomplete. |
 | [#3 / Epic 2](https://github.com/zarthur/ic-7300_firmware/issues/3) Interfaces | Native receive/ownership/timing are the next bounded research slice; #15–#19 remain open. |
 | [#4 / Epic 3](https://github.com/zarthur/ic-7300_firmware/issues/4) Receive | Host pipeline and studies exist; #20–#25 require target integration or explicit release decisions. |

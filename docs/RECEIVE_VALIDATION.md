@@ -277,8 +277,7 @@ they do not govern the owner's current software-only first-candidate plan.
    recovery may be accepted only for that exact experiment under the current
    policy; it does not close #11 or authorize TX. An additional conditional stock
    return must be explicitly included if proposed.
-5. Keep packing-related tooling private pending the distribution review in #8.
-   Continue bounded native audio/runtime research using existing software/evidence.
+5. Continue bounded native audio/runtime research using existing software/evidence.
 
 Labeled scope/UI/SD/combined-load scenarios remain follow-on operator sessions.
 A successful host capture does not measure the native codec under those loads.
