@@ -257,3 +257,47 @@ Firmware-free tests execute the ARM core for full, aborted and empty captures,
 verify exact recovery and ordinary audio after completion, and reject malformed,
 missing, duplicate, reordered and truncated frames. Recorder hooks, arming,
 combined placement and target validation remain separate work.
+
+### Combined v2 recorder and lifecycle hooks (offline)
+
+`tools/native_v2_recorder.py` checks one combined layout against the exact v1.42
+application and executes the original bounded paths with all ten hook sites
+installed in private emulated memory. It has no firmware or SD-card writer.
+
+| Region | Start | Bytes |
+| --- | --- | --- |
+| Capture hooks and observation cores | `0x20362000` | 1,508 |
+| Relocated lifecycle wrappers | `0x20362800` | 380 |
+| Recorder wrappers and v2 carrier | `0x20363000` | 688 |
+| Capture storage | `0x20364000` | 114,704 |
+| Live callback monitor | `0x2038f000` | 32 |
+| Export control | `0x2038f040` | 8 |
+| Lifecycle counter | `0x2038f080` | 16 |
+
+The builder rejects overlapping substitutions, mismatched original instructions,
+non-FF padding and changed embedded cores. The lifecycle code is byte-identical
+to the independently tested wrapper except for its state-address literal.
+Static non-overlap does not establish runtime ownership or target timing.
+
+At `0x200497f0`, a nonzero recorder write submission can arm the capture once.
+The wrapper masks IRQ/FIQ while requiring disabled status, zero count, correct
+v2 identity, idle/unpoisoned callback state and unused export control. It changes
+only capture status to armed, then restores all input registers, masks and
+NZCVQ/GE flags before the original submission routine. An active callback causes
+this attempt to be skipped; a later submission can try again. No lifecycle hook
+rearms or clears a capture. Arming marks a submission attempt, not successful
+filesystem completion.
+
+At `0x20066f80`, only a 216-byte copy with frozen capture status and active export
+control enters the carrier core. Other cases retain the original Thumb memcpy.
+The original publisher still handles the ring's metadata and wrap behavior.
+The recorder must serialize calls; these tests do not simulate scheduler ownership.
+
+Combined tests cover trigger guards across masks/flags, all four relocated
+lifecycle prologues including exhausted counters, full capture/export with
+lifecycle changes inside capture windows, flagged and empty nested-callback
+aborts, original publisher behavior, and actual restart-tail continuation.
+Explicit context switches supply intervening callbacks; they are not hardware
+IRQ delivery. Ready-path tests retain the existing ACK/cache boundary, and
+submission tests stop at the original OS entry. Target stack/timing, file output
+and runtime memory ownership remain unverified for v2.

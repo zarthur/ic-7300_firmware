@@ -108,3 +108,12 @@ The [CPU-to-DSP gate follow-up](../research/native-dsp-controls.md) executes
 shared-state publication, pending flag refresh and command-prefix construction.
 It distinguishes cached gates from current state and tests the no-refresh path.
 Physical channel identity and the state machine's radio semantics remain open.
+
+The [v2 diagnostic follow-up](../prototype/native_receive/README.md) adds a
+pre/post lifecycle counter, nested-callback abort reporting, clock-gated read-only
+SSI observations and explicit full/aborted recorder exports. Combined offline
+hooks now connect capture, lifecycle tracking, the recorder trigger and publisher
+in a checked disjoint layout. This is not an installed candidate: runtime storage
+ownership, target timing, single-file v2 recovery and hardware lifecycle evidence
+remain open. Continue those qualifications alongside DSP producer/gain tracing;
+keep issue #15 open until the interface requirements above are supported.
