@@ -121,7 +121,9 @@ strides 6, 4, 3, 2 and 1. Upstream filtering is a DSP question. Do not reuse thi
 sample picker as a demonstrated anti-alias resampler for FT8.
 
 `0x20067254` applies route/mute decisions after selection. One branch scales by
-181/256 (integer signed rounding); another emits zeros through `0x20066ed0`.
+181/256 (signed truncation toward zero); another emits zeros through `0x20066ed0`.
+The [recorder-control follow-up](native-recorder-controls.md) executes these
+branches and maps TX REC Audio and RX REC Condition to their settings records.
 The DMA extraction point precedes these **CPU recorder** operations, but DSP
 AGC, squelch, AF volume and mode effects on the incoming wire remain unresolved.
 Therefore it is a better investigation point, not yet an invariant gain tap.
