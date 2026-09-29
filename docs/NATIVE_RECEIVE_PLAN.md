@@ -40,3 +40,7 @@ publication and format-writing routines against synthetic memory. Channel/gain,
 absolute acquisition timing, owned storage and target diagnostic acceptance
 remain open. Continue through the numbered requirements in the map; do not
 restart at the file reader or mistake this milestone for the whole goal.
+
+The [timing follow-up](../research/native-receive-timing.md) recovers intended
+clock scale and rollover semantics. Delay-timer reuse and pending interrupts
+prevent treating the recovered raw values as a continuous acquisition clock.
