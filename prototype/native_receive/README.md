@@ -58,3 +58,34 @@ buffers have [offline qualification](../../research/native-receive-recorder-batc
 and the installed candidate produced complete timestamped exports. Target stack
 headroom and latency, control dependence, and restart/loss association remain
 unresolved; these captures do not complete issues #14 or #15.
+## Transport epoch prototype
+
+`epoch.S` is an offline, independently assembled boundary counter for the next
+diagnostic. It is not included in `wrappers.S` or the installed v1 bundle.
+It takes a separate, initialized 16-byte live state (`epoch`, `last_reason`,
+`exhausted`, `reserved`) and reason 1 for cold-start entry or 2 for shared-restart
+entry. Epoch zero means no observed boundary. Each accepted boundary increments
+the epoch; even another cold-start notification never resets it within the same
+state lifetime. Overflow or an invalid reason permanently sets `exhausted`.
+Consumers must reject exhausted state, regardless of the retained last epoch.
+
+The original candidate boundaries are `0x200605fc` and `0x200605e4` respectively.
+Both begin with `push {r4, lr}`; the first subsequent calls are bank initialization
+and stop. A future hook must observe the boundary before those operations and
+preserve that original prologue, call order and caller state. No hook or new
+placement is implemented here. The core requires serialized callers and readers:
+its barriers order memory accesses but do not make concurrent access safe.
+Interrupt/preemption behavior and initialization before the first hook remain
+integration requirements.
+
+Live state must be separate from frozen capture/export storage. Records will
+need their own epoch snapshot and discontinuity status; this counter alone
+neither detects every reconfiguration nor proves successful hardware startup,
+stable cadence or sample validity. It deliberately has no operation that declares
+the transport ready. Epoch identity is scoped to one explicitly initialized
+state lifetime, not persistent across firmware loads or resets.
+
+`tests/test_native_epoch.py` executes the compiled ARM core with strict access
+bounds, verifies preserved registers/stack and neighboring storage, and checks
+repeated boundaries, terminal overflow and invalid input. It does not simulate
+hardware or concurrent callers.
