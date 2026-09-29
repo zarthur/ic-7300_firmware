@@ -54,3 +54,8 @@ The [placement follow-up](../research/native-receive-placement.md) executes full
 startup table construction before CP15 writes and tests the scatter zero helper.
 Padding retains application descriptor attributes and is outside scatter
 destinations; runtime ownership, final hooks and asynchronous export remain open.
+
+The [bounded capture core](../prototype/native_receive/README.md) now has original
+ARM code and firmware-free execution tests. It retains both streams and stops
+after 512 records. It is not hooked into firmware: trigger, raw observations,
+export and target measurement remain required.
