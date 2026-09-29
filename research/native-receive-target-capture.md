@@ -108,3 +108,28 @@ and the native stop/restart and discontinuity contract. General mode/channel
 routing remains open. Runtime ownership/headroom under sustained UI/scope/SD
 load is not proved by a 384-ms capture (#14). The timestamped target artifact
 exists, but the broader receive-interface identification is not yet complete.
+
+
+## Repeat-capture reset limitation
+
+Two subsequent complete ordinary WAV files contained no diagnostic frames:
+
+| Recording SHA-256 | PCM duration | Owner restart evidence |
+| --- | --- | --- |
+| `3e75998cd40f774b8ce85328d7579427163d0dee85b057b43ead1d341c0cf116` | 57.861 s | Initially confirmed, then corrected to uncertain |
+| `cede6a79610f557c5355aa1f6ae79ef4cb5b344d1504eec25fc219e609453b5f` | 54.270 s | Radio off/on; external DC remained connected |
+
+These files pass RIFF/chunk-length validation but fail diagnostic acceptance;
+neither establishes native sample or timing behavior at minimum AF volume.
+No incomplete SD write is needed to explain their contents.
+
+The installed arm wrapper requires capture status/count and both carrier control
+words to be zero. Completed capture/export leaves them nonzero, and the wrapper
+has no rearm operation. Consequently, a repeat recording needs verified private
+state initialization. The original application includes a WFI instruction at
+`0x20029b14` followed by an in-place continuation, so a power-button action must
+not be assumed equivalent to loading the application image afresh. This static
+path does not prove which path the owner's radio took or directly demonstrate
+RAM retention. A full DC-off restart after normal shutdown is the next proposed
+comparison; its diagnostic result is not yet available. No firmware change is
+required for that comparison.
