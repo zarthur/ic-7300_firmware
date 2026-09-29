@@ -61,7 +61,7 @@ not callable APIs. Reproduce pointer searches with tools/trace.py.
 | Update validation | MD5 init 0x2003c860; transform 0x2003c890; update 0x2003d38c; finalize candidate 0x2003d458 | Fully recover validation and write ordering |
 | Update flow | MD5 init callers 0x2002580c, 0x20025930, 0x20025d94, 0x20026040; file seek 0x2c and 16-byte comparisons visible | Determine header/trailer tests and bank selection |
 | Flash destination | At 0x20025de0..0x20025df4 selects 0x400000 or 0x10000; loader selects 0x18400000 or 0x18010000 | Possible alternate image banks; do not assume rollback/recovery |
-| Receive recording | 0x20068840 loads recorder metadata; parser calls nearby 0x200686cc/0x20068744 | Trace beyond file metadata into buffers and DMA |
+| Receive recording | [Bounded stored-audio study](recorder-interface.md) classifies 0x20068840 and nearby fields as file metadata; original format checker accepts tested mono PCM16 at 8 kHz | Live PCM rate, producer buffers and DMA ownership remain unknown; classify next task boundary at 0x2006bfd4 |
 | Voice playback | 0x2006a90c scans eight voice files; literal load 0x2006a944 and calls 0x20068c50/0x20068dfc | Recover stream format, queue ownership, start/stop and sample rate |
 | GUI/settings | Firmware Update, Time Set, PTT and voice controls have string/table references in address-map.json | Decode widget descriptors, callbacks and persistence layout |
 | DSP transport | Service diagram signals and recorder paths | Recover framing, handshakes and data ownership |

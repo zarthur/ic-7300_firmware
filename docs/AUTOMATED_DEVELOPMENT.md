@@ -215,3 +215,23 @@ The heartbeat `ic-7300-development-and-pr-review` runs every two hours.
   broad UI scans, rebuild the same candidate, or run unchanged suites while only
   owner observations are pending. Stay quiet unless new input, changed evidence,
   a concrete failure or decision readiness warrants notification.
+
+
+2026-09-29 receive and native-interface checkpoint:
+
+- PR #48 consolidated the roadmap and reconciled the preserved dirty checkout.
+  Current stock input-only receive checks and identical-audio replay completed:
+  short capture 34/47 matched/reference messages; ten-minute capture 412/579,
+  with no prototype-only results. Both passed host quality and separate file,
+  count/statistics/timing checks. See [receive evidence](RECEIVE_VALIDATION.md).
+- [Stored-audio boundary research](../research/recorder-interface.md) identifies
+  the old recorder lead as file metadata. Nine bounded original format trials
+  distinguish stored 8 kHz mono PCM16 acceptance from the still-unknown live PCM
+  interface, including output-byte changes on later rejection. New tests cover
+  bounds, refusal/provenance and original-routine results.
+- Current versions, full configuration/source confirmation, UI/update-menu and
+  current settings-backup evidence remain pending. Preserve the existing candidate
+  and prior decision manifest; append new observations in a new local revision.
+- Next bounded desktop entry is 0x2006bfd4: classify its task/work ownership before
+  inferring a sample producer. Do not relabel file scratch as a live DMA buffer
+  or repeat unchanged capture/parameter sweeps to fill the queue.
