@@ -86,8 +86,7 @@ file-offset ranges. This mechanism does not establish a real-image layout policy
 Future enabling work must add a code-reviewed, exact-base policy with proven
 regions and stream bounds and prove all unresolved acceptance fields. Exclusive
 output/audit publication and ordinary-failure cleanup now have synthetic tests,
-but the real-image policy still refuses output. Publication retains issue
-#8's qualified-review requirement.
+but the real-image policy still refuses output.
 
 ## Visible proof (#13)
 

@@ -16,6 +16,9 @@ Before opening a pull request:
 4. Do not enable RF transmission, bypass safety checks, or change frequency,
    power, PTT, or update behavior without an approved test plan.
 
+Third-party code must have a documented compatible license and required notices.
+Record these in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
 By contributing, you confirm you have the right to submit the material under
-the repository's license. Maintainers may reject material that creates legal,
-safety, or licensing risk.
+the repository's license. Maintainers may reject material that creates safety
+or licensing risk.
