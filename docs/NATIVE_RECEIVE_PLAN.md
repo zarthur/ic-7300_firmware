@@ -98,3 +98,8 @@ The [recorder-control follow-up](../research/native-recorder-controls.md) resolv
 settings record boundaries and tests the original downstream mute/copy/gain stage
 for 1,536 control combinations. This separates CPU recorder effects from the
 still-open DSP and physical-control dependence of the native input.
+
+The [DSP image follow-up](../research/native-receive-dsp-image.md) makes the
+original DSP load layout and initialized command-table location reproducible.
+The AF command has a candidate DSP handler and gain consumer; mapping that gain
+stage to the native receive lane remains open.
