@@ -162,7 +162,7 @@ class CaptureV2Tests(unittest.TestCase):
 
     def test_lost_pair_or_corrupt_owner_cannot_publish_after_copy(self):
         for address, value in ((capture.LIVE, 2), (capture.LIVE+4, 0),
-                               (capture.LIVE+8, 16), (capture.STORAGE+4, 77)):
+                               (capture.LIVE+8, 32), (capture.STORAGE+4, 77)):
             trial = capture.CaptureTrial(); trial.call('begin')
             trial.call('finish', pause_at_sample=37)
             trial.uc.mem_write(address, struct.pack('<I', value))
@@ -174,7 +174,7 @@ class CaptureV2Tests(unittest.TestCase):
     def test_decoder_rejects_bad_identity_flags_and_unstable_control(self):
         trial = capture.CaptureTrial(); trial.call('begin'); trial.call('finish')
         data = trial.storage()
-        for offset, value in ((0, 4), (4, 512), (8, 0), (12, 1), (16, 99), (20, 1), (20, 8), (20, 16)):
+        for offset, value in ((0, 4), (4, 512), (8, 0), (12, 1), (16, 99), (20, 1), (20, 8), (20, 16), (20, 32)):
             bad = bytearray(data); struct.pack_into('<I', bad, offset, value)
             with self.assertRaises(ValueError): capture.decode_storage(bytes(bad))
         with self.assertRaises(ValueError): capture.decode_storage(data[:-1])

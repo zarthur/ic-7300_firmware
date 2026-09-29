@@ -9,7 +9,8 @@
  * Live: depth, owner, faults, poison, epoch_before[3], reserved. Initially zero.
  * Status: 0 disabled,1 armed,2 full,3 reserved invalid,4 busy,
  * 5 aborted with flagged final record,6 aborted without an outer record.
- * Flags: 1 epoch changed,2 epoch unknown,4 exhausted,8 nested extraction.
+ * Flags: 1 epoch changed,2 epoch unknown,4 exhausted,8 nested extraction,
+ * 16 SSI observations unavailable (only set by the ready-path observer).
  * Commit does NOT prove DMA ownership, physical channel phase or acquisition time.
  * Single CPU privileged ARM; IRQ/FIQ state updates are masked. No rearm API.
  * Poison never publishes a frozen capture. Frozen storage is never changed.
@@ -156,7 +157,7 @@
     cmp r0, r11
     bne .Lfinish_poison
     ldr r0, [r5, #8]
-    bics r0, r0, #8
+    bics r0, r0, #24
     bne .Lfinish_poison
     ldm r6, {r0-r2}
     add ip, r10, #20
