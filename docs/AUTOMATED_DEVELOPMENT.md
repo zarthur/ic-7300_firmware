@@ -9,19 +9,21 @@ require a later explicit owner decision on the exact candidate and procedure.
 
 ## Active queue
 
-1. Freeze and verify the baseline, target identity evidence and outstanding gaps.
-2. Delegate independent bounded research on the exact update/boot path, a harmless
-   same-length display-label site, and software-only restoration options.
-3. Review and implement a constrained local candidate builder only after the
-   exact patch policy and relevant acceptance evidence support it. Keep firmware
-   outputs and unpublished packing code local, subject to the distribution policy.
-4. Validate candidate-specific original-loader decode, integrity, protected bytes,
-   modeled write effects and failure cases, deterministic construction, and source
-   provenance. Resolve failed invariants and obtain independent review.
-5. Assemble the exact-image first-test decision package and present remaining
-   risks, including the possibility of a nonbooting radio with no demonstrated
-   software restoration path. Request the owner's candidate-specific decision.
-6. Do not autonomously install, open device interfaces, tune, transmit, or contact
+The September 28 checkpoint completed local candidate construction, applicable
+validation and review of the conditional technical draft. Use
+[NEXT_STEPS.md](NEXT_STEPS.md) and [WORK_STATUS.md](WORK_STATUS.md) for current work.
+Earlier checkpoint entries below are historical, including statements that no
+candidate existed at the time.
+
+1. Preserve/reconcile old local work and continue from current `origin/main`.
+2. Incorporate current-radio observations and verify current settings-backup
+   evidence when supplied. Keep uncovered storage and restoration limits explicit.
+3. Finalize the existing exact-candidate procedure/manifest and present the
+   owner's concrete decision when its readiness evidence is complete.
+4. While observations are pending, advance one bounded native receive/buffer
+   interface question. Do not rebuild the same candidate, repeat broad updater
+   scans or rerun unchanged suites solely to fill an unattended cycle.
+5. Do not autonomously install, open device interfaces, tune, transmit, or contact
    third parties. No intentional corrupt-image or power-interruption tests.
 
 Recovery research remains important, but lack of demonstrated independent recovery

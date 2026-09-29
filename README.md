@@ -7,8 +7,9 @@ sequencing and no external computer during operation.
 This is a research repository, not installable radio firmware. Vendor firmware,
 extracted payloads, recordings, dependencies, and build outputs are kept outside
 Git. Stock USB status reads have been demonstrated; input-only USB audio capture
-is now available for receive validation. Modified-image flashing remains blocked
-on recovery and platform evidence.
+is now available for receive validation. A local display-only candidate has a
+reviewed conditional decision package; current-radio observations, backup evidence
+and the exact installation decision remain pending.
 
 The project is independent of Icom. Read [the legal and distribution policy](LEGAL.md),
 [security policy](SECURITY.md), and [hardware test policy](docs/TEST_POLICY.md)
@@ -151,8 +152,9 @@ firmware write occurs. Use `.venv/bin/python tools/development_check.py --help`
 for profile, decoder/output paths and timeout configuration. Custom evidence
 directories must be outside tracked source (normally under `artifacts/`) and
 contain no whitespace because Make cannot handle those build paths.
-Benchmark success does not imply sensitivity parity. The synthetic profile is
-ready for a future CI job; no hosted workflow has been activated.
+Benchmark success does not imply sensitivity parity. The synthetic profile runs
+on Linux and macOS for pull requests and pushes to `main`; see the
+[hosted workflow](.github/workflows/synthetic.yml).
 
 ```sh
 make -j4 test
@@ -178,14 +180,15 @@ instructions, hashes and annotations instead.
 The ARM application is the preferred investigation target, with approximately
 231 KiB measured codec heap plus stack/context requirements. Available RAM,
 audio buffer ownership, scheduling deadlines and acceptance of modified images
-remain unproven. The next milestone is recovery/updater research and resolving
-the recorder/playback paths, followed by receive-only hardware measurements.
+remain unproven on the radio. The next milestone is completing the existing
+first-candidate decision package. Native recorder/buffer interface research can
+continue independently; see [the active queue](docs/NEXT_STEPS.md).
 
 ## Epic 1 desktop platform work
 
 See [the next-work plan](docs/NEXT_STEPS.md) and
-[automated results and manual steps](docs/RECEIVE_VALIDATION.md) for the current
-receive-only work session.
+[recorded receive results](docs/RECEIVE_VALIDATION.md) for the completed stock
+receive sessions.
 
 [Platform evidence and packing status](research/platform.md) records updater and
 runtime candidates and remaining blockers. Packing/recompression results in the research notes are historical local work; that tooling is not published pending distribution review.
