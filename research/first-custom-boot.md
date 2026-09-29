@@ -3,7 +3,9 @@
 The owner reports successful installation of the approved exact candidate. A
 privately retained photograph shows the intended `Informaiton` label in the
 radio's Others menu. This establishes the visible change on the running radio;
-it does not establish every updater stage or full post-installation acceptance.
+the owner subsequently confirmed automatic restart, unchanged component versions
+and about ten minutes of reception without issue. This completes the authorized
+display-only observation test; it does not establish recovery or native FT8 feasibility.
 
 ## Preparation and identity
 
@@ -29,16 +31,16 @@ flushed, settings verified unchanged, and the card safely ejected. macOS changed
 the associated AppleDouble metadata; this is recorded separately from the exact
 firmware payload. No installation command was issued by the agent.
 
-## Observed outcome and remaining checks
+## Observed outcome
 
 | Item | Evidence / status |
 | --- | --- |
 | Visible custom label | PASS: owner reports success; photo shows `Informaiton` in Others |
 | Application reaches menu | PASS: visible in the same photo |
 | Exact installed flash contents | Not read back; attribution rests on verified prepared card and expected visible result |
-| Automatic update completion/restart | Owner's overall success report; specific sequence still unconfirmed |
-| Post-install component versions | Pending owner observation |
-| Ten-minute receive/audio/UI behavior | Pending owner observation |
+| Automatic update completion/restart | PASS: owner confirms automatic restart completed; individual updater stages were not recorded |
+| Post-install component versions | PASS: owner confirms unchanged 1.42 / 1.01 / 1.07 / 1.00 / 1.13 |
+| Receive observation and UI | PASS for bounded observation: owner reports about ten minutes receiving without issue; photo and version check establish menu access. Not an instrumented duration/load test |
 | Stock return | Not performed or authorized; would require a separate decision |
 | Failed-boot recovery | Unproven |
 | Native FT8 resource/interface feasibility | Not established by this test |
@@ -51,14 +53,16 @@ same-version restore guarantee.
 
 ## Evidence and disposition
 
-The private `artifacts/display-test-20260929/observation-manifest.json` binds the
-approval, media-preparation record, installation observation and original photo.
-All referenced hashes were rechecked when preparing this note. Candidate bytes,
-settings, photo and detailed station evidence remain unpublished. Historical
-reviewed decision packages remain unchanged.
+The private `artifacts/display-test-20260929/completion-manifest.json` binds the
+original observation manifest, approval, media record, original photo and final
+owner report. Original evidence and reviewed decision packages are preserved.
+Candidate bytes, settings, photo and detailed station evidence remain unpublished.
 
-Keep #13 open until remaining post-install checks and the stock-return disposition
-are recorded. No additional write is authorized by this note. Recovery #11 and
-native receive integration remain separate. Continue the next desktop slice at
-`0x2006bfd4` described in [recorder findings](recorder-interface.md) while waiting
-for physical observations; do not restart completed candidate construction.
+The authorized display-only test is complete. No additional write is authorized.
+Stock-return disposition is explicitly **not performed / not authorized** for this
+session; it remains a separate future test, so #13 retains its broader acceptance
+gap and #11 remains open. Successful custom boot does not prove failed-boot recovery.
+
+The next major desktop work is the native receive slice at `0x2006bfd4`, described
+in [recorder findings](recorder-interface.md). No further first-test readiness
+collection or repeat candidate construction is needed to begin that work.

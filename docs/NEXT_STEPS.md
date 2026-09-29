@@ -2,8 +2,9 @@
 
 The owner has installed the approved display-only candidate and supplied a photo
 showing the intended `Informaiton` label. Read the [physical result](../research/first-custom-boot.md).
-Current wrap-up is post-install versions, automatic-restart details and ten minutes
-of receive/UI observations. Stock return is not authorized or demonstrated.
+The owner also confirms automatic restart, unchanged versions and about ten
+minutes receiving without issue. The authorized display-only test and its wrap-up
+are complete. Stock return is a separate unapproved, unperformed test.
 
 Baseline reconciliation, readiness collection, settings-file backup and the exact
 installation decision are complete. Preserve the private evidence and proceed from
@@ -43,15 +44,15 @@ current main; do not restart those tasks. See [issue status](WORK_STATUS.md).
 
 | Order | Work | Completion criterion |
 | --- | --- | --- |
-| 1 | Finish physical result record (#13/#31/#32) | Record post-install component versions, automatic-restart details and ten minutes of receive/audio/UI behavior. Retain photo evidence. Record stock return as not performed unless separately authorized; do not infer recovery. |
-| 2 | Recover one native receive interface (#14/#15/#17/#19) | Continue from the bounded entry `0x2006bfd4` in [the recorder findings](../research/recorder-interface.md). The previous lead is stored-file parsing, not a live PCM ring. Establish sample format, ownership, lifecycle, task and timestamp boundaries. Deliver a reproducible interface map or a precise unresolved boundary. This desktop work can proceed while owner observations are pending. |
-| 3 | Design the bounded target adapter (#20–#22) | Separate the estimated 393,216-byte codec workspace from adapter/DMA/stack overhead and actual target RAM availability. Plan measurements under scope/UI/SD load. Host USB capture and host benchmarks do not establish native deadlines. |
-| 4 | Evaluate a specific new decoder hypothesis (#23/#25) | Use frozen baseline/holdout corpora, report per-slot gains/losses/unconfirmed results and resource use, and reject lost baseline matches. Retain manual signal reports until calibration is validated. Do not repeat unchanged parameter sweeps. |
+| 1 | Recover one native receive interface (#14/#15/#17/#19) | Continue from the bounded entry `0x2006bfd4` in [the recorder findings](../research/recorder-interface.md). The previous lead is stored-file parsing, not a live PCM ring. Establish sample format, ownership, lifecycle, task and timestamp boundaries. Deliver a reproducible interface map or a precise unresolved boundary. This is the next major unit of work. |
+| 2 | Design the bounded target adapter (#20–#22) | Separate the estimated 393,216-byte codec workspace from adapter/DMA/stack overhead and actual target RAM availability. Plan measurements under scope/UI/SD load. Host USB capture and host benchmarks do not establish native deadlines. |
+| 3 | Evaluate a specific new decoder hypothesis (#23/#25) | Use frozen baseline/holdout corpora, report per-slot gains/losses/unconfirmed results and resource use, and reject lost baseline matches. Retain manual signal reports until calibration is validated. Do not repeat unchanged parameter sweeps. |
 
 The owner confirmed current identity/versions and no modifications, and the radio
 SD folder was copied and hash verified before card preparation. The exact
 revision-3 candidate installation was separately approved. The photo confirms the
-label change; remaining observations must not be inferred from elapsed time.
+label change; the subsequent owner report confirms restart, versions and the
+bounded receive observation. Retain the limited scope of these physical results.
 
 ## Decision and validation rules
 
