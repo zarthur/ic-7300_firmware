@@ -171,6 +171,23 @@ def publish_probe(app,index,enabled,tag,payload):
     return r
 
 
+def meter_probe(app, samples, previous_peak=0, empty=False):
+    if not isinstance(samples,bytes) or len(samples)!=72 or type(previous_peak) is not int or not 0 <= previous_peak <= 32767 or type(empty) is not bool:
+        raise ValueError('Require 36 synthetic PCM16 samples and a valid previous peak')
+    queue, peak = 0x203fc002, 0x2039024e
+    h = Isolated(app, [(0x2004536c,0x20045424),(0x2005fbe0,0x2005fc24),
+                       (0x2005fc60,0x2005fcb4),COPY,CLEAR,(0x2017c750,0x2017c758)],
+                 [(queue,0x243),(peak,2)])
+    h.uc.mem_write(queue,samples)
+    h.uc.mem_write(queue+0x240,bytes((0 if empty else 1,7,0)))
+    h.uc.mem_write(peak,struct.pack('<H',previous_peak))
+    result = h.run(0x2004536c)
+    result.update(peak=struct.unpack('<H',h.uc.mem_read(peak,2))[0],
+                  cursors=list(h.uc.mem_read(queue+0x240,3)),
+                  limitation='Peak-meter consumer proves cursor use, not physical channel identity')
+    return result
+
+
 def format_writer_probe(app):
     h = Isolated(app, [(0x20068fe8, 0x2006908c), (0x2017c860, 0x2017c872)],
                  [(OUTPUT, 24)])
@@ -198,6 +215,9 @@ def _report(image):
     result={'schema_version':1,'image_sha256':digest(data),'application_sha256':digest(app),
             'dependencies':{n:importlib.metadata.version(n) for n in ('capstone','unicorn')},
             'record_format_writer':format_writer_probe(app),
+            'second_queue_meter':{name:meter_probe(app,struct.pack('<36h',*values),prior,empty) for name,values,prior,empty in [
+                ('negative_full_scale',[-32768]+[0]*35,0,False),('hold_peak',[12]*36,100,False),
+                ('silence',[0]*36,0,False),('empty',[-32768]*36,123,True)]},
             'static_flows':{n:walk(app,APP_BASE,*bounds) for n,bounds in ROUTINES.items()},
             'queue_cases':{f'{op}_{w}_{r}':queue_probe(app,w,r,op) for op in ('count','pop','push') for w in range(8) for r in range(8)},
             'sample_selection':{str(mode):select_probe(app,mode,samples) for mode in range(5)},
