@@ -20,6 +20,7 @@ SYNTHETIC_TESTS = (
     'test_study_cancellation', 'test_study_likelihood', 'test_control_flow', 'test_development_check',
     'test_emulation.EngineTests', 'test_firmware',
     'test_platform_evidence', 'test_receive_capture', 'test_targets',
+    'test_recorder_interface.SyntheticRecorderTests',
     'test_controller.ControllerModelTests', 'test_update_footprint.SyntheticFootprintTests',
     'test_updater_stages.ComponentDispatchModelTests',
     'test_label_metrics.LabelMetricsModelTests',

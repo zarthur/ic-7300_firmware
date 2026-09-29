@@ -1,4 +1,46 @@
-# Automated work and receive checklist — updated 2026-09-27
+# Automated work and receive checklist — updated 2026-09-29
+
+## Current stock receive baseline — 2026-09-29
+
+The owner reported the radio powered/connected in USB-D with audible FT8.
+Operating frequency and mode are recorded privately as operator observations;
+no CI-V polling or tuning commands were used. Exactly one stereo USB Audio CODEC
+input was selected explicitly, with channel 0 used for replay. Physical source
+association and unchanged settings throughout capture were not independently
+monitored; filter/routing details and current component versions remain pending.
+
+A 60-second check retained all 2,880,000 stereo frames and three complete slots.
+The prototype matched 34 of 47 WSJT-X messages, with no prototype-only results.
+The subsequent 600-second recording retained all 28,800,000 frames and 39 complete
+slots. The prototype matched **412 of 579** reference messages, with **167
+reference-only** and **zero prototype-only** results. Both replays completed
+without errors. Counts are unique decoded text per slot, not unique stations or
+a calibrated sensitivity measurement; different recordings cannot be compared
+as if propagation were fixed.
+
+Both captures passed host continuity/alignment checks without flagged blocks,
+raw clipping or resampling clipping. The long capture's maximum adjacent ADC
+timestamp residual was approximately 22.4 microseconds. Separate verification
+recomputed WAV hashes/inventory, frame counts, channel statistics, callback
+offsets/timing residuals and complete-slot headers/data lengths; all matched.
+Host time-setting inspection required administrator access, so absolute UTC
+accuracy remains unverified. These checks do not establish upstream radio sample
+continuity or native CPU timing.
+
+The executable was freshly built from clean `597deb0`, with pinned dependencies.
+Replay verified unchanged inputs, binaries and source. Local evidence is retained
+under `artifacts/receive-interface-20260929/` in the original evidence checkout:
+`session-context.json`, `receive-baseline-provenance.json`, capture/replay folders
+and independent-verification reports. Raw audio and decoded station data remain
+ignored. The recording streams and decoder processes completed; no playback,
+serial, settings or firmware-write commands were issued.
+
+This completes a current host receive check with the stated labeling limits.
+Current component versions, full configuration/source confirmation, ordinary
+UI/update-menu observations and current readable settings-backup evidence still
+belong in the exact-candidate readiness record. The
+[bounded stored-audio investigation](../research/recorder-interface.md) separately
+narrows the old recorder lead without claiming a native PCM interface.
 
 ## Unattended cancellation development and holdout captures
 
@@ -213,33 +255,30 @@ Keep raw recordings and station/device identifiers under ignored `artifacts/`.
 Copy a [test record](TEST_CHECKLIST.md) for each scenario, with actual duration,
 configuration, evidence paths and PASS / FAIL / NOT MEASURED conclusions.
 
-## Manual steps: clear recovery and qualification blockers
+## Current readiness and recovery follow-up
 
-1. Record the original model/region from the external label and firmware/component
-   versions from the version screen. Keep private identifiers local. Do not open
-   the enclosure merely to fill in the still-unknown board/flash revision.
-2. Use the documented stock settings-save operation to make a current SD backup.
-   Copy the export to two independent locations and record SHA-256 hashes. Check
-   the files are readable. File copies are not proof of settings restoration or
-   calibration coverage; do not perform an unreviewed restore test.
-3. Send the drafted [service inquiry](../research/recovery-access.md#next-decision-and-concrete-service-inquiry)
-   to Icom or an authorized service provider. Ask specifically about recovery
-   without main-application boot, applicable board revisions, complete backup
-   coverage, calibration preservation and supported J491/readback access. No
-   inquiry was sent by this automated session.
-4. Save the response locally. Use it to produce an exact board-specific recovery
-   procedure. If it requires internal access or external equipment, first specify
-   parts, connector orientation, voltages, isolation, reset/power ownership and
-   tool initialization. There is currently no approved wiring procedure.
-5. Review and execute a separate official-content-only recovery experiment under
-   [TEST_POLICY.md](TEST_POLICY.md). Require repeated matching complete reads and
-   restore verification for covered storage, and demonstrate entry without
-   intentionally corrupting firmware or interrupting a write. Record uncovered
-   failure classes. Until this passes, custom-image boots stay blocked.
-6. Obtain the qualified distribution review required by issue #8 before publishing
-   patching-related tooling. This does not prevent local receive/offline work.
+Use [the active queue](NEXT_STEPS.md), [first-test plan](FIRST_CUSTOM_FIRMWARE.md)
+and [current policy](TEST_POLICY.md). The former service-inquiry, hardware-access
+and unconditional recovery-proof instructions in this section are historical;
+they do not govern the owner's current software-only first-candidate plan.
 
-Remaining automated research is substantial: flash completion/error semantics,
-selector-block ownership, DSP/FPGA paths, verified display-string consumers and
-native audio/runtime APIs. The session's refreshed emulation does not close those
-tasks. USB audio measurements cannot establish on-radio RAM or CPU headroom.
+1. After recording ends, record actual component versions and any intervening
+   changes, normal UI behavior and non-writing update-menu observations. No new
+   firmware update or power cycle is implied by this observation task.
+2. Identify a current settings export. If a new export is needed, use the reviewed
+   owner-operated stock procedure, safely unmounting the card before removal.
+   Retain computer copies, hashes, date, readability and explicit coverage gaps.
+   Do not format a card, load ALL settings or infer calibration/flash coverage.
+3. Add the observations and receive evidence to a new revision of the existing
+   private decision package, preserving its reviewed history. Keep same-version
+   return-to-stock and failed-boot recovery marked unproven. No automatic device
+   action or third-party inquiry is part of completing the record.
+4. Present the exact candidate/procedure for the owner's later decision. Unproven
+   recovery may be accepted only for that exact experiment under the current
+   policy; it does not close #11 or authorize TX. An additional conditional stock
+   return must be explicitly included if proposed.
+5. Keep packing-related tooling private pending the distribution review in #8.
+   Continue bounded native audio/runtime research using existing software/evidence.
+
+Labeled scope/UI/SD/combined-load scenarios remain follow-on operator sessions.
+A successful host capture does not measure the native codec under those loads.
