@@ -133,3 +133,24 @@ path does not prove which path the owner's radio took or directly demonstrate
 RAM retention. A full DC-off restart after normal shutdown is the next proposed
 comparison; its diagnostic result is not yet available. No firmware change is
 required for that comparison.
+
+
+## Second complete diagnostic capture
+
+A subsequent file again passes strict WAV and diagnostic recovery checks.
+Its requested DC-off restart, minimum AF, frequency/mode and normal-operation
+conditions are **awaiting owner confirmation**. The validated bytes alone do not
+establish those conditions, so this is not yet an AF-volume comparison or a
+verified power-cycle rearm procedure.
+
+- Recording SHA-256: `a69aa0738ca5477ca55ada021a61247a17fd5b741a47239912cd6f25045c8e9d`; 889,896 bytes, 55.6065 seconds of PCM.
+- Capture SHA-256: `e95793b1dd8f0a95c3341c130487c35d1ff59d7645f47fedb9ab50b61bfdeed6`; 90,128 bytes, all 512 blocks and 470 checksum-valid ordered frames.
+- Both DMA bank identifiers occur 256 times, strictly alternating.
+- Stream A: 18,432 samples, range −14,973 to 15,295, RMS 5,665.35, no zero or rail samples. Stream B: all 18,432 samples zero.
+- Stream A again matches 3,024 ordinary recorder samples exactly at stride six, phase zero, unity gain, beginning at WAV sample 2,052.
+- Clean timer observations span 12,263,997 nominal cycles over 511 intervals. Under the same uncalibrated 32 MHz assumption, the inferred rate is 48,000.012 samples/s.
+
+The file and recovered storage were copied locally and hash-verified, and repeat
+analysis gives the same report. This strengthens reproducibility of the bounded
+capture/export chain. It does not establish missing control conditions, exclude
+unobserved DMA loss, identify stream B, or prove calibrated timing.

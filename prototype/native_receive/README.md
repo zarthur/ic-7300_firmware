@@ -1,7 +1,9 @@
 # Bounded receive diagnostic prototype
 
 This directory contains original ARMv7-A diagnostic code and offline integration
-tests. It is not an installable firmware image, and no target capture exists yet.
+tests. These sources are not an installable firmware image. An exact private
+candidate was installed by the owner and produced validated
+[target captures](../../research/native-receive-target-capture.md).
 
 `capture.S` copies 36 signed 16-bit samples from each of the two native extracted
 streams into fixed storage, preserving their bit patterns and halfword alignment.
@@ -14,8 +16,8 @@ and takes 343 emulated instructions per copy, not measured CPU cycles.
 bytes. It leaves original audio unchanged before capture completion and after
 export. Each fragment has a magic identifier, total size, byte offset, payload
 length and FNV-1a-32 checksum. Host recovery requires all fragments in order in
-one file and rejects incomplete or corrupt input. The intended diagnostic would
-replace part of a recording with capture data rather than listenable audio.
+one file and rejects incomplete or corrupt input. The installed diagnostic replaces part of a recording with capture data.
+That portion is not listenable audio.
 
 `wrappers.S` integrates both cores at three exact original v1.42 call sites. It
 arms once on the first nonzero recorder write submission, reads raw timer/pending
@@ -51,6 +53,8 @@ or extra allocated sections. The standalone tests require no firmware:
 ```
 
 Exact-image wrapper tests also execute original native queue and publisher code
-through the actual patched calls. Ring-to-file routing, partial-buffer handling,
-target stack headroom and latency, candidate update validation, owner installation
-review, and a timestamped hardware capture remain required by issue #15.
+through the actual patched calls. Original ring-to-file batching and partial
+buffers have [offline qualification](../../research/native-receive-recorder-batches.md),
+and the installed candidate produced complete timestamped exports. Target stack
+headroom and latency, control dependence, and restart/loss association remain
+unresolved; these captures do not complete issues #14 or #15.
