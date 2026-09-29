@@ -2,17 +2,16 @@
 
 The lead at `0x2006bfd4` reads a **stored file**. Following the separate recorder
 producer upstream identifies a live SSIF0 receive DMA path, two software sample
-queues and a recorder ring. This is a reproducible offline interface map, not a
-completed timestamped target capture or a callable extension API. Issue #15
-remains open.
+queues and a recorder ring. This interface map now has a [timestamped target capture](native-receive-target-capture.md)
+confirming the recorder relationship and cadence in USB-D. It is not a callable
+extension API; gain/control dependence and lifecycle requirements keep #15 open.
 
 ## Scope and reproduction
 
 All code addresses below refer to the decoded original v1.42 application,
 SHA-256 `4686728c9d1f7249b6278a29686a40b8fa5e527bd2428a76a33cd9395178c9a4`.
-The original container is pinned in `research/targets.json`. The installed
-label-only candidate has a different application hash and is deliberately not
-accepted by this probe. No radio connection or firmware construction is involved.
+The original container is pinned in `research/targets.json`. The display-only and later receive-diagnostic candidates have different application
+hashes and are deliberately not accepted by this original-instruction probe. No radio connection or firmware construction is involved.
 
 ```
 .venv/bin/python tools/native_receive.py artifacts/original/7300_142.dat \
@@ -112,8 +111,9 @@ creation at `0x2006ae5c`, writes mono PCM16, 8000 samples/s, 16000 bytes/s and
 The first-queue consumer chooses six of each 36 input samples, then accumulates
 108 samples (216 bytes) for publication. Combining these facts supports an
 **intended nominal 48 ksample/s first-queue stream**, and 96 k stereo frames/s at
-SSIF0 before alternate-frame omission. This is an inference from the recording
-contract, not measured timing. A changing route, stalled queue or wrong external
+SSIF0 before alternate-frame omission. The recording contract originally supplied this inference. The first target
+capture now also supports approximately 48 kHz at the extraction boundary,
+relative to the recovered timer scale; the wire-clock rate is still inferred. A changing route, stalled queue or wrong external
 clock invalidates a naive sample-count-to-time conversion.
 
 No filter appears in the isolated selection routine `0x20066fc4`; modes 0..4 use
@@ -171,7 +171,7 @@ capture rather than silently fabricate continuity. A private adapter queue needs
 bounded capacity and an explicit overflow policy; the native modulo queue cannot
 supply that accounting retroactively.
 
-Remaining completion requirements, in order:
+Completion requirements and current status:
 
 1. Resolve channel A/B meaning and mode/gain controls across RX/TX, squelch and
    AF volume; follow the DSP control path and compare CPU consumers. Nominal
@@ -182,11 +182,13 @@ Remaining completion requirements, in order:
 3. Identify an owned bounded buffer, execution/ABI insertion mechanism and export
    path; establish interrupt/task budgets under #14. Do not choose an apparent
    zero-filled region as free memory.
-4. Prepare a concrete receive-only diagnostic candidate with no added PTT route,
-   validate its exact footprint and review its installation scope. The earlier
-   label-only authorization does not cover this different modification.
-5. Collect a timestamped target capture and verify rate, channel, continuity,
-   gain behavior and normal radio operation. This is the acceptance evidence for
-   #15; offline probes cannot substitute for it.
+4. DONE for the first bounded diagnostic: the exact receive-only candidate was
+   prepared and footprint-validated, separately approved, and installed by the
+   owner. It adds no PTT operation. Further modifications are separate work.
+5. The first timestamped target capture is complete: stream A matches ordinary
+   receive recording at unity gain, bank alternation and nominal cadence pass,
+   and the owner reports normal restart/reception. Gain/control variations and
+   restart/loss association remain required; the bounded record does not prove
+   all of these properties. See the [target evidence](native-receive-target-capture.md).
 
 The investigation plan is [NATIVE_RECEIVE_PLAN.md](../docs/NATIVE_RECEIVE_PLAN.md).
