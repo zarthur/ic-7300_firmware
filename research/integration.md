@@ -92,16 +92,26 @@ output completion before advancing terminal QSO states.
 
 ## What the next phase must establish
 
-1. Recover updater semantics, including alternate-bank behavior, and determine
-   a readback/recovery procedure before the first modified boot experiment.
-2. Resolve the recorder/playback interfaces and sample rate; instrument RX-only
-   timestamped audio capture through the existing path.
-3. Measure unused RAM, stack peaks and execution time under normal radio load.
-   Confirm a 384 KiB workspace or revise the implementation based on evidence.
-4. Identify a minimal UI hook and produce a visible-only firmware modification
-   after a validated packer and recovery route exist.
-5. Integrate native receive decoding, calibrated SNR and then timed transmission.
+Use [the active work queue](../docs/NEXT_STEPS.md) and
+[first-test policy](../docs/FIRST_CUSTOM_FIRMWARE.md) for current execution order.
+The local display-only candidate has a reviewed conditional decision draft;
+current-radio observations, backup evidence and an exact owner decision remain
+pending. The earlier unconditional independent-recovery prerequisite is superseded
+by that candidate-specific policy; recovery itself remains unproven.
 
-This phase ends with a specific feasibility boundary: codec interoperability and
-container extraction are demonstrated; spare runtime resources, audio injection,
-modified-image acceptance and recovery remain unproven. No image is flash-ready.
+1. Finish readiness evidence for the existing visible-only experiment. Preserve
+   unresolved physical effects and restoration limits in the exact decision.
+2. Resolve one recorder-to-buffer path: sample format/rate, ownership, lifecycle,
+   task and timestamp boundaries. A host USB stream is not the native interface.
+3. Design bounded codec/adapter storage, then measure available RAM, stack peaks
+   and execution time on target under radio load through separately authorized
+   instrumentation. The estimated 384 KiB codec workspace is not proven free RAM.
+4. Build native receive and UI integration only after those interfaces and budgets
+   are supported by evidence. Keep signal reports manual unless calibrated.
+5. Plan timed transmission separately after audio/PTT, timing, operator-control
+   and measurement requirements are satisfied.
+
+Codec interoperability and container extraction are demonstrated. Spare runtime
+resources, native audio integration, physical modified-image acceptance and
+failed-boot recovery remain unproven. The private candidate is not an authorized
+installation or a supported release.
