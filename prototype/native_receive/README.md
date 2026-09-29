@@ -58,25 +58,51 @@ buffers have [offline qualification](../../research/native-receive-recorder-batc
 and the installed candidate produced complete timestamped exports. Target stack
 headroom and latency, control dependence, and restart/loss association remain
 unresolved; these captures do not complete issues #14 or #15.
+
 ## Transport epoch prototype
 
 `epoch.S` is an offline, independently assembled boundary counter for the next
 diagnostic. It is not included in `wrappers.S` or the installed v1 bundle.
 It takes a separate, initialized 16-byte live state (`epoch`, `last_reason`,
-`exhausted`, `reserved`) and reason 1 for cold-start entry or 2 for shared-restart
-entry. Epoch zero means no observed boundary. Each accepted boundary increments
+`exhausted`, `reserved`) and reasons 1= cold-start entry, 2= shared-restart entry,
+3= stop entry, 4= start entry. Epoch zero means no observed boundary. Each accepted boundary increments
 the epoch; even another cold-start notification never resets it within the same
 state lifetime. Overflow or an invalid reason permanently sets `exhausted`.
 Consumers must reject exhausted state, regardless of the retained last epoch.
 
-The original candidate boundaries are `0x200605fc` and `0x200605e4` respectively.
-Both begin with `push {r4, lr}`; the first subsequent calls are bank initialization
-and stop. A future hook must observe the boundary before those operations and
-preserve that original prologue, call order and caller state. No hook or new
-placement is implemented here. The core requires serialized callers and readers:
-its barriers order memory accesses but do not make concurrent access safe.
-Interrupt/preemption behavior and initialization before the first hook remain
-integration requirements.
+`epoch_wrappers.S` provides separate offline wrappers for these exact entries:
+
+| Boundary | Original entry | Replayed prologue |
+| --- | --- | --- |
+| Cold start | `0x200605fc` | `push {r4, lr}` |
+| Shared restart | `0x200605e4` | `push {r4, lr}` |
+| Stop | `0x200604c4` | `push {r4-r10, lr}` |
+| Start | `0x2006003c` | `push {r4-r6, lr}` |
+
+Stop also has direct callers at `0x20029d90` and `0x2002b6a0`, so observing only
+shared restart misses known transport boundaries. Nested boundaries each advance
+the epoch: a shared restart followed by stop and start produces three observations,
+not a count of three hardware failures. The original start unconditionally enables
+IRQ near its return; a wrapper around the entire restart must not assume that the
+incoming interrupt mask persists throughout it.
+
+Each wrapper replaces the entry PUSH with an ARM B preserving caller LR. It saves
+32 bytes, masks IRQ and FIQ around the counter update, restores the caller's masks,
+APSR and general registers, replays the original PUSH, and continues at entry+4.
+The standalone core still requires serialized callers/readers: barriers are not a
+lock. All future readers of the live state must likewise use a coherent snapshot
+protocol; the wrappers alone do not implement record capture or export.
+
+`tools/native_epoch.py` gates the exact original image and executes these
+substitutions only in private emulator memory. Trial code/state addresses
+`0x20363000`/`0x2037e080` are not qualified for installation. Tests check 384 cases
+across all four boundaries, all IRQ/FIQ mask combinations, condition flags,
+ordinary and terminal counter states. Every live-state access must occur with
+both masks set; preserved caller state, original saved stack words, 32-byte stack
+footprint and exact state writes are checked. Execution stops before the first
+original instruction after the prologue. Actual interrupt delivery, stack
+headroom, mask latency, initialization before the first hook, complete boundary
+coverage and placement ownership remain integration/target requirements.
 
 Live state must be separate from frozen capture/export storage. Records will
 need their own epoch snapshot and discontinuity status; this counter alone

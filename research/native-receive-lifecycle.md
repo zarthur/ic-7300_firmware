@@ -36,6 +36,15 @@ observer of channel 3's failure branch is insufficient: either later handler
 can request a transport-wide restart. Channel 4's output direction does not mean
 these read-only probes activate a transmitter; they do not execute its data path.
 
+Two additional direct stop calls occur outside shared restart: `0x20029d90` and
+`0x2002b6a0`. Both reviewed caller paths test the service gate and disable IRQ
+before calling `0x200604c4`. A cold/shared-entry-only epoch would miss these
+known stops. The [offline epoch wrappers](../prototype/native_receive/README.md#transport-epoch-prototype)
+therefore observe stop and start entries too. Nested entry observations advance
+the epoch independently; they are not independent failure counts. Those tests
+qualify entry ABI and mask preservation, not completion of stop/start hardware
+operations or a comprehensive reconfiguration inventory.
+
 The bounded original call-flow walk distinguishes:
 
 | Entry | Ordered callees | Final tail branch |

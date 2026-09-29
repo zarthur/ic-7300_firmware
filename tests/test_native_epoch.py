@@ -53,7 +53,7 @@ class EpochTests(unittest.TestCase):
 
     def test_cold_and_shared_restart_never_reuse_an_epoch(self):
         state = (0, 0, 0, 0xdeadbeef)
-        for epoch, reason in enumerate((1, 2, 2, 1, 2), 1):
+        for epoch, reason in enumerate((1, 4, 2, 3, 4, 3, 1), 1):
             result, state, writes = self.execute(state, reason)
             self.assertEqual(result, 1)
             self.assertEqual(state, (epoch, reason, 0, 0xdeadbeef))
@@ -68,7 +68,7 @@ class EpochTests(unittest.TestCase):
             self.assertEqual(self.execute(state, reason), (0, state, []))
 
     def test_invalid_reason_and_nonzero_exhaustion_fail_closed(self):
-        for reason in (0, 3, 0xffffffff):
+        for reason in (0, 5, 0xffffffff):
             self.assertEqual(self.execute((45, 2, 0, 9), reason),
                              (0, (45, 2, 1, 9), [(8, 4)]))
         for exhausted in (1, 2, 0xffffffff):

@@ -1,6 +1,6 @@
 /* Private transport epoch counter, offline prototype; no installed hooks.
  * r0: initialized, aligned {epoch, last_reason, exhausted, reserved} (16 bytes).
- * r1: 1 cold-start entry, 2 shared-restart entry.
+ * r1: 1 cold-start entry, 2 shared-restart entry, 3 stop entry, 4 start entry.
  * Return 1: advanced; 0: permanently exhausted/invalid. AAPCS ARM.
  * Caller MUST serialize all readers/writers; DMB is not a lock. This marks
  * boundaries only, never declares valid samples or successful hardware start.
@@ -19,9 +19,9 @@ receive_epoch_boundary:
     cmp r2, #0
     bne .Lepoch_inactive
     cmp r1, #1
-    beq .Lepoch_reason_ok
-    cmp r1, #2
-    bne .Lepoch_exhaust
+    blo .Lepoch_exhaust
+    cmp r1, #4
+    bhi .Lepoch_exhaust
 .Lepoch_reason_ok:
     ldr r2, [r0]
     cmn r2, #1
