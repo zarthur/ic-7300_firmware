@@ -49,3 +49,8 @@ The [memory/cursor follow-up](../research/native-receive-memory.md) identifies
 the shared allocator and occupied framebuffer, tests allocation failure/reuse,
 and verifies both second-queue cursors have consumers. Qualify diagnostic
 placement and export next; no native capture has been collected yet.
+
+The [placement follow-up](../research/native-receive-placement.md) executes full
+startup table construction before CP15 writes and tests the scatter zero helper.
+Padding retains application descriptor attributes and is outside scatter
+destinations; runtime ownership, final hooks and asynchronous export remain open.
