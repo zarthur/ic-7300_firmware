@@ -1,16 +1,13 @@
 # Next work — updated 2026-09-29
 
-The first display-only candidate has been built and independently reviewed as a
-conditional technical draft. The current milestone is to complete current-radio
-and backup evidence, then present the exact candidate and procedure for the
-owner's decision under [the first-test plan](FIRST_CUSTOM_FIRMWARE.md).
+The owner has installed the approved display-only candidate and supplied a photo
+showing the intended `Informaiton` label. Read the [physical result](../research/first-custom-boot.md).
+Current wrap-up is post-install versions, automatic-restart details and ten minutes
+of receive/UI observations. Stock return is not authorized or demonstrated.
 
-PRs #36–#49 are merged. The September 29 review found no open PRs. Candidate
-construction, bounded label/updater analysis and the conditional procedure are
-completed desktop work; they should not be restarted while observations are
-pending. See [issue status](WORK_STATUS.md) for completed evidence and remaining
-acceptance criteria, and [checkpoint history](AUTOMATED_DEVELOPMENT.md#checkpoint)
-for the sequence of completed work.
+Baseline reconciliation, readiness collection, settings-file backup and the exact
+installation decision are complete. Preserve the private evidence and proceed from
+current main; do not restart those tasks. See [issue status](WORK_STATUS.md).
 
 ## Current evidence
 
@@ -36,7 +33,8 @@ for the sequence of completed work.
   [cancellation findings](../research/cancellation-study.md) retain measured
   limits. Cancellation remains an opt-in desktop experiment; target memory and
   timing are unmeasured.
-- Normal same-version/custom-to-stock installation, physical write effects and
+- This exact custom candidate has reached the visible menu. Stock-to-stock
+  reinstall, custom-to-stock return, complete physical write effects and
   failed-boot recovery remain unproven. Read the
   [restoration assessment](../research/software-restoration.md) and
   [last bounded handshake findings](../research/update-handshake-boundaries.md).
@@ -45,18 +43,15 @@ for the sequence of completed work.
 
 | Order | Work | Completion criterion |
 | --- | --- | --- |
-| 1 | Collect missing current-radio evidence (#7/#11/#13/#32) | Confirm the same original radio, current component versions and intervening changes; record normal stock boot/receive/UI behavior and observed update-menu availability. Verify current settings-export paths, hashes and readability locally and list uncovered storage. These observations do not demonstrate same-version installation or failed-boot recovery. |
-| 2 | Finalize the existing decision package (#10/#12/#13/#31/#32) | Incorporate the observations, preserve candidate/base identity and historical provenance, freeze a procedure revision/manifest, and present the PASS/FAIL/UNKNOWN evidence and phase-specific responses for the owner's exact decision. Include conditional stock return explicitly if proposed; it is another write. |
-| 3 | Recover one native receive interface (#14/#15/#17/#19) | Continue from the bounded entry `0x2006bfd4` in [the recorder findings](../research/recorder-interface.md). The previous lead is stored-file parsing, not a live PCM ring. Establish sample format, ownership, lifecycle, task and timestamp boundaries. Deliver a reproducible interface map or a precise unresolved boundary. This desktop work can proceed while owner observations are pending. |
-| 4 | Design the bounded target adapter (#20–#22) | Separate the estimated 393,216-byte codec workspace from adapter/DMA/stack overhead and actual target RAM availability. Plan measurements under scope/UI/SD load. Host USB capture and host benchmarks do not establish native deadlines. |
-| 5 | Evaluate a specific new decoder hypothesis (#23/#25) | Use frozen baseline/holdout corpora, report per-slot gains/losses/unconfirmed results and resource use, and reject lost baseline matches. Retain manual signal reports until calibration is validated. Do not repeat unchanged parameter sweeps. |
+| 1 | Finish physical result record (#13/#31/#32) | Record post-install component versions, automatic-restart details and ten minutes of receive/audio/UI behavior. Retain photo evidence. Record stock return as not performed unless separately authorized; do not infer recovery. |
+| 2 | Recover one native receive interface (#14/#15/#17/#19) | Continue from the bounded entry `0x2006bfd4` in [the recorder findings](../research/recorder-interface.md). The previous lead is stored-file parsing, not a live PCM ring. Establish sample format, ownership, lifecycle, task and timestamp boundaries. Deliver a reproducible interface map or a precise unresolved boundary. This desktop work can proceed while owner observations are pending. |
+| 3 | Design the bounded target adapter (#20–#22) | Separate the estimated 393,216-byte codec workspace from adapter/DMA/stack overhead and actual target RAM availability. Plan measurements under scope/UI/SD load. Host USB capture and host benchmarks do not establish native deadlines. |
+| 4 | Evaluate a specific new decoder hypothesis (#23/#25) | Use frozen baseline/holdout corpora, report per-slot gains/losses/unconfirmed results and resource use, and reject lost baseline matches. Retain manual signal reports until calibration is validated. Do not repeat unchanged parameter sweeps. |
 
-PR #49 already added current stock host-receive evidence to decision-package
-revision 2. Do not repeat the capture solely to complete the queue: missing inputs
-are same-radio/version/change confirmation, boot/UI observations, current backup
-evidence and SD/power/operator readiness. The private wrap-up audit under
-`artifacts/wrap-up-20260929/` rechecks retained manifests, all 90 archived source
-files and the full-profile source identity; it is not a new hardware test.
+The owner confirmed current identity/versions and no modifications, and the radio
+SD folder was copied and hash verified before card preparation. The exact
+revision-3 candidate installation was separately approved. The photo confirms the
+label change; remaining observations must not be inferred from elapsed time.
 
 ## Decision and validation rules
 
