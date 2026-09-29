@@ -35,6 +35,36 @@ guards are enforced by the original-instruction harness. Reports bind the input,
 tools and source revision and reject changes during generation. Existing output
 paths are refused. No firmware payload or disassembly is emitted.
 
+## ACC/USB output-level command
+
+The same tool now executes the original menu-label selector for settings 76,
+77 and 80. Their value pointers identify `ACC/USB Output Select` at
+`0x203de518`, `ACC/USB AF Output Level` at `0x203de519`, and
+`ACC/USB IF Output Level` at `0x203de51c`.
+
+Original helper `0x2001fb98` chooses the AF level when Output Select is zero,
+otherwise the IF level. It calls interpolation routine `0x2000621c`, including
+the original Thumb integer division at `0x2017c618`. Its three table points are
+`(0,0), (128,100), (255,150)`. Integer interpolation maps a level byte `x` to
+`floor(100*x/128)` below 128, otherwise `100+floor(50*(x-128)/127)`.
+These are internal setting bytes, not displayed percentages or measured gain.
+
+The result is stored at `0x20390101`. A separate call to `0x2001fbe8` publishes
+it at `0x203def36`; command packing at `0x200b2120..0x200b2144` places it in
+bits 15..8 of tag `0x4a`. The command's other payload bytes are supplied
+independently. Exact write footprints, source preservation and guards are
+checked across these bounded calls; caller scheduling and transport are not
+executed. The report adds 3,072 fixtures covering every level byte with
+zero/nonzero selector values and varied unselected settings. Tests also vary
+all selector bytes and the command's other payload bytes.
+
+Private static DSP inspection connects the command field to a cached gain
+calculation in producer `0x1180fdd8`, whose final conversion writes context
+offsets 256..287. The public CPU probe does not execute that producer, establish
+its full numerical gain, or identify it as native A/B. Changing an ACC/USB level
+is therefore a possible discriminating experiment, not yet a qualified native
+receive control contract.
+
 ## Relation to receive audio
 
 Private inspection of the separately decoded DSP program connects tag 0 to
