@@ -36,8 +36,11 @@ Capture control is status/count/reserved/reserved. Status values are disabled=0,
 armed=1, full=2, invalid=3 and busy=4; reserved words start at zero. BUSY is an
 observation state, **not an atomic lock**. The consumer must wait for FULL with
 appropriate ordering, or stop the producer before reading a partial buffer.
-There is no rearm until reboot in the proposed wrapper design. DMB instructions
-order publication; offline execution does not prove cache or interrupt behavior.
+There is no in-session rearm. The wrapper requires capture status/count and both
+transport control words to be zero; a radio off/on action alone is not proof that
+this private state was reinitialized. The owner's follow-up off/on recording with
+DC connected contained no diagnostic frames. DMB instructions order publication;
+offline execution does not prove cache or interrupt behavior.
 
 `tools/native_capture.py` assembles with clang's ARM target and rejects relocations
 or extra allocated sections. The standalone tests require no firmware:
