@@ -79,3 +79,7 @@ initial/final partial buffers; assess stack headroom and target timing; prepare
 and verify a concrete firmware candidate and its update footprint; obtain owner
 review for the new installation; collect and analyze a timestamped target capture.
 Issue #15 and the native receive goal remain open.
+
+The subsequent [batch tests](native-receive-recorder-batches.md) establish byte
+preservation through original selection/copy with explicit stable recorder
+prestates. Single-file target output and live timing/stack behavior remain open.
