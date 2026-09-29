@@ -52,12 +52,12 @@ def text_section(data):
     return code
 
 
-def build_core():
+def build_core(source=None):
     compiler=shutil.which('clang')
     if not compiler:raise ValueError('clang is required to assemble the ARM capture core')
     with tempfile.TemporaryDirectory() as directory:
         obj=Path(directory)/'capture.o'
-        subprocess.run([compiler,'--target=armv7-none-eabi','-c',str(SOURCE),'-o',str(obj)],
+        subprocess.run([compiler,'--target=armv7-none-eabi','-c',str(SOURCE if source is None else source),'-o',str(obj)],
                        check=True,capture_output=True,timeout=30)
         return text_section(obj.read_bytes())
 

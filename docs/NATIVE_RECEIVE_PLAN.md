@@ -59,3 +59,9 @@ The [bounded capture core](../prototype/native_receive/README.md) now has origin
 ARM code and firmware-free execution tests. It retains both streams and stops
 after 512 records. It is not hooked into firmware: trigger, raw observations,
 export and target measurement remain required.
+
+The [export boundary](../research/native-receive-export.md) now includes original
+file-worker result and task-ID exhaustion probes plus a bounded recorder-carrier
+core. A modeled bridge preserves original publisher metadata and wrap behavior.
+Qualify the actual wrapper, recording trigger, timer observations and single-file
+output next; no target capture exists yet.

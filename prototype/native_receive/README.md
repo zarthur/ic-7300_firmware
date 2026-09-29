@@ -45,9 +45,19 @@ Run the firmware-free tests:
 
 Before integration: recover the post-boot trigger and task context, define and
 implement timer snapshots, qualify the exact hook and storage placement together,
-and implement asynchronous SD export with request lifetime, actual write-count
-checking, close and failure handling. Native file submission can block on an OS
-semaphore, and its completion path can wait indefinitely. A timeout must not
-release memory that an outstanding request still references. The exporter must
-not run in the audio ISR or stall a normal radio task. Target latency, drop and
-channel/gain measurements remain required by issue #15.
+and qualify the recorder carrier through its actual file output. Native file
+submission can block on an OS semaphore, and its completion path can wait
+indefinitely; the carrier therefore adds no file calls to the audio ISR or normal
+radio tasks. The existing recorder retains request lifetime and file cleanup.
+Target latency, drop and channel/gain measurements remain required by issue #15.
+
+## Recorder carrier prototype
+
+`transport.S` now provides a second standalone core for the existing recorder's
+216-byte copy boundary. It emits a completed capture in checksummed fragments,
+then resumes copying normal recorded audio. It does not start recording or create
+a task/file. The intended test would use an owner-started recording; part of that
+recording would contain diagnostic data rather than listenable audio. This remains
+an offline prototype with a modeled bridge, not an installed hook. See the
+[export boundary](../../research/native-receive-export.md) for lifecycle tests,
+protocol details and the remaining integration requirements.
