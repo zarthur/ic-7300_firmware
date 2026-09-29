@@ -91,3 +91,8 @@ native DMA handlers at their decision boundaries and separates common transport
 restart from A-queue backlog discard. An adapter epoch must cover the shared
 restart, including requests from other channels; the first installed diagnostic
 does not yet carry this epoch. AF-volume measurement is pending separately.
+
+The [recorder-control follow-up](../research/native-recorder-controls.md) resolves
+settings record boundaries and tests the original downstream mute/copy/gain stage
+for 1,536 control combinations. This separates CPU recorder effects from the
+still-open DSP and physical-control dependence of the native input.

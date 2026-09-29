@@ -25,6 +25,7 @@ SYNTHETIC_TESTS = (
     'test_native_placement.SyntheticPlacementTests', 'test_native_capture',
     'test_native_export.SyntheticExportTests', 'test_native_transport', 'test_native_capture_report',
     'test_native_wrappers.SyntheticWrapperTests', 'test_native_lifecycle.SyntheticLifecycleTests',
+    'test_native_recorder_controls.SyntheticRecorderControlTests',
     'test_controller.ControllerModelTests', 'test_update_footprint.SyntheticFootprintTests',
     'test_updater_stages.ComponentDispatchModelTests',
     'test_label_metrics.LabelMetricsModelTests',
