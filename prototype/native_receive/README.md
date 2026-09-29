@@ -123,8 +123,9 @@ wrappers remain v1. Every DMA handler entry must call `begin` before reading
 status or selecting a bank, including when capture is disabled or already frozen.
 A ready path pairs this with `finish` after extraction; an idle or restart path
 uses `cancel`. Observing only immediately before extraction still misses changes
-between the original status read and extraction. The exact original hook sites
-and new carrier are not yet integrated with this core.
+between the original status read and extraction. The handler hooks below now
+integrate these paths offline; recorder arming and a v2 carrier remain separate
+integration work.
 
 Storage is 114,704 bytes: a 16-byte header (`status`, `count`, magic `0x3252434e`,
 version 2) and 512 records of 224 bytes. Each record contains:
@@ -132,10 +133,10 @@ version 2) and 512 records of 224 bytes. Each record contains:
 | Byte offset | Contents |
 | --- | --- |
 | 0 | Sequence |
-| 4 | Flags: epoch changed=1, epoch unknown=2, epoch exhausted=4, nested extraction=8 |
+| 4 | Flags: epoch changed=1, epoch unknown=2, epoch exhausted=4, nested extraction=8, SSI observations unavailable=16 |
 | 8 | Three epoch words captured by `begin`: number, reason, exhaustion |
 | 20 | Three epoch words captured after the copy |
-| 32 | Twelve caller-supplied observation words (space for existing timing/bank observations and five SSIF registers) |
+| 32 | Twelve observation words: tick/counter/pending twice, source-end pointer, SSICR, SSIFCR, SSISR, SSIFSR, SSITDMR |
 | 80 | 72 bytes of stream A, then 72 bytes of stream B |
 
 A separate initialized 32-byte live monitor tracks callback depth, copy ownership,
@@ -174,5 +175,59 @@ resuming; this models controlled interleaving, not hardware interrupt delivery.
 
 This larger capture overlaps the earlier epoch wrapper's trial state address if
 placed at the v1 capture base. It must not be combined with those trial addresses.
-New placement, early/late firmware wrappers, arming, v2 carrier/host recovery,
-stack headroom, execution timing and target acceptance remain required.
+Final runtime placement, arming, lifecycle-bundle combination, v2 carrier/host
+recovery, stack headroom, execution timing and target acceptance remain required.
+
+## V2 handler hooks and SSI observation
+
+`capture_v2_hooks.S` integrates the standalone core and `ssif_observe.S` at four
+exact original instruction sites. `tools/native_v2_hooks.py` checks the image,
+original instruction bytes, identical embedded cores, all-FF padding and disjoint
+storage before substituting instructions in emulator memory. It has no image or
+card writer.
+
+| Hook | Original site | Behavior preserved |
+| --- | --- | --- |
+| Entry | `0x20060614` | Observe before the status read, replay `push {r4-r6, lr}` |
+| Idle | `0x200606e8` | Cancel observation, replay `pop {r4-r6, pc}` |
+| Restart | `0x20060644` | Cancel observation, tail-branch to shared restart |
+| Ready | `0x200606d8` | Capture extracted A/B, then call the original A-queue producer; the original B-queue path follows |
+
+The ready hook skips all additional timer/SSI observations unless this callback
+owns an active outer capture. It preserves the original call inputs and flags.
+The trial layout uses code at `0x20362000`, capture at `0x20364000`, live monitor
+at `0x2038f000` and epoch at `0x2038f080`. These epoch addresses differ from the
+older standalone lifecycle-wrapper trial; do not combine the old trial unchanged.
+
+Renesas R01UH0403EJ0700 sections 55.2.11 and 55.3.5 identify STBCR11 bit 5 as
+SSI0's clock-stop control and prohibit module-register access in standby. The
+observer therefore masks IRQ/FIQ across its byte read of `0xfcfe0440` and, only
+when bit 5 is clear, the five approved SSI0 word reads. It never reads the FIFO
+data register and never writes peripheral registers. If gated, it skips SSI,
+sets flag 16 and fills those five observations with `0xffffffff`. The decoder
+requires this sentinel when the flag is set. Actual observed all-one words with
+flag 16 clear remain raw observations, not a claim that they are valid settings.
+
+This protects against maskable single-CPU clock-state writers, not arbitrary DMA
+writers. Hardware FIFO state can change between reads; masking interrupts does
+not make these five words an atomic hardware snapshot. They cannot identify the
+first serial word in an already completed DMA bank.
+
+Tests compare 2,048 entry/idle/restart decisions with unmodified original code,
+including registers, flags and the saved entry frame. Another 1,024 ready cases
+cover every gate byte and IRQ/FIQ mask combination, both banks, original queue
+output, signed sample preservation, raw timer/SSI observations and skipped reads.
+Additional cases cover an epoch change after bank selection, frozen/inactive
+passthrough, and combined nested/unavailable flags. The active path reaches
+144 bytes below the original caller's stack in these fixtures; target headroom
+and timing are not established by that measurement.
+
+Ready decisions stop before acknowledgment/cache operations. Tests then supply
+the documented post-cache register/bank state and execute original extraction
+and queue routines. Neither the intermediate hardware effects nor successful
+transport restart is fabricated. Reproduce with:
+
+```sh
+IC7300_TEST_IMAGE=artifacts/original/7300_142.dat \
+  .venv/bin/python -m unittest discover -s tests -p 'test_native*v2*.py' -v
+```

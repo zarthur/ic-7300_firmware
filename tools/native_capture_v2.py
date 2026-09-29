@@ -142,8 +142,10 @@ def decode_storage(data):
         expected = (int(before[0] != after[0]) | (2 if not before[0] or not after[0] else 0) |
                     (4 if before[2] or after[2] else 0))
         nested = bool(flags & 8)
-        if sequence != i or flags & ~15 or flags & 7 != expected or nested != (status == 5 and i == count-1):
+        if sequence != i or flags & ~31 or flags & 7 != expected or nested != (status == 5 and i == count-1):
             raise ValueError('Inconsistent v2 record flags or sequence')
+        if flags & 16 and words[15:20] != (0xffffffff,)*5:
+            raise ValueError('Unavailable SSI observations require explicit sentinel words')
         records.append(dict(sequence=sequence, flags=flags, epoch_before=list(before),
                             epoch_after=list(after), observations=list(words[8:20]),
                             stream_a=list(words[20:56]), stream_b=list(words[56:92])))
