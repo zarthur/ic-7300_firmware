@@ -14,7 +14,7 @@ replace their acceptance criteria. See [the ordered work queue](NEXT_STEPS.md).
 | [#10](https://github.com/zarthur/ic-7300_firmware/issues/10) Updater semantics | Container checks, loader, selector and bounded transfer/controller/UI traces | Complete acceptance specification across supported targets; physical/task effects and complete selector-block ownership remain unknown. |
 | [#11](https://github.com/zarthur/ic-7300_firmware/issues/11) Recovery | Failure-class matrix and conditional software restoration assessment | Successful physical recovery procedure is not demonstrated; same-version/custom-to-stock return is untested. Risk acceptance does not complete this issue. |
 | [#12](https://github.com/zarthur/ic-7300_firmware/issues/12) Packer | Private constrained candidate builder/audit reviewed for one exact edit | General deterministic packer acceptance and distribution remain incomplete; preserve the narrow local policy. |
-| [#13](https://github.com/zarthur/ic-7300_firmware/issues/13) Visible-only proof | Owner approved installation; photo confirms the custom label on the running radio | Record post-install versions, restart sequence and ten-minute receive/UI check. Stock return remains unapproved/unperformed; see [physical result](../research/first-custom-boot.md). |
+| [#13](https://github.com/zarthur/ic-7300_firmware/issues/13) Visible-only proof | Authorized display test complete: photo confirms label; owner confirms automatic restart, unchanged versions and about ten minutes receiving without issue | Stock return remains unapproved/unperformed, so broader acceptance remains open; see [physical result](../research/first-custom-boot.md). |
 | [#14](https://github.com/zarthur/ic-7300_firmware/issues/14) Runtime headroom | Desktop codec measurements and estimated workspace | Identify owned target memory, stacks/tasks and measure CPU/stack behavior under load. |
 | [#15](https://github.com/zarthur/ic-7300_firmware/issues/15) Receive interface | PR #49 classifies the old lead as stored-file parsing and bounds stored-WAV format; current stock USB receive evidence | Classify `0x2006bfd4`, then establish native PCM format, buffers/DMA ownership, timestamps and lifecycle. |
 | [#16](https://github.com/zarthur/ic-7300_firmware/issues/16) Playback/PTT interface | Voice playback and UI reference leads | Resolve queue/completion/PTT/abort/flush semantics; no waveform injection is part of interface discovery. |
@@ -83,6 +83,7 @@ experiments or establish physical readiness.
 
 Baseline reconciliation is complete. Preserve the stale evidence checkout;
 start new source work from current main. Readiness observations, backup verification and the exact installation decision
-are now complete. The visible label is confirmed; post-install versions and
-receive/UI observations remain pending, with stock return unperformed. This does not block desktop native-interface
+are now complete. The display-only test is complete: label, automatic restart, unchanged versions
+and about ten minutes receiving without issue are documented. Stock return is
+unapproved/unperformed and remains separate from the next desktop work. This does not block desktop native-interface
 research. No issue is closed by this status correction.
