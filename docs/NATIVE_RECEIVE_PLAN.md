@@ -85,3 +85,9 @@ complete WAV and carrier validation: 512 blocks, alternating banks, timer-relati
 in USB-D. Owner reports normal restart/reception at 7.074 MHz with no settings
 changes. Continue with gain/control dependence and lifecycle/discontinuity
 semantics; do not mistake this bounded success for all-mode/runtime qualification.
+
+The [lifecycle follow-up](../research/native-receive-lifecycle.md) tests all three
+native DMA handlers at their decision boundaries and separates common transport
+restart from A-queue backlog discard. An adapter epoch must cover the shared
+restart, including requests from other channels; the first installed diagnostic
+does not yet carry this epoch. AF-volume measurement is pending separately.

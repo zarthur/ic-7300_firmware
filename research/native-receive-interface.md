@@ -133,7 +133,10 @@ Therefore it is a better investigation point, not yet an invariant gain tap.
   a timestamp or gap marker. `0x200605fc` initializes DMA-bank memory, configures SSI/pins and DMA, then
   starts the audio transport at `0x2006003c`. `0x200605e4` disables and restarts
   transport on the observed failure path. It does not call the initial bank
-  clear. A restart must invalidate an adapter's continuity epoch.
+  clear. A restart must invalidate an adapter's continuity epoch. The
+  [lifecycle follow-up](native-receive-lifecycle.md) establishes that all three
+  serviced DMA channels can request the same transport restart; A-queue flushing
+  is a separate consumer operation.
 - `0x20005c08` registers `0x20005b98` for interrupt ID `0x9a`. This service
   checks the flag at `0x2039038c`, calls the DMA handler, and advances the MTU2
   channel-3 compare at `0xfcff0218` by 8000 timer ticks. Those ticks are not
