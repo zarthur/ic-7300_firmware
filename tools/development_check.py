@@ -24,6 +24,7 @@ SYNTHETIC_TESTS = (
     'test_native_timing.SyntheticTimingTests', 'test_native_memory.SyntheticMemoryTests',
     'test_native_placement.SyntheticPlacementTests', 'test_native_capture', 'test_native_epoch',
     'test_native_epoch_wrappers.SyntheticEpochWrapperTests',
+    'test_native_capture_v2',
     'test_native_export.SyntheticExportTests', 'test_native_transport', 'test_native_capture_report',
     'test_native_wrappers.SyntheticWrapperTests', 'test_native_lifecycle.SyntheticLifecycleTests',
     'test_native_recorder_controls.SyntheticRecorderControlTests',
