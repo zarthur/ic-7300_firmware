@@ -231,3 +231,29 @@ transport restart is fabricated. Reproduce with:
 IC7300_TEST_IMAGE=artifacts/original/7300_142.dat \
   .venv/bin/python -m unittest discover -s tests -p 'test_native*v2*.py' -v
 ```
+
+### Version 2 recorder carrier (offline)
+
+`transport_v2.S` and `tools/native_transport_v2.py` export immutable v2 storage
+in 598 recorder payloads using `IC73RX02`. Each payload is 216 bytes: a 24-byte
+header followed by at most 192 storage bytes. The last carries 80 bytes and 112
+zero padding bytes. The original v1 core and decoder remain separate.
+
+The exporter accepts full captures (status 2, count 512), captures aborted with
+a final flagged record (5, count 1–512), and captures aborted without a final
+record (6, count 0–511). Header identity, count and frame index are checked before
+reading storage. Inactive captures, completed exports and invalid exports copy
+the original audio payload unchanged. A malformed frozen header latches export
+status 3. The caller must serialize export and keep frozen storage immutable.
+
+Recovery requires every frame in order from one file, with exact offsets,
+lengths, FNV-1a checksums and zero padding, then validates the capture records.
+Checksums detect accidental corruption; they do not authenticate data. Export
+status 2 means all bytes were exported, including for an aborted or empty capture;
+the recovered capture status and flags must still be examined. This does not
+establish sample validity, DMA ownership, or uninterrupted acquisition.
+
+Firmware-free tests execute the ARM core for full, aborted and empty captures,
+verify exact recovery and ordinary audio after completion, and reject malformed,
+missing, duplicate, reordered and truncated frames. Recorder hooks, arming,
+combined placement and target validation remain separate work.
