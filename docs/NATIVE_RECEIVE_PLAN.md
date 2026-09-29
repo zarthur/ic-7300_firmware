@@ -103,3 +103,8 @@ The [DSP image follow-up](../research/native-receive-dsp-image.md) makes the
 original DSP load layout and initialized command-table location reproducible.
 The AF command has a candidate DSP handler and gain consumer; mapping that gain
 stage to the native receive lane remains open.
+
+The [CPU-to-DSP gate follow-up](../research/native-dsp-controls.md) executes
+shared-state publication, pending flag refresh and command-prefix construction.
+It distinguishes cached gates from current state and tests the no-refresh path.
+Physical channel identity and the state machine's radio semantics remain open.
