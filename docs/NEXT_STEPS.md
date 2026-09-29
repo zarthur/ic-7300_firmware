@@ -44,7 +44,7 @@ current main; do not restart those tasks. See [issue status](WORK_STATUS.md).
 
 | Order | Work | Completion criterion |
 | --- | --- | --- |
-| 1 | Recover one native receive interface (#14/#15/#17/#19) | Continue from the bounded entry `0x2006bfd4` in [the recorder findings](../research/recorder-interface.md). The previous lead is stored-file parsing, not a live PCM ring. Establish sample format, ownership, lifecycle, task and timestamp boundaries. Deliver a reproducible interface map or a precise unresolved boundary. This is the next major unit of work. |
+| 1 | Recover one native receive interface (#14/#15/#17/#19) | The [native interface map](../research/native-receive-interface.md) follows the file-reader lead to SSIF0 DMA and two live sample queues. Exact-image probes establish extraction, wrap/overflow and recorder publication. Continue with channel/gain semantics, timer/sample alignment and owned diagnostic storage; #15 still requires timestamped target capture. See the [execution plan](NATIVE_RECEIVE_PLAN.md). |
 | 2 | Design the bounded target adapter (#20–#22) | Separate the estimated 393,216-byte codec workspace from adapter/DMA/stack overhead and actual target RAM availability. Plan measurements under scope/UI/SD load. Host USB capture and host benchmarks do not establish native deadlines. |
 | 3 | Evaluate a specific new decoder hypothesis (#23/#25) | Use frozen baseline/holdout corpora, report per-slot gains/losses/unconfirmed results and resource use, and reject lost baseline matches. Retain manual signal reports until calibration is validated. Do not repeat unchanged parameter sweeps. |
 
