@@ -9,17 +9,17 @@ replace their acceptance criteria. See [the ordered work queue](NEXT_STEPS.md).
 
 | Issue | Established progress | Remaining acceptance / next action |
 | --- | --- | --- |
-| [#7](https://github.com/zarthur/ic-7300_firmware/issues/7) Target matrix | Published original-model matrix; exact-image gates; observed official update | Region qualification remains incomplete; collect current-radio evidence and resolve concrete compatibility conflicts. |
+| [#7](https://github.com/zarthur/ic-7300_firmware/issues/7) Target matrix | Published original-model matrix; exact-image gates; observed official update | Same-radio/current pre-install versions and no modifications confirmed; regional qualification remains incomplete. |
 | [#8](https://github.com/zarthur/ic-7300_firmware/issues/8) Distribution review | License, notices and publication boundary exist | Qualified review remains pending; keep packing tools, images and private evidence unpublished. |
 | [#10](https://github.com/zarthur/ic-7300_firmware/issues/10) Updater semantics | Container checks, loader, selector and bounded transfer/controller/UI traces | Complete acceptance specification across supported targets; physical/task effects and complete selector-block ownership remain unknown. |
 | [#11](https://github.com/zarthur/ic-7300_firmware/issues/11) Recovery | Failure-class matrix and conditional software restoration assessment | Successful physical recovery procedure is not demonstrated; same-version/custom-to-stock return is untested. Risk acceptance does not complete this issue. |
 | [#12](https://github.com/zarthur/ic-7300_firmware/issues/12) Packer | Private constrained candidate builder/audit reviewed for one exact edit | General deterministic packer acceptance and distribution remain incomplete; preserve the narrow local policy. |
-| [#13](https://github.com/zarthur/ic-7300_firmware/issues/13) Visible-only proof | Exact label candidate and reviewed conditional decision package exist | Revision 2 includes current host receive evidence. Version/change/UI observations, current backups, SD/power/operator readiness and exact owner decision remain pending; custom boot and stock return have not occurred. |
+| [#13](https://github.com/zarthur/ic-7300_firmware/issues/13) Visible-only proof | Owner approved installation; photo confirms the custom label on the running radio | Record post-install versions, restart sequence and ten-minute receive/UI check. Stock return remains unapproved/unperformed; see [physical result](../research/first-custom-boot.md). |
 | [#14](https://github.com/zarthur/ic-7300_firmware/issues/14) Runtime headroom | Desktop codec measurements and estimated workspace | Identify owned target memory, stacks/tasks and measure CPU/stack behavior under load. |
 | [#15](https://github.com/zarthur/ic-7300_firmware/issues/15) Receive interface | PR #49 classifies the old lead as stored-file parsing and bounds stored-WAV format; current stock USB receive evidence | Classify `0x2006bfd4`, then establish native PCM format, buffers/DMA ownership, timestamps and lifecycle. |
 | [#16](https://github.com/zarthur/ic-7300_firmware/issues/16) Playback/PTT interface | Voice playback and UI reference leads | Resolve queue/completion/PTT/abort/flush semantics; no waveform injection is part of interface discovery. |
 | [#17](https://github.com/zarthur/ic-7300_firmware/issues/17) UTC interface | RTC/timer leads and host discontinuity tests | Recover native time source, accuracy/setting behavior and clock-jump gate. |
-| [#18](https://github.com/zarthur/ic-7300_firmware/issues/18) UI/settings | One display label has bounded consumer/renderer/font evidence | Native UI hook, live behavior and settings persistence remain incomplete; design RAM-only feature state. |
+| [#18](https://github.com/zarthur/ic-7300_firmware/issues/18) UI/settings | One display label has bounded consumer/renderer/font evidence and is now visibly running on the radio | Native UI hook, live behavior and settings persistence remain incomplete; design RAM-only feature state. |
 | [#19](https://github.com/zarthur/ic-7300_firmware/issues/19) DSP transport | Service-diagram and recorder-path leads | Recover framing, handshakes and concurrent buffer ownership with reproducible interface evidence. |
 | [#20](https://github.com/zarthur/ic-7300_firmware/issues/20) Target codec | Portable C codec and host allocation measurements | Bounded/static workspace, target ABI build and target-compatible tests. |
 | [#21](https://github.com/zarthur/ic-7300_firmware/issues/21) Streaming receive | Host USB capture/resampling/aligned replay | Native nonblocking adapter depends on #15/#20; host capture does not satisfy it. |
@@ -82,7 +82,7 @@ original evidence checkout. Integrity checks do not independently repeat the
 experiments or establish physical readiness.
 
 Baseline reconciliation is complete. Preserve the stale evidence checkout;
-start new source work from current main. The remaining first-test wrap-up is
-current owner observations and backup verification, followed by the exact
-candidate/procedure decision. This does not block desktop native-interface
+start new source work from current main. Readiness observations, backup verification and the exact installation decision
+are now complete. The visible label is confirmed; post-install versions and
+receive/UI observations remain pending, with stock return unperformed. This does not block desktop native-interface
 research. No issue is closed by this status correction.
