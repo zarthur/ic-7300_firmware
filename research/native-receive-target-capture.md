@@ -130,18 +130,17 @@ state initialization. The original application includes a WFI instruction at
 `0x20029b14` followed by an in-place continuation, so a power-button action must
 not be assumed equivalent to loading the application image afresh. This static
 path does not prove which path the owner's radio took or directly demonstrate
-RAM retention. A full DC-off restart after normal shutdown is the next proposed
-comparison; its diagnostic result is not yet available. No firmware change is
-required for that comparison.
+RAM retention. The subsequent DC-off restart comparison below produced a complete diagnostic
+capture. No firmware change was made for that comparison.
 
 
 ## Second complete diagnostic capture
 
 A subsequent file again passes strict WAV and diagnostic recovery checks.
-Its requested DC-off restart, minimum AF, frequency/mode and normal-operation
-conditions are **awaiting owner confirmation**. The validated bytes alone do not
-establish those conditions, so this is not yet an AF-volume comparison or a
-verified power-cycle rearm procedure.
+The owner confirms normal shutdown followed by external DC off/on, AF volume
+fully down, 7.074 MHz USB-D, other controls unchanged, and normal startup and
+reception. These conditions come from the owner's explicit confirmation, not
+from the file contents.
 
 - Recording SHA-256: `a69aa0738ca5477ca55ada021a61247a17fd5b741a47239912cd6f25045c8e9d`; 889,896 bytes, 55.6065 seconds of PCM.
 - Capture SHA-256: `e95793b1dd8f0a95c3341c130487c35d1ff59d7645f47fedb9ab50b61bfdeed6`; 90,128 bytes, all 512 blocks and 470 checksum-valid ordered frames.
@@ -152,5 +151,17 @@ verified power-cycle rearm procedure.
 
 The file and recovered storage were copied locally and hash-verified, and repeat
 analysis gives the same report. This strengthens reproducibility of the bounded
-capture/export chain. It does not establish missing control conditions, exclude
-unobserved DMA loss, identify stream B, or prove calibrated timing.
+capture/export chain. It does not exclude unobserved DMA loss, identify stream B,
+or prove calibrated timing.
+
+In this confirmed USB-D configuration, minimum AF volume does not mute the
+native A stream: all 18,432 captured samples remain nonzero and its unity
+relationship to the recorder is preserved. This does not measure gain versus
+knob position: the two captures used changing on-air signals, not a controlled
+constant input. Squelch, RF gain, AGC and other modes remain unqualified.
+
+A full DC-off restart after normal shutdown successfully rearmed this installed
+one-shot diagnostic in the observed trial, whereas the preceding power-button
+off/on trial with DC connected exported no diagnostic frames. This supports
+using the full DC cycle for subsequent comparisons; it is not direct measurement
+of retained RAM, a guarantee for every power transition, or a recovery test.

@@ -90,7 +90,9 @@ The [lifecycle follow-up](../research/native-receive-lifecycle.md) tests all thr
 native DMA handlers at their decision boundaries and separates common transport
 restart from A-queue backlog discard. An adapter epoch must cover the shared
 restart, including requests from other channels; the first installed diagnostic
-does not yet carry this epoch. AF-volume measurement is pending separately.
+does not yet carry this epoch. The second target capture confirms that minimum
+AF volume does not mute native A in USB-D after a full DC-off restart; calibrated
+gain, other controls and lifecycle continuity remain open.
 
 The [recorder-control follow-up](../research/native-recorder-controls.md) resolves
 settings record boundaries and tests the original downstream mute/copy/gain stage
