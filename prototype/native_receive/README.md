@@ -115,3 +115,64 @@ state lifetime, not persistent across firmware loads or resets.
 bounds, verifies preserved registers/stack and neighboring storage, and checks
 repeated boundaries, terminal overflow and invalid input. It does not simulate
 hardware or concurrent callers.
+
+## Two-phase capture prototype (v2)
+
+`capture_v2.S` is a separate offline core; the installed capture, transport and
+wrappers remain v1. Every DMA handler entry must call `begin` before reading
+status or selecting a bank, including when capture is disabled or already frozen.
+A ready path pairs this with `finish` after extraction; an idle or restart path
+uses `cancel`. Observing only immediately before extraction still misses changes
+between the original status read and extraction. The exact original hook sites
+and new carrier are not yet integrated with this core.
+
+Storage is 114,704 bytes: a 16-byte header (`status`, `count`, magic `0x3252434e`,
+version 2) and 512 records of 224 bytes. Each record contains:
+
+| Byte offset | Contents |
+| --- | --- |
+| 0 | Sequence |
+| 4 | Flags: epoch changed=1, epoch unknown=2, epoch exhausted=4, nested extraction=8 |
+| 8 | Three epoch words captured by `begin`: number, reason, exhaustion |
+| 20 | Three epoch words captured after the copy |
+| 32 | Twelve caller-supplied observation words (space for existing timing/bank observations and five SSIF registers) |
+| 80 | 72 bytes of stream A, then 72 bytes of stream B |
+
+A separate initialized 32-byte live monitor tracks callback depth, copy ownership,
+faults, poison and the early epoch snapshot. `begin` and the control portions of
+`finish` mask IRQ/FIQ, then restore the incoming masks. The observation/sample
+copy uses the incoming masks, so the core does not extend its critical section
+over the long copy. Epoch writers and readers must share this single-CPU masking
+contract. Barriers do not make the design safe for other CPU/DMA writers.
+
+Nested callbacks mark the outer record and unwind depth without copying or
+publishing storage. Only the outer callback can publish, after its copy returns.
+On nesting it freezes an explicitly aborted partial capture (status 5), retaining
+the affected record with flag 8. Its samples may be mixed and must not be used as
+valid audio. An outer cancellation with nesting freezes status 6 without adding a
+record; this explicitly reports the possible gap even when zero records were
+captured. Ordinary cancellation returns to armed state with the count unchanged.
+Epoch changes without nesting retain flagged records and continue,
+allowing the host to identify observed boundaries. No flags means only that these
+checks found no event; it is not proof of DMA-bank ownership or acquisition-time
+continuity. A poisoned monitor never publishes frozen storage. Missing hook pairs,
+invalid controls and depth overflow require external diagnosis, not silent rearm.
+
+Full status 2 and aborted statuses 5/6 are immutable. Later callback bookkeeping uses
+only the separate live monitor. Status 4 is busy and cannot be exported; status 0
+is disabled and status 1 is armed. Initialization and transport publication are
+caller responsibilities. The decoder accepts only a frozen or otherwise quiescent
+snapshot and rejects inconsistent sequence, version, status, count and flags.
+
+`tools/native_capture_v2.py` executes the compiled core in bounded private memory.
+Tests include 512-record completion, flagging boundaries during extraction/copy,
+all IRQ/FIQ masks, late arming, nested callbacks at the first/middle/final sample,
+frozen-storage preservation, idle/restart cancellation, empty aborted captures,
+missing pairs and poisoned controls. The nested tests
+pause actual ARM copying and run nested core calls with a separate stack before
+resuming; this models controlled interleaving, not hardware interrupt delivery.
+
+This larger capture overlaps the earlier epoch wrapper's trial state address if
+placed at the v1 capture base. It must not be combined with those trial addresses.
+New placement, early/late firmware wrappers, arming, v2 carrier/host recovery,
+stack headroom, execution timing and target acceptance remain required.
