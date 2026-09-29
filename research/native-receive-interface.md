@@ -137,8 +137,9 @@ Therefore it is a better investigation point, not yet an invariant gain tap.
 - `0x20005c08` registers `0x20005b98` for interrupt ID `0x9a`. This service
   checks the flag at `0x2039038c`, calls the DMA handler, and advances the MTU2
   channel-3 compare at `0xfcff0218` by 8000 timer ticks. Those ticks are not
-  audio samples and are not UTC. Absolute timer frequency and worst-case service
-  latency have not been established.
+  audio samples and are not UTC. The [timing follow-up](native-receive-timing.md) establishes the intended
+  32 MHz scale and 250-us service spacing; actual frequency, continuity and
+  worst-case service latency remain unmeasured.
 - Recorder consumption is reached via `0x2006759c` in the main service loop
   (`0x2002b620`) and other paths. File I/O runs in separately created workers.
   Task descriptors at `0x201988cc/0x201988dc` identify those worker entries;
@@ -174,8 +175,9 @@ Remaining completion requirements, in order:
 1. Resolve channel A/B meaning and mode/gain controls across RX/TX, squelch and
    AF volume; follow the DSP control path and compare CPU consumers. Nominal
    sample rate is not sufficient channel identification.
-2. Recover monotonic timer frequency, wrap behavior and capture-time association;
-   establish how DMA restart/loss is surfaced. Link UTC separately under #17.
+2. Complete the [timing follow-up](native-receive-timing.md): nominal clock
+   scale and register rollover are mapped, but a coherent monotonic capture
+   epoch and DMA restart/loss association are not. Link UTC separately under #17.
 3. Identify an owned bounded buffer, execution/ABI insertion mechanism and export
    path; establish interrupt/task budgets under #14. Do not choose an apparent
    zero-filled region as free memory.
