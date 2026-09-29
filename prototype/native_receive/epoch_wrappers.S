@@ -5,6 +5,9 @@
  * general registers and APSR, replay the original PUSH, continue at entry+4.
  * This is not a placement/initialization or complete lifecycle qualification.
  */
+#ifndef RX_EPOCH_STATE
+#define RX_EPOCH_STATE 0x2037e080
+#endif
 .syntax unified
 .arch armv7-a
 .arm
@@ -22,7 +25,7 @@
     mrs ip, cpsr
     cpsid if
     push {r3, ip}
-    ldr r0, =0x2037e080
+    ldr r0, =RX_EPOCH_STATE
     mov r1, #\reason
     adr lr, .Lafter_\name
     adr ip, .Lcore
