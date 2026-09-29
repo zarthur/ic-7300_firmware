@@ -71,3 +71,9 @@ patched call sites in offline tests, including a full 512-record capture and
 470-fragment reconstruction. Triggering is the first nonzero native write
 submission, not the ring watermark gate. Ring-to-file routing, candidate update
 validation, target stack/timing checks and owner-run capture remain outstanding.
+
+The [recorder batch follow-up](../research/native-receive-recorder-batches.md)
+qualifies original selection and byte copying across partial 4 KiB writes, ring
+wrap and file-tag changes. All 470 synthetic fragments reconstruct exactly after
+batching. Submission/completion and actual SD output remain target observations;
+this is not a whole-recorder simulation.
