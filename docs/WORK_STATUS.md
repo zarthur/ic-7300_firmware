@@ -1,6 +1,6 @@
 # Work status — 2026-09-29
 
-Reviewed against `main` at `24b6934`, merged PRs #36–#47, the 32 open issues,
+Reviewed against `main` at `7ac5b19`, merged PRs #36–#49, the 32 open issues,
 and the retained candidate/validation manifests. No open PRs were present at
 review time. The table records partial progress; it does not close issues or
 replace their acceptance criteria. See [the ordered work queue](NEXT_STEPS.md).
@@ -14,9 +14,9 @@ replace their acceptance criteria. See [the ordered work queue](NEXT_STEPS.md).
 | [#10](https://github.com/zarthur/ic-7300_firmware/issues/10) Updater semantics | Container checks, loader, selector and bounded transfer/controller/UI traces | Complete acceptance specification across supported targets; physical/task effects and complete selector-block ownership remain unknown. |
 | [#11](https://github.com/zarthur/ic-7300_firmware/issues/11) Recovery | Failure-class matrix and conditional software restoration assessment | Successful physical recovery procedure is not demonstrated; same-version/custom-to-stock return is untested. Risk acceptance does not complete this issue. |
 | [#12](https://github.com/zarthur/ic-7300_firmware/issues/12) Packer | Private constrained candidate builder/audit reviewed for one exact edit | General deterministic packer acceptance and distribution remain incomplete; preserve the narrow local policy. |
-| [#13](https://github.com/zarthur/ic-7300_firmware/issues/13) Visible-only proof | Exact label candidate and reviewed conditional decision package exist | Current observations/backups, exact owner decision, observed custom boot/receive and approved stock return remain pending. |
+| [#13](https://github.com/zarthur/ic-7300_firmware/issues/13) Visible-only proof | Exact label candidate and reviewed conditional decision package exist | Revision 2 includes current host receive evidence. Version/change/UI observations, current backups, SD/power/operator readiness and exact owner decision remain pending; custom boot and stock return have not occurred. |
 | [#14](https://github.com/zarthur/ic-7300_firmware/issues/14) Runtime headroom | Desktop codec measurements and estimated workspace | Identify owned target memory, stacks/tasks and measure CPU/stack behavior under load. |
-| [#15](https://github.com/zarthur/ic-7300_firmware/issues/15) Receive interface | Recorder metadata leads; separate stock USB receive evidence | Trace native PCM format, buffers/DMA ownership, timestamps and lifecycle. |
+| [#15](https://github.com/zarthur/ic-7300_firmware/issues/15) Receive interface | PR #49 classifies the old lead as stored-file parsing and bounds stored-WAV format; current stock USB receive evidence | Classify `0x2006bfd4`, then establish native PCM format, buffers/DMA ownership, timestamps and lifecycle. |
 | [#16](https://github.com/zarthur/ic-7300_firmware/issues/16) Playback/PTT interface | Voice playback and UI reference leads | Resolve queue/completion/PTT/abort/flush semantics; no waveform injection is part of interface discovery. |
 | [#17](https://github.com/zarthur/ic-7300_firmware/issues/17) UTC interface | RTC/timer leads and host discontinuity tests | Recover native time source, accuracy/setting behavior and clock-jump gate. |
 | [#18](https://github.com/zarthur/ic-7300_firmware/issues/18) UI/settings | One display label has bounded consumer/renderer/font evidence | Native UI hook, live behavior and settings persistence remain incomplete; design RAM-only feature state. |
@@ -68,3 +68,21 @@ structure and whitespace, confirm the issue list and recorded CI/evidence facts,
 and require normal hosted synthetic checks before merge. Hardware fields in the
 [test checklist](TEST_CHECKLIST.md) are N/A; this increment performs no radio I/O,
 image construction, firmware write, dependency change or runtime-code change.
+
+## Wrap-up verification
+
+The September 29 follow-up rehashed the retained decision-package dependencies,
+PR #46 evidence index, reconciliation archive and all 90 archived source files.
+All 824 recorded integrity/source checks passed. The retained PR #49 full profile
+has 142 Python tests with zero skips and all stages passing; its source hashes
+match merged `7ac5b19`. Hosted Linux/macOS validation also passed for that merge
+in [run 36582605304](https://github.com/zarthur/ic-7300_firmware/actions/runs/36582605304).
+Private audit script/results are under `artifacts/wrap-up-20260929/` in the
+original evidence checkout. Integrity checks do not independently repeat the
+experiments or establish physical readiness.
+
+Baseline reconciliation is complete. Preserve the stale evidence checkout;
+start new source work from current main. The remaining first-test wrap-up is
+current owner observations and backup verification, followed by the exact
+candidate/procedure decision. This does not block desktop native-interface
+research. No issue is closed by this status correction.
