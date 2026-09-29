@@ -27,7 +27,7 @@ SYNTHETIC_TESTS = (
     'test_native_capture_v2',
     'test_native_v2_hooks.SyntheticV2HookTests',
     'test_native_v2_recorder.SyntheticV2RecorderTests',
-    'test_native_export.SyntheticExportTests', 'test_native_transport', 'test_native_transport_v2', 'test_native_capture_report',
+    'test_native_export.SyntheticExportTests', 'test_native_transport', 'test_native_transport_v2', 'test_native_capture_report', 'test_native_capture_v2_report',
     'test_native_wrappers.SyntheticWrapperTests', 'test_native_lifecycle.SyntheticLifecycleTests',
     'test_native_recorder_controls.SyntheticRecorderControlTests',
     'test_native_dsp_controls.SyntheticDspControlTests',

@@ -301,3 +301,41 @@ Explicit context switches supply intervening callbacks; they are not hardware
 IRQ delivery. Ready-path tests retain the existing ACK/cache boundary, and
 submission tests stop at the original OS entry. Target stack/timing, file output
 and runtime memory ownership remain unverified for v2.
+
+### V2 recording analysis
+
+```sh
+.venv/bin/python tools/native_capture_v2_report.py recording.wav --output report.json
+```
+
+This read-only command requires one complete mono PCM16/8k WAV containing all
+598 v2 frames. It validates the file, carrier and capture records and refuses to
+overwrite an existing report. It preserves the raw samples, observation words,
+flags and lifecycle states with field names, input hashes and analysis provenance.
+The separate v1 analyzer remains available for recordings from the installed v1
+candidate.
+
+`export_complete` means every byte was recovered. `capture_outcome` distinguishes
+full, aborted-with-record and aborted-without-record captures, including an empty
+abort. Raw statistics include flagged records; empty statistics are null rather
+than invented zeros. Nested-callback samples can be mixed.
+
+Timing is projected separately within segments. A segment excludes unknown or
+exhausted lifecycle state, within-record epoch changes, nested callbacks and
+ambiguous timer snapshots. It also ends at an epoch change between records,
+repeated bank identifier or nonpositive/ambiguous timer interval. A full-capture
+rate appears only when one eligible segment covers an entire full capture.
+Partial segments can still carry nominal estimates. Unavailable SSI observations
+alone do not invalidate the independent timer observations; their raw sentinel
+words and flag remain explicit.
+
+These are projections using the nominal 32 MHz clock and recovered timer period,
+not calibrated acquisition timestamps or proof of continuous audio. Recorder
+sample matches are limited to eligible segments and ordinary audio before the
+first diagnostic frame; they never cross a recorded lifecycle boundary or fault.
+
+Original-instruction batch tests additionally pass all three frozen capture
+forms through partial 4 KiB batches and ring wrap. A 598-frame export bracketed
+by two ordinary payloads takes 32 batches, and recovers byte-for-byte. Stable file
+tags and producer state are supplied fixtures; actual asynchronous I/O completion
+and target SD output still require hardware evidence.
