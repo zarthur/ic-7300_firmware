@@ -71,8 +71,8 @@ capture inputs remain unchanged. This tests the core's call contract and origina
 publisher continuation, **not a patched firmware wrapper**, cache coherency,
 interrupt scheduling, or end-to-end SD output.
 
-Next: implement and qualify the exact wrapper and a one-shot trigger on the
-actual recorder write path (candidate `0x200497f0`), assign
-and capture raw timer observations, validate recorder-to-file byte preservation
-and single-file routing, measure added work, then prepare a concrete candidate
-for owner review. A target capture is still required before issue #15 can close.
+The [wrapper follow-up](native-receive-wrappers.md) implements the exact hooks
+and raw observations in an offline emulator. Ring-to-file byte preservation,
+single-file routing and target cost remain to be qualified before preparing an
+owner-reviewed installation candidate. A target capture is still required before
+issue #15 can close.

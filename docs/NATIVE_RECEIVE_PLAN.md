@@ -65,3 +65,9 @@ file-worker result and task-ID exhaustion probes plus a bounded recorder-carrier
 core. A modeled bridge preserves original publisher metadata and wrap behavior.
 Qualify the actual wrapper, recording trigger, timer observations and single-file
 output next; no target capture exists yet.
+
+The [wrapper bundle](../research/native-receive-wrappers.md) now executes actual
+patched call sites in offline tests, including a full 512-record capture and
+470-fragment reconstruction. Triggering is the first nonzero native write
+submission, not the ring watermark gate. Ring-to-file routing, candidate update
+validation, target stack/timing checks and owner-run capture remain outstanding.

@@ -20,10 +20,10 @@ receive_capture:
     mov r4, r0
     ldr r3, [r4]
     cmp r3, #1
-    bne inactive
+    bne .Lcapture_inactive
     ldr r7, [r4, #4]
     cmp r7, #512
-    bhs invalid
+    bhs .Lcapture_invalid
     mov r3, #4
     str r3, [r4]
     /* 176 = 128 + 32 + 16. */
@@ -33,17 +33,17 @@ receive_capture:
     add r5, r5, #16
     str r7, [r5], #4
     mov r6, #7
-observations:
+.Lcapture_observations:
     ldr r8, [r2], #4
     str r8, [r5], #4
     subs r6, r6, #1
-    bne observations
+    bne .Lcapture_observations
     mov r6, #72
-samples:
+.Lcapture_samples:
     ldrh r8, [r1], #2
     strh r8, [r5], #2
     subs r6, r6, #1
-    bne samples
+    bne .Lcapture_samples
     dmb sy
     add r7, r7, #1
     str r7, [r4, #4]
@@ -54,10 +54,10 @@ samples:
     str r3, [r4]
     mov r0, #1
     pop {r4-r8, pc}
-inactive:
+.Lcapture_inactive:
     mov r0, #0
     pop {r4-r8, pc}
-invalid:
+.Lcapture_invalid:
     mov r3, #3
     str r3, [r4]
     mvn r0, #0
