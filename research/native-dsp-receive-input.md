@@ -111,6 +111,34 @@ four-increment threshold and forced-mute retention. The parity probe stops
 before the intervening call at `0x20005bcc`; the full interrupt routine and its
 ordering relative to release polling are not executed by these fixtures.
 
+## Ordinary receive processing: qualified slices
+
+On the ordinary branch at `0x1180ed24`, the caller first invokes `0x1180c610`.
+That routine writes the coefficient at B14+24; its complete gain calculation
+remains unqualified. The scheduled loop at `0x1180ed44` then multiplies eight
+float32 samples at stack+40 by that coefficient in place. This is a separate
+gain stage from the input ramp.
+
+The next call, `0x1180cc44`, takes stack+40 as input and stack+104 as output.
+Its final command-bit-14 test controls replacement of the processed output
+with the original eight inputs. Both replacement-copy schedules preserve all
+eight words in the tested disjoint buffers. This does not imply that internal
+filter state remains unchanged while output is bypassed. The following loop
+selects output indices 0, 2, 4 and 6 into stack+88..100. Scheduled-loop fixtures
+verify these transformations for 120 input/gain combinations; the filter body
+and branch selection are outside those fixtures.
+
+The call chain then passes those four samples through `0x1180cfa0`, writing
+stack+72..84, and `0x1180d058`, writing stack+136..148. The latter wrapper and
+its original filter helper `0x118007cc` were interpreted together: each input
+is multiplied by float32 0.1, processed through descriptor `0x11818798`, then
+multiplied by 10. Each multiply rounds separately, so these factors must not
+simply be cancelled. Tests with a supplied two-section filter cover 128 cases
+and 32 consecutive groups, checking output, state updates, bounded writes and
+interrupt-enable restoration. They do not identify the descriptor's actual
+runtime coefficients or qualify the preceding `0x1180cfa0` stage. Processing
+after `0x1180d058` and association with the CPU receive lane remain open.
+
 ## Scope of the evidence
 
 Private exact-image models and reports include `dsp-rx-param-trial`,
@@ -120,6 +148,8 @@ Private exact-image models and reports include `dsp-rx-param-trial`,
 Transition evidence is retained in `input-mute-request-trial`,
 `input-mute-release-trial`, `input-mute-counter-trial`, and
 `input-mute-cadence-trial`.
+Ordinary-path evidence is retained in `dsp-ordinary-sample-layout-trial` and
+`dsp-ordinary-filter-wrapper-trial`.
 They retain firmware hashes and explicit boundaries. Firmware, decoded code,
 manual crops and generated original-image reports remain private.
 
