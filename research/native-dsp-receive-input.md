@@ -1131,7 +1131,57 @@ outputs. Their later consumers are not included in these connected fixtures,
 so this is not proof of global independence from native output.
 
 The two `0x11801108` results, envelope, five gains and decoded sample remain
-supplied boundaries. The helper's waveform/envelope implementation, the earlier
-control updates inside `0x1180f708`, the sample decoder and complete caller still
-require qualification. No physical source, calibrated gain or UI meaning is
+supplied boundaries. These cases leave the helper itself, earlier control updates inside
+`0x1180f708`, the sample decoder and complete caller unexecuted. The helper is
+checked separately below. No physical source, calibrated gain or UI meaning is
 assigned to these scalar paths from arithmetic alone.
+
+## Stateful waveform helper and sine routine
+
+A restricted model now executes the complete `0x11801108..0x11801250` helper
+and its original numerical callee `0x11816d54..0x11816e4c`. It takes a six-word
+float32 descriptor; the labels below describe observed arithmetic, not physical
+time units or UI controls:
+
+| Byte offset | Use in this helper |
+| --- | --- |
+| 0 | Phase increment; cleared when amplitude is nonnegative. |
+| 4 | Phase accumulator; advanced and wrapped once while amplitude is negative. |
+| 8 | Increment added to the word at offset 12 on every call. |
+| 12 | Accumulator; a positive result forces amplitude slope to float32 `0.1`. |
+| 16 | Amplitude, normally negative in the active fixtures. |
+| 20 | Amplitude slope. |
+
+A negative slope reduces amplitude while it exceeds float32 `-0.9`; otherwise
+amplitude is set to `-1` and slope to zero. A positive slope increases amplitude
+and stops at zero. A nonnegative amplitude clears amplitude, slope, phase and
+phase increment and returns zero. With negative amplitude, the helper adds the
+phase increment, subtracts one if the result is at least `0.5`, or adds one if
+it is below `-0.5`. This is one wrap, not arbitrary-range normalization.
+
+The active path passes float32 `2*pi*phase` to the original numerical routine,
+which performs range reduction and an odd polynomial approximation to sine,
+then multiplies its result by amplitude. Both routines execute in the model;
+there is no substituted sine call in the instruction path. A separate arithmetic
+expression checks the result bit for bit, and comparison with host `sin` stays
+within `2e-6` absolute error for tested inputs. This is a bounded numerical check,
+not a general accuracy claim for the firmware math library.
+
+Validation passes 1,080 finite descriptor cases and three 160-call sequences,
+including both phase-wrap directions, slope changes, amplitude clamps and the
+return to zero. Descriptor state, outputs, guarded memory, stack restoration
+and preserved registers are checked; wrong load/FP latencies are rejected.
+Another 192 connected groups replace supplied waveform values with actual
+outputs of this helper, then pass them through original scalar scaling,
+combination, mix staging and native publication. Outer envelope, five gains
+and decoded sample remain supplied boundaries; complete control-update and
+sample-decoder execution are still open.
+
+The numerical model assumes nearest-even float32 arithmetic and integer
+conversion. TI SPRUFE8B pages 59/63 describe FADCR/FMCR rounding selection, and
+page 479 specifies the four-cycle `SPINT` result. Five static byte bindings
+include the startup writes of zero to FADCR/FMCR at `0x118177b8/0x118177bc`,
+consistent with nearest mode, and the original sine call/conversion. These are
+not live register observations. Nonfinite inputs, denormals, overflow, other
+rounding modes, physical frequency/timebase and hardware acceptance remain
+outside this qualification.
