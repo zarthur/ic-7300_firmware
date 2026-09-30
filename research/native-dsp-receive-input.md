@@ -420,6 +420,31 @@ independent reference; incorrect load/FP latencies are rejected. Preceding
 mode/control processing, the two additional buffer producers, DMA ownership,
 and physical gain calibration remain separate qualifications.
 
+## AF-controlled output and the native publication boundary
+
+Static tracing identifies a separate AF-controlled output loop at
+`0x11811520..0x118117c0`. It reads the low byte of command word `0x11817b54`,
+compares it with the cached byte at B14+456, and updates the target gain at
+B14+464 when it changes. The smoothed gain at B14+460 multiplies the filtered
+sample at `0x11811708`, before further scaling, limiting and integer conversion.
+This is an instruction-level trace, not execution of the complete AF loop or
+qualification of its numerical gain law.
+
+The loop initializes its destination to context+352 and its count to eight.
+The store at `0x118117b4` advances by four bytes per iteration, covering context
+352–383. Under the separately qualified routing layout, these are the second
+half's eight words for TX serializer 2. They do not overlap the native
+serializer-4 publication at context 384–415 described above. Thus the direct
+AF-controlled stores identified here target a different serializer lane.
+
+This does not establish global AF independence. Immediately afterward,
+`0x118117e4` calls `0x1180a2e4` with the context pointer in A4 and a scaled
+post-AF value in B4. That helper's complete effects and other possible shared
+state dependencies remain unqualified. The target observation that AF minimum
+left native stream A present in the tested USB-D capture is consistent with
+separate direct output lanes, but neither observation proves independence for
+every mode, transition or control setting.
+
 ## DSP completion dispatch and ordering
 
 The original service prefix `0x11812680..0x118126d8` reads the EDMA3 global
