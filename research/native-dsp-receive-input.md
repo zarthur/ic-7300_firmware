@@ -420,6 +420,43 @@ independent reference; incorrect load/FP latencies are rejected. Preceding
 mode/control processing, the two additional buffer producers, DMA ownership,
 and physical gain calibration remain separate qualifications.
 
+## DSP completion dispatch and ordering
+
+The original service prefix `0x11812680..0x118126d8` reads the EDMA3 global
+interrupt-pending register at `0x01c01068`. The base `0x01c00000` is present
+in the parsed cinit data. Completion bits 1 and 2 gate the routing call:
+
+| Pending bits 2:1 | Routing action |
+| --- | --- |
+| 00 | Skip this routing call |
+| 01 | Select bank 0 |
+| 10 | Select bank 1 |
+| 11 | Select bank 1 once |
+
+On the selected path, `0x11812324..0x11812340` writes `0x66` to
+`0x01c01070` before entering the routing slice. TI SPRUH91D pages 508,
+538–539 identify these registers as IPR and ICR and specify that writing a
+one to ICR clears the corresponding pending bit. Thus the write acknowledges
+bits 1, 2, 5 and 6, rather than acknowledging only the selected bank's bit.
+The restricted `dsp-dma-dispatch-trial` passes all 256 low-byte pending-status
+values with a stable supplied snapshot. It records the actual clear write;
+concurrent completions and peripheral side effects are not simulated.
+
+Within the routing routine, the already-qualified context-to-output-bank copy
+precedes the processing call at `0x118125e4` to `0x118104c0`. The output copy
+therefore uses the context contents from before that processing call, while
+newly extracted receive input is available to the call. The arithmetic output
+produced during the call is not the data already copied by that invocation.
+This ordering must be included in any end-to-end latency model; no physical
+latency is assigned here.
+
+The simultaneous-bit case is a concrete qualification limit: this dispatch
+prefix does not separately process both pending banks. It neither proves that
+an overrun occurs on target nor excludes detection elsewhere. Safe ownership
+and continuity still require the transfer-completion configuration, service
+latency, concurrent DMA behavior and discontinuity evidence; a bank index alone
+is insufficient proof of those properties.
+
 ## Scope of the evidence
 
 Private exact-image models and reports include `dsp-rx-param-trial`,
