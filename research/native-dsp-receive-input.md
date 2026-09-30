@@ -579,6 +579,34 @@ partition: the AIS ROM function, later initialization and runtime paths remain
 outside this callback check. No physical boot, cache behavior or timing is
 simulated.
 
+## DSP interrupt routing and the separate McASP1 boundary
+
+Main initialization calls `0x118136ec`, which writes `0x3d060504` to INTMUX1
+at `0x01800104`, selects vector base `0x11832400`, writes `0xfff0` to the
+CPU interrupt-clear register, and ORs `0x82` into IER. The restricted
+`dsp-interrupt-setup-trial` checks these original instructions for 34 initial
+IER values and two memory poisons (68 cases). All unrelated IER bits survive;
+this is not an assignment that disables other previously enabled interrupts.
+The model records control-register and passive MMIO writes without simulating
+interrupt delivery or peripheral side effects.
+
+INTMUX1 maps events 4, 5, 6 and 61 to CPU interrupts 4, 5, 6 and 7 respectively.
+TI identifies event 61 as the combined McASP0/1/2 RX/TX interrupt, rather than
+an EDMA bank-completion event (SPRS377F, pages 76 and 78; SPRUFK5A, page 178).
+Exact original vector bytes at `0x118324e0` identify interrupt 7's target as
+`0x11811e78`.
+
+The handler's initial peripheral base comes from `0x11832100` and is
+`0x01d04000`: McASP1. Its status read is at `0x01d04080` (RSTAT), and the
+conditional data path at `0x11812090` reads `0x01d04288` (RBUF2), per the
+register map in SPRS377F pages 120 and 122. These addresses and instruction
+bytes are statically pinned; the handler itself is not executed by this setup
+model. The combined interrupt identity therefore must not be mistaken for
+proof that this handler recovers McASP0 native-audio DMA overruns. Its work is
+also a separate possible contributor to service latency. Actual interrupt
+frequency, execution time, complete handler effects and recovery behavior remain
+unqualified. This initialization check does not establish the cache partition.
+
 ## Scope of the evidence
 
 Private exact-image models and reports include `dsp-rx-param-trial`,
