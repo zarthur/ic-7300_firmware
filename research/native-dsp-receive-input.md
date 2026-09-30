@@ -265,6 +265,33 @@ These tests qualify coefficient use without assigning UI meanings or physical
 hold times. The subsequent RF-dependent floor, meter aggregation and nonlinear
 mapping still separate this state update from the returned feedback factor.
 
+### Smoothed lower bound, meter fields and nonlinear call
+
+The original caller from `0x1180d50c` through its transfer to `0x11816be0`
+updates B14+180 as the float32 sum of `0.005 * B14+44` and `0.995 * prior`.
+It chooses the larger of this smoothed lower bound and the preceding attenuation
+state, and publishes the selected value at B14+156. All multiplications and
+additions round separately.
+
+It also accumulates the selected value at B14+172 while incrementing B14+176.
+For nonnegative counters starting at zero, the ninth call updates the low ten
+bits of two halfwords at `0x11817ba8+10` and `+34`, preserving their upper bits,
+then clears the accumulator and counter. The displayed integer is derived by
+separate float32 multiplies by 0.3375 and 4096, truncation, and an upper clamp
+of 1023. This is a call-count relationship, not a measured update interval.
+
+The nonlinear helper receives A4=10 and
+`B4 = float32(30 * negate(selected_value))`, with return address `0x1180d618`.
+The caller qualification passes 180 boundary cases and a 64-group sequence,
+stopping at the helper entry without supplying an invented return value.
+
+The helper's nonzero-exponent path uses `RCPDP` in the routine at
+`0x11816a80`. TI SPRUFE8B page 409 specifies an approximation error bound, not
+an exact result bit pattern. Clearing part of that result's high word at
+`0x11816a90` does not clear its low word. A host logarithm or power calculation
+therefore cannot be presented as verified original-helper execution. Its
+numerical result and the final returned gain factor remain open.
+
 ## Scope of the evidence
 
 Private exact-image models and reports include `dsp-rx-param-trial`,
@@ -283,6 +310,8 @@ The history branch is covered by `dsp-ordinary-history-trial`.
 Its energy-feedback prefix is covered by `dsp-feedback-energy-trial`.
 Threshold and release-table evidence is retained in `dsp-feedback-threshold-trial`
 and `dsp-feedback-release-table-trial`.
+The remaining caller is covered by `dsp-feedback-floor-trial`; the reciprocal
+instruction limit is recorded in `dsp-log-reciprocal-bound-audit.json`.
 They retain firmware hashes and explicit boundaries. Firmware, decoded code,
 manual crops and generated original-image reports remain private.
 
