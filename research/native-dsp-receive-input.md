@@ -136,8 +136,35 @@ multiplied by 10. Each multiply rounds separately, so these factors must not
 simply be cancelled. Tests with a supplied two-section filter cover 128 cases
 and 32 consecutive groups, checking output, state updates, bounded writes and
 interrupt-enable restoration. They do not identify the descriptor's actual
-runtime coefficients or qualify the preceding `0x1180cfa0` stage. Processing
-after `0x1180d058` and association with the CPU receive lane remain open.
+runtime coefficients or qualify the preceding `0x1180cfa0` stage. The table-path
+follow-up below supplies original coefficients for one selection range.
+Processing after `0x1180d058` and association with the CPU receive lane remain
+open.
+
+### Original six-section coefficient tables
+
+Static review of `0x11807ea0` identifies a table path controlled by the low six
+bits of command `0x11817b34`. Values 11–23 select table 2, 24–29 select table 1,
+and 30–63 select table 0. Each table contains 24 float32 coefficients starting
+at `0x11823428 + 96*selector`; its gain comes from
+`0x11825290 + 4*selector`. The copy loop writes six sections through the pointer
+in template `0x118188a0`, then that template is passed to setup for descriptor
+`0x11818798`. Subsequent coefficient-generation guards in this routine require
+a low-six-bit value below 11, so their bodies are bypassed for this range.
+
+The template's initialization record contains pointer `0x118187c0`, gain zero,
+and count 14. These are mutable startup values; treating them as the active
+filter configuration would be incorrect. The three original table gains are
+approximately 0.05668712, 0.01758705 and 0.003909986. Their UI meaning and the
+other coefficient-generation paths remain unresolved.
+
+Using the exact table bytes, twelve original preallocated-setup cases verify
+coefficient copying and descriptor publication. The original wrapper/filter
+model then passes 192 four-sample groups (768 filter calls), checking output
+and retained state against an independent recurrence. Selection and template
+publication remain static evidence; setup and processing were executed as
+separate slices with the same table data. This does not establish current radio
+selection, allocation behavior, or the other handler at `0x11808bb0`.
 
 ## Scope of the evidence
 
@@ -149,7 +176,8 @@ Transition evidence is retained in `input-mute-request-trial`,
 `input-mute-release-trial`, `input-mute-counter-trial`, and
 `input-mute-cadence-trial`.
 Ordinary-path evidence is retained in `dsp-ordinary-sample-layout-trial` and
-`dsp-ordinary-filter-wrapper-trial`.
+`dsp-ordinary-filter-wrapper-trial`, with original table data qualified by
+`dsp-ordinary-table-filter-trial`.
 They retain firmware hashes and explicit boundaries. Firmware, decoded code,
 manual crops and generated original-image reports remain private.
 
