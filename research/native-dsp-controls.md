@@ -142,6 +142,42 @@ are outside this connected fixture. The AF-derived status therefore cannot be
 classified as UI-only, but neither state index one nor request bit 14 is assigned
 a physical TX meaning here.
 
+### Eligibility of the selected request path
+
+The selected path begins at `0x20065530`, before the getter/hold slice above.
+Let C be control base `0x203de174`, M be mode base `0x203deeb8`, S be settings
+base `0x203de4cc`, and B be helper state base `0x203902c9`. The original code
+reaches the request getter only when all of these conditions hold:
+
+- C+11 is neither `0x52` nor `0x61`.
+- B+2 and B+3 are not both nonzero.
+- The low two bits of M+12 are zero.
+- The source predicate returned by `0x2001fc60` is nonzero.
+- Bit 6 of C+1 is set.
+
+The source predicate executes original helper `0x20013108` and a mode-indexed
+table to choose among setting bytes S+`0x53..0x56`. On this selected path, the
+preceding M+12 test ensures that the chosen offset is always `0x53`, including
+when the helper permits a mode subindex. Original table `0x2018c540` maps the
+five tested setting indexes 0–4 to bytes 1–5; the predicate returns their low
+bit. Thus indexes 0, 2 and 4 permit this path, while 1 and 3 reject it. These
+are software indexes, not identified UI labels.
+
+The private `cpu-af-eligibility-trial` passes 12,800 fixtures through the
+selected path and all four original predicate/getter helper routines. It
+checks every combination of the represented guard classes, both request states,
+all four mode subflags, five source indexes and raw mode indexes 0–7. The
+unselected setting bytes are poisoned and explicitly checked as unread.
+Input memory and unrelated stack fields remain unchanged; counter clearing
+occurs only for an eligible asserted request. Hold behavior is separated by
+supplying a counter above its threshold, and is covered by the preceding trial.
+
+Earlier full-function checks and the branch selecting this mode family remain
+outside the entry boundary. Supplying every raw mode to this slice does not
+establish that each can reach it in the complete caller. These conditions
+constrain the software dependency; they do not yet provide user-facing settings
+for a hardware acceptance test or prove receive-stream gain independence.
+
 ## Relation to receive audio
 
 Private inspection of the separately decoded DSP program connects tag 0 to
