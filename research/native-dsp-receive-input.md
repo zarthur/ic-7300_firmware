@@ -276,7 +276,7 @@ additions round separately.
 It also accumulates the selected value at B14+172 while incrementing B14+176.
 For nonnegative counters starting at zero, the ninth call updates the low ten
 bits of two halfwords at `0x11817ba8+10` and `+34`, preserving their upper bits,
-then clears the accumulator and counter. The displayed integer is derived by
+then clears the accumulator and counter. The encoded integer is derived by
 separate float32 multiplies by 0.3375 and 4096, truncation, and an upper clamp
 of 1023. This is a call-count relationship, not a measured update interval.
 
