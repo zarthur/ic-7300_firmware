@@ -607,6 +607,45 @@ also a separate possible contributor to service latency. Actual interrupt
 frequency, execution time, complete handler effects and recovery behavior remain
 unqualified. This initialization check does not establish the cache partition.
 
+## McASP1 command enqueue and continuity limits
+
+Original cinit data initializes the object at `0x11819300` with a buffer
+pointer of `0x11818f00`, capacity 256 words, and zero producer/consumer
+counts and indexes. In the generic interrupt enqueue body
+`0x118120e4..0x11812190`, the fields are:
+
+| Offset | Enqueue use |
+| --- | --- |
+| `+0` | Word-buffer pointer |
+| `+4` | Capacity in words |
+| `+8`, `+12` | Producer and consumer counters |
+| `+16`, `+20` | Producer and consumer indexes |
+| `+24`, `+25` | Space/nonempty flags computed from pre-increment counters |
+
+The restricted `dsp-command-push-trial` executes this original body in 504
+fixtures, including the cinit capacity, index wrap, full/overfull occupancy and
+signed counter boundaries. It compares every memory byte with a separate
+reference. The body writes the supplied command at the producer index,
+increments the producer counter, advances the index modulo capacity, and writes
+`0xdeaddead` into the following slot. Neither a full count nor the space flag
+suppresses these writes in this slice. Thus existing slots can be overwritten
+when service falls behind; the following-slot sentinel also needs to be included
+in any capacity argument. No target overflow is claimed.
+
+The flag comparisons use signed 32-bit values. Both flags describe the counters
+before this insertion, and the consumer recomputes queue state in its own path;
+they must not be treated as a post-insertion continuity guarantee. The static
+service trace at `0x11812864` reads this same object, advances its consumer
+counter/index, and selects a command handler or a pending-command field.
+
+This is the generic enqueue body only: earlier special command handling, the
+consumer's complete execution, interrupt interleavings, subsequent object
+reconfiguration and backpressure elsewhere are not modeled. It identifies a
+concrete command-loss boundary relevant to gain/control history; it does not
+prove that a control transition occurred on the target or that the complete
+firmware has no recovery mechanism. Audio continuity and command continuity
+remain separate properties to qualify.
+
 ## Scope of the evidence
 
 Private exact-image models and reports include `dsp-rx-param-trial`,
