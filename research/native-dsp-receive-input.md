@@ -457,6 +457,46 @@ and continuity still require the transfer-completion configuration, service
 latency, concurrent DMA behavior and discontinuity evidence; a bank index alone
 is insufficient proof of those properties.
 
+## DMA descriptors and completion meaning
+
+The original TX PaRAM constructor at `0x118147d0`, including helper
+`0x11814c44`, passes 24 fixtures covering both address placements, poisoned
+initial memory and each null pointer guard. It writes three complete PaRAM
+sets, preserves the caller's stack/A10, and leaves other parameter memory
+unchanged. The RX constructor has the corresponding independently checked
+24-fixture result.
+
+| Direction | Initial / linked PaRAM indices | Bank 0 / bank 1 completion codes | Bank addresses |
+| --- | --- | --- | --- |
+| RX | 0 / 34, 35 | 1 / 2 | `0x1181e550`, `0x1181e610` |
+| TX | 1 / 32, 33 | 3 / 4 | `0x1181e6d0`, `0x1181e7d0` |
+
+TX sets use ACNT=16, BCNT=2, CCNT=8, source BIDX=128 and CIDX=-112,
+with destination `0x01d02000` and zero destination indices. The initial TX set
+and linked set 32 describe bank 0 and link to set 33; set 33 describes bank 1
+and links back to set 32. The link field's reload count is two. This is a
+256-byte bank layout, separate from the 192-byte RX banks.
+
+The generated option words are `0x00101000`/`0x00102000` for RX and
+`0x00103000`/`0x00104000` for TX. All set final-completion interrupt enable,
+clear intermediate-completion interrupt enable and chaining enables, and have
+TCCMODE=0. TI SPRUH91D pages 461 and 501–502 define that as normal completion:
+the completion follows the data transfer, rather than merely submission of a
+transfer request. The sets use A synchronization and increment address modes;
+zero peripheral indices produce repeated access to the transfer port.
+
+This narrows the ownership boundary but does not close it. The dispatch gate
+above observes RX completion codes 1/2, while TX completion uses 3/4. Its
+`0x66` clear mask does not clear TX completion bits 3/4, and the qualified
+prefix does not check them before entering the copy routine. RX completion
+alone therefore cannot prove that the selected TX bank is available for writes.
+The relationship between the two DMA streams, the deadline before bank reuse,
+cache behavior and any checks outside this prefix remain required evidence.
+
+Private `dsp-tx-param-trial` and `dsp-param-completion-audit` retain the original
+constructor results and decoded option fields. These are constructor and manual
+semantics checks, not measured peripheral execution or runtime PaRAM ownership.
+
 ## Scope of the evidence
 
 Private exact-image models and reports include `dsp-rx-param-trial`,
