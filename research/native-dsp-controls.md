@@ -161,7 +161,7 @@ preceding M+12 test ensures that the chosen offset is always `0x53`, including
 when the helper permits a mode subindex. Original table `0x2018c540` maps the
 five tested setting indexes 0–4 to bytes 1–5; the predicate returns their low
 bit. Thus indexes 0, 2 and 4 permit this path, while 1 and 3 reject it. These
-are software indexes, not identified UI labels.
+are software indexes; their menu labels are qualified below.
 
 The private `cpu-af-eligibility-trial` passes 12,800 fixtures through the
 selected path and the original predicate and getter routines. It
@@ -177,6 +177,40 @@ outside the entry boundary. Supplying every raw mode to this slice does not
 establish that each can reach it in the complete caller. These conditions
 constrain the software dependency; they do not yet provide user-facing settings
 for a hardware acceptance test or prove receive-stream gain independence.
+
+### Named modulation-source settings
+
+`tools/native_dsp_controls.py` now executes the original menu-label selector,
+the option-selection slice before rendering, and source predicate `0x2001fc60`.
+The report's `modulation_settings` section identifies:
+
+| Menu index | Label | Value byte |
+| --- | --- | --- |
+| 83 | DATA OFF MOD | `0x203de51f` (S+`0x53`) |
+| 84 | DATA MOD | `0x203de520` (S+`0x54`) |
+
+Both menus use the same five options. The original option lookup is checked
+with both language-bit values and unrelated language-byte bits set:
+
+| Value | Option | Original source predicate |
+| --- | --- | --- |
+| 0 | MIC | 1 |
+| 1 | ACC | 0 |
+| 2 | MIC,ACC | 1 |
+| 3 | USB | 0 |
+| 4 | MIC,USB | 1 |
+
+For a supplied raw mode index zero, the predicate selects DATA OFF MOD when
+the low mode subflags are zero and DATA MOD when they are one. The unselected
+setting is poisoned and checked as unread. The tested AF-related request path
+rejects nonzero subflags before calling the predicate, so its qualified setting
+is specifically DATA OFF MOD. This identifies a microphone-source eligibility
+condition; it does not establish live microphone routing, native capture gain,
+the other enable bit's UI name or complete request eligibility.
+
+The probe rejects unrecognized firmware, verifies the descriptor/value-pointer
+relationship and checks that these lookups modify no non-stack state. It stops
+before rendering and does not change settings or submit commands to the radio.
 
 ## Relation to receive audio
 

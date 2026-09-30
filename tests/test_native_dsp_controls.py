@@ -21,6 +21,8 @@ class SyntheticDspControlTests(unittest.TestCase):
             controls.level_probe(b'unknown', [(0, 0, 0, 0, 0)])
         with self.assertRaisesRegex(ValueError, 'exact pinned'):
             controls.level_settings_probe(b'unknown')
+        with self.assertRaisesRegex(ValueError, 'exact pinned'):
+            controls.modulation_settings_probe(b'unknown')
         for cases in ([], [(0, 0)], [(0, 0, 0, False, 0)], [(0, 256, 0, 0, 0)], [(0, 0, -1, 0, 0)]):
             with self.assertRaises(ValueError): controls.gate_probe(b'unknown', cases)
             with self.assertRaises(ValueError): controls.level_probe(b'unknown', cases)
@@ -77,3 +79,15 @@ class FirmwareDspControlTests(unittest.TestCase):
             self.assertEqual(row['mapped_level'], expected, row)
             self.assertEqual(row['command'], 0x4a000000 | row['high_byte'] << 16 |
                              expected << 8 | row['low_byte'], row)
+
+    def test_modulation_menu_options_and_original_source_predicate(self):
+        rows = controls.modulation_settings_probe(self.app)
+        self.assertEqual([(r['index'], r['label'], r['address']) for r in rows], [
+            (83, 'DATA OFF MOD', 0x203de51f), (84, 'DATA MOD', 0x203de520)])
+        for row in rows:
+            self.assertEqual(row['options'], [
+                {'value': 0, 'label': 'MIC', 'source_predicate': 1},
+                {'value': 1, 'label': 'ACC', 'source_predicate': 0},
+                {'value': 2, 'label': 'MIC,ACC', 'source_predicate': 1},
+                {'value': 3, 'label': 'USB', 'source_predicate': 0},
+                {'value': 4, 'label': 'MIC,USB', 'source_predicate': 1}])
