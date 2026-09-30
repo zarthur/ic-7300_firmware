@@ -138,8 +138,8 @@ and 32 consecutive groups, checking output, state updates, bounded writes and
 interrupt-enable restoration. They do not identify the descriptor's actual
 runtime coefficients or qualify the preceding `0x1180cfa0` stage. The table-path
 follow-up below supplies original coefficients for one selection range.
-Processing after `0x1180d058` and association with the CPU receive lane remain
-open.
+Complete processing after `0x1180d058` and association with the CPU receive
+lane remain open; subsequent qualified slices are described below.
 
 ### Original six-section coefficient tables
 
@@ -180,7 +180,7 @@ approximately 0.001023218. Separate original setup and processing slices using
 its exact coefficients pass four setup cases and 512 filter calls with retained
 state, matching an independent recurrence. Another 128 cases cover supplied
 filter state, unrelated command bits and interrupt-enable restoration. Reset,
-parameter changes, the bit-5-clear processing branch, current radio selection
+parameter changes, the complete bit-5-clear processing branch, current radio selection
 and subsequent output routing remain unqualified.
 
 ### History processing with bit 5 clear
@@ -233,8 +233,9 @@ feedback loop because the upstream target gain is still supplied.
 This execution uses command bit 8 set, command 01 bit 0 clear, and a zero
 holdoff halfword at B14+2. It stops at `0x1180d39c`, before the threshold,
 hold/release, metering and nonlinear mapping that produces the return factor.
-Those later effects and the final gain applied to subsequent groups remain
-unqualified; the table selector is not yet assigned a radio UI meaning.
+The threshold stage is qualified below. The later metering and nonlinear
+effects, and the final gain applied to subsequent groups, remain unqualified;
+the table selector is not yet assigned a radio UI meaning.
 
 ### Threshold and hold/release updates
 
