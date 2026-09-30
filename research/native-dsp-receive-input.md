@@ -551,6 +551,34 @@ phase, or completion before reuse. Those remain separate acceptance properties.
 The private audit records manual hashes and labels its result as geometry and
 manual semantics, not hardware execution.
 
+## Boot callbacks and cache-configuration boundary
+
+The AIS entry at `0x118177a0` establishes an aligned stack at `0x1182f2f0`
+and B14 at `0x11831b18`, then invokes `0x11816f60` with the cinit table at
+`0x1182f2f8`. That initialization routine also walks the null-terminated
+callback table at `0x11832390` before the main trampoline at `0x118179a0`
+transfers control to `0x118160b0`.
+
+The table contains ten callbacks. The private `dsp-boot-callback-trial`
+interprets their original instructions in table order, including the nonnull
+object constructor at `0x118003f0` and list-registration helper at
+`0x11817960`. Two BSS/stack poison fixtures give 20 callback executions.
+Every non-stack write is compared with an independently enumerated destination,
+size and value; untouched memory, stack restoration and saved registers are
+checked. Original loaded/cinit bytes supply initialized globals. Explicitly
+identified object destinations supply otherwise-unloaded BSS storage; this does
+not establish ownership of arbitrary unused memory. The allocation path is
+unmapped and would fail the model if reached.
+
+These callbacks initialize filter descriptors and other audio state, and register
+two list nodes. Their checked writes remain in DSP RAM and the synthetic stack;
+none writes the cache-control register window. The separate boot-data audit
+also finds no direct cinit destination in `0x01840000..0x0184ffff`.
+This narrows the cache investigation but does not establish the active L2
+partition: the AIS ROM function, later initialization and runtime paths remain
+outside this callback check. No physical boot, cache behavior or timing is
+simulated.
+
 ## Scope of the evidence
 
 Private exact-image models and reports include `dsp-rx-param-trial`,
