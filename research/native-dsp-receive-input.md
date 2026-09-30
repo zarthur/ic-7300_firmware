@@ -362,6 +362,46 @@ mode bytes 0–3, 6–9 and 14, not the alternate callback for modes 4 and 5.
 They do not exclude runtime coefficient changes or establish physical sample
 rate, lane identity, or complete downstream gain.
 
+## Publication into serializer-4 context words
+
+The outer caller saves the receive routine's return in B10 at `0x118109a8`.
+Static tracing reaches an eight-iteration loop at `0x11810a00..0x11810aa0`:
+it repeatedly supplies that value to filter descriptor `0x11817e78`, adds
+context words 704 through 732, applies a controlled gain and float32 0.45,
+and writes eight results to SP+56 through SP+84. The context words are cleared
+as they are consumed. That interpolation/control loop has not yet been executed
+as a whole; this identifies the producer of the publication loop's main buffer.
+
+The original publication loop `0x11811250..0x118112e0` is qualified separately
+with supplied buffers and the original filter. For output index `i = 0..3`,
+its filter input is:
+
+```
+main_term = float32(15 * main[2*i])
+combined  = float32(auxiliary[i] + main_term)
+mix_term  = float32(8.392573356628418 * mix[i])
+input     = float32(mix_term + combined)
+```
+
+Here `main` is SP+56, `auxiliary` is SP+88, and `mix` is SP+248. The five-section
+filter descriptor is `0x11818030`; its setup call at `0x118108f4` selects
+original template `0x11817d88`. The model supplies that initialized descriptor
+and does not execute the setup or prove that runtime coefficients remain unchanged.
+
+Each filter result is clipped to ±`0.9999899864196777`, multiplied by
+`2126008832.0` with float32 rounding, and truncated toward zero to a signed
+integer. The loop stores the word at context `384 + 8*i`, then copies it to
+`388 + 8*i`. Thus it produces four identical adjacent word pairs in context
+384–415. This reaches the context region independently mapped to TX serializer 4;
+it does not resolve physical FIFO phase or the CPU's retained frame alignment.
+
+`dsp-output-publication-trial` passes 128 cases and three 32-group stateful
+sequences, including both clipping limits. It verifies filter arguments,
+filter state, duplicated stores and unchanged surrounding memory against an
+independent reference; incorrect load/FP latencies are rejected. Preceding
+mode/control processing, the two additional buffer producers, DMA ownership,
+and physical gain calibration remain separate qualifications.
+
 ## Scope of the evidence
 
 Private exact-image models and reports include `dsp-rx-param-trial`,
