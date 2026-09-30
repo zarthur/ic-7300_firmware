@@ -369,8 +369,26 @@ Static tracing reaches an eight-iteration loop at `0x11810a00..0x11810aa0`:
 it repeatedly supplies that value to filter descriptor `0x11817e78`, adds
 context words 704 through 732, applies a controlled gain and float32 0.45,
 and writes eight results to SP+56 through SP+84. The context words are cleared
-as they are consumed. That interpolation/control loop has not yet been executed
-as a whole; this identifies the producer of the publication loop's main buffer.
+as they are consumed. The body `0x118109b8..0x11810aa4` is now qualified with
+an initialized descriptor supplied from original template `0x11817d7c`, a
+supplied receive return, and the original filter instructions.
+
+With command `0x11817b20` bit 10 set, the nonnegative counter at B14+400
+increments per output sample and caps at 960. With that bit clear, it decreases
+by two per sample and floors at zero. The gain is the float32 product of this
+counter and float32 `1/960`, clamped to [0, 1]. Each of the eight outputs is
+`float32(float32(float32(addend + filtered_return) * gain) * float32(0.45))`.
+The same receive return is supplied to the filter eight times, while its state
+advances between samples. This is a count relationship, not a measured ramp time
+or an established UI-control mapping.
+
+`dsp-output-interpolation-trial` passes 144 cases, two 125-group sequences
+covering full rise/fall trajectories, and 32 groups feeding its actual modeled
+outputs into the separately qualified publication loop. The connected fixture
+uses zero auxiliary/mix inputs; it is not uninterrupted execution of the full
+caller. Filter state, gain-counter publication, all outputs and clearing of the
+eight context addends are checked. Incorrect load/FP latencies are rejected.
+Startup/reset paths and runtime coefficient changes remain unqualified.
 
 The original publication loop `0x11811250..0x118112e0` is qualified separately
 with supplied buffers and the original filter. For output index `i = 0..3`,
