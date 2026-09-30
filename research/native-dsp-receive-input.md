@@ -706,6 +706,42 @@ chains. The first two paths also have later static stores invalidating the other
 current-command word after their helper returns; those stores are outside the
 changed-path execution check described here.
 
+## CPU packing for deferred command types 0x20 and 0x21
+
+The original CPU slice `0x200b1d14..0x200b1e04` constructs these words in
+command-array slot `+8`. The private `band-command-trial` executes 1,372
+fixtures together with the original Thumb unsigned and signed division routines
+at `0x2017c618` and `0x2017c644`. No division result is stubbed. Input records
+and adjacent output words remain unchanged; each fixture writes exactly one
+command word outside its private stack.
+
+For type `0x20`, let L and U be the signed halfwords at selected-record offsets
+`+0x24` and `+0x26`. The encoded fields are:
+
+- Bits 17:9: `trunc((max(L, -8000) + 8000) / 25) & 511`.
+- Bits 8:0: `trunc(min(U, 8000) / 25) & 511`.
+- Bits 23 and 22: the supplied normalized flag and selection flag respectively.
+
+The clamps are one-sided in this slice. Values outside the ordinary field range
+can therefore wrap through the final bit-field masks; these fixtures are not a
+claim that the UI permits such settings.
+
+For type `0x21`, let W be the unsigned halfword at `+0x28` and S the signed
+halfword at `+0x2a`. Bits 23:11 contain `trunc(S / 5) & 8191`. When supplied
+path bit 1 is set, bits 5:0 contain `(W / 50) & 63`, and bits 10/9 carry the
+flag/selection values. Otherwise, supplied path bit 2 selects
+`(trunc((W - 500) / 500) + 10) & 63` for bits 5:0, leaving bits 10/9 zero.
+The bit-1 path takes precedence when both are supplied. Signed division
+truncates toward zero, including negative boundary fixtures.
+
+These fields connect directly to the deferred-handler decisions above: type
+`0x20`'s two flags drive its bit-22/23 update argument; type `0x21`'s low six
+bits and two flags drive mask `0x63f`. The latter low-six-bit selector also
+feeds the previously mapped ordinary-filter table selection. This establishes
+field-level software relationships, not calibrated gain or physical UI units.
+Earlier record selection, command delivery, downstream coefficient updates and
+target behavior remain outside this CPU packing test.
+
 ## Scope of the evidence
 
 Private exact-image models and reports include `dsp-rx-param-trial`,
