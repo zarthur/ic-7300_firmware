@@ -183,6 +183,35 @@ filter state, unrelated command bits and interrupt-enable restoration. Reset,
 parameter changes, the bit-5-clear processing branch, current radio selection
 and subsequent output routing remain unqualified.
 
+### History processing with bit 5 clear
+
+The slice `0x1180d778..0x1180d868` qualifies the next branch's four-sample
+history operation. It uses a 24-word ring at `0x11818728`, a four-word working
+buffer at `0x11818788`, and a cursor read from B14+544. Starting with prior
+gain `g`, it computes `step = float32(float32(target - g) * 0.25)`. For each
+sample, in order:
+
+1. Write `float32(input * g)` to the working buffer.
+2. Write `float32(float32(old_ring_sample * g) * scale)` to the output, where
+   `scale` has float32 bits `0x3f71dbea` (approximately 0.944761872).
+3. Replace that ring entry with the raw input, advance the cursor modulo 24,
+   and update `g = float32(g + step)`.
+
+The instruction pipeline matters: successive operations using the same
+register name can consume different outstanding load/multiply results.
+Treating the text as sequential scalar operations incorrectly suggests a
+squared-gain path. Scheduled original-code interpretation instead matches the
+recurrence above across all 24 cursor positions, four gain trajectories and
+both initial interrupt-enable states (192 cases). A further 24-group sequence
+places an impulse at the output six four-sample groups later, including ring
+wrap. This establishes a 24-sample history delay in the model, not a duration
+in seconds or an end-to-end radio latency.
+
+The slice stores the final gain at B14+552 and leaves the next cursor in B7.
+It stops before the call to `0x1180d190` and the parallel cursor publication at
+`0x1180d86c`. Those effects, the surrounding parameter lifecycle and remaining
+output routing are still open.
+
 ## Scope of the evidence
 
 Private exact-image models and reports include `dsp-rx-param-trial`,
@@ -197,6 +226,7 @@ Ordinary-path evidence is retained in `dsp-ordinary-sample-layout-trial` and
 `dsp-ordinary-table-filter-trial`.
 The following zero-output branch is covered by `dsp-ordinary-zero-output-trial`
 and `dsp-envelope-table-trial`.
+The history branch is covered by `dsp-ordinary-history-trial`.
 They retain firmware hashes and explicit boundaries. Firmware, decoded code,
 manual crops and generated original-image reports remain private.
 
