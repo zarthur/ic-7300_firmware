@@ -330,6 +330,38 @@ checks the setup constants. It is a static audit, not execution of the
 complete mode handler or the selected processors. Their numerical behavior,
 subsequent routing and runtime transition timing remain open.
 
+## Common output processor
+
+A restricted instruction model covers the stable processing body
+`0x1180a224..0x1180a2d0` of callback `0x1180a140`, including the original
+`0x118007cc` filters and secondary callback `0x1180a12c`. Initialized filter
+descriptors are supplied from the original cinit templates; allocation and
+reset branches preceding the body are not executed.
+
+For each four-sample group, the processor multiplies each input by float32
+0.7, then by the corresponding entry of `[1, 0, -1, 0]` from
+`0x11825110`, starting at the phase index B14+988. Each multiplication rounds
+separately. Every result passes through the two-section filter at descriptor
+`0x1181a8a8`, using template `0x1181a890` and gain
+`0.09832599759101868`. The phase advances modulo four per input, so its value
+is unchanged after a complete group.
+
+Only the first of the four filtered results feeds the next stage. The remaining
+three still advance filter state. That selected result is multiplied, with
+separate float32 roundings, by 0.8 and 4, by 0.25 in callback `0x1180a12c`,
+and by 0.5 afterward. It then passes through the one-section filter at
+`0x1181a8d0`, using template `0x1181a89c` and gain
+`0.9636527895927429`; this filter's return is the processor's return value.
+
+`dsp-common-output-trial` passes 128 cases across all four phase indices and
+both initial interrupt-enable states, plus four 32-group stateful sequences.
+It compares filter inputs, intermediate outputs, final outputs and both filter
+states with an independent arithmetic reference. Incorrect load or floating-point
+latencies are rejected. These checks cover the secondary callback selected by
+mode bytes 0–3, 6–9 and 14, not the alternate callback for modes 4 and 5.
+They do not exclude runtime coefficient changes or establish physical sample
+rate, lane identity, or complete downstream gain.
+
 ## Scope of the evidence
 
 Private exact-image models and reports include `dsp-rx-param-trial`,
