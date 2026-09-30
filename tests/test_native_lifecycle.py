@@ -23,6 +23,24 @@ class SyntheticLifecycleTests(unittest.TestCase):
         for modes in ([], [True], [-1], [1 << 32], ['0']):
             with self.assertRaises(ValueError): lifecycle.configuration_probe(b'unknown', modes)
 
+    def test_start_requires_pinned_image_and_bounded_stimuli(self):
+        with self.assertRaisesRegex(ValueError, 'exact pinned'):
+            lifecycle.start_probe(b'unknown', [(-1, 0, 0, 0, 0)])
+        for cases in ([], [()], [(-2, 0, 0, 0, 0)], [(21, 0, 0, 0, 0)],
+                      [(-1, 5, 0, 0, 0)], [(-1, 0, 256, 0, 0)],
+                      [(-1, 0, 0, 65536, 0)], [(-1, 0, 0, 0, 2)],
+                      [(-1, 0, False, 0, 0)]):
+            with self.assertRaises(ValueError):
+                lifecycle.start_probe(b'unknown', cases)
+
+    def test_stop_requires_pinned_image_and_bounded_stimuli(self):
+        with self.assertRaisesRegex(ValueError, 'exact pinned'):
+            lifecycle.stop_probe(b'unknown', [(-1, 0, 0, 0, 0)])
+        for cases in ([], [()], [(2, 0, 0, 0, 0)], [(-1, -1, 0, 0, 0)],
+                      [(-1, 0, -1, 0, 0)], [(-1, 0, 0, -1, 0)],
+                      [(-1, 0, 0, 0, True)]):
+            with self.assertRaises(ValueError): lifecycle.stop_probe(b'unknown', cases)
+
     def test_source_mutation_invalidates_evidence(self):
         with tempfile.TemporaryDirectory() as directory:
             image=Path(directory)/'image';image.write_bytes(b'input')
@@ -77,5 +95,39 @@ class FirmwareLifecycleTests(unittest.TestCase):
             self.assertEqual(stages[1]['writes'], [
                 {'address': a, 'value': 0} for a in
                 (0xe820b004, 0xe820b804, 0xe820b014, 0xe820b814)])
+
+    def test_complete_start_timeout_preserves_old_gate_but_still_enables_dma(self):
+        cases = [(phase, retries, gate, count, mask)
+                 for phase in range(-1, 21) for retries in (0, 2)
+                 for gate in (0, 1) for count in (0, 65535) for mask in (0, 1)]
+        for row in lifecycle.start_probe(self.app, cases):
+            with self.subTest(case=(row['timeout_phase'], row['previous_gate'],
+                                   row['retries_per_phase'], row['initial_irq_mask'])):
+                self.assertEqual(row['gate'], 1 if row['timeout_phase'] == -1 else row['previous_gate'])
+                dma_writes = [w for w in row['writes'] if w['address'] in
+                              (0xe82000e8, 0xe8200128, 0xe8200168)]
+                self.assertEqual([w['address'] for w in dma_writes],
+                                 [0xe8200128, 0xe82000e8, 0xe8200168])
+                self.assertTrue(all(w['value'] == 1 for w in dma_writes))
+                self.assertEqual(sum(w['address'] == 0x2039038c for w in row['writes']),
+                                 int(row['timeout_phase'] == -1))
+                self.assertEqual(row['writes'][-1],
+                                 {'address': 0x203903ac, 'size': 1, 'value': 0})
+                self.assertEqual(row['return_irq_mask'], 0)
+                self.assertEqual(len(row['polls']), 20)
+
+    def test_complete_stop_clears_gate_without_dma_disable_command(self):
+        cases = [(phase, retries, gate, count, mask)
+                 for phase in (-1, 0, 1) for retries in (0, 2) for gate in (0, 1, 255)
+                 for count in (0, 65535) for mask in (0, 1)]
+        for row in lifecycle.stop_probe(self.app, cases):
+            self.assertEqual(row['gate'], 0)
+            self.assertEqual(row['return_irq_mask'], row['initial_irq_mask'])
+            writes = row['writes']
+            controls = [w for w in writes if w['address'] in (0xe82000e8, 0xe8200128, 0xe8200168)]
+            self.assertEqual(controls, [{'address': a, 'size': 4, 'value': 0}
+                                       for a in (0xe82000e8, 0xe8200128, 0xe8200168)])
+            self.assertEqual(writes[-2:], [{'address': a, 'size': 1, 'value': 0}
+                                          for a in (0x2039038c, 0x203903ac)])
 
 if __name__=='__main__':unittest.main()
