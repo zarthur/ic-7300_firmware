@@ -1089,3 +1089,49 @@ mix slots are cleared. These are connected bounded slices: six global scalar
 values and main staging remain supplied, and the preceding producer and full
 caller are not executed. Physical source identity, calibrated gain, buffer
 ownership and hardware acceptance remain open.
+
+## Upstream scalar scaling and combination
+
+The caller at `0x11810c80` refreshes scalars when the signed selector at
+B14+404 is less than 2, calling `0x1180f708` before the separate sample decoder.
+For the supplied nonnegative sequence `0, 1, 2`, the first two visits refresh
+one scalar column each; the third reuses both columns. This does not establish
+initialization, negative-value reachability or the full caller lifecycle.
+
+Twenty-four static instruction bindings identify the call arguments and
+callee pointer saves. The first call to `0x11801108` uses descriptor
+`0x11817de4`; the second uses `0x11817da0`. Let their returned float32 values
+be `w1` and `w2`, and let `e` be A11 at `0x1180f97c`. Two original arithmetic
+slices, `0x1180f97c..0x1180f9cc` and `0x1180f9dc..0x1180fa24`, compute:
+
+- `m = 0.060169000178575516 * (e * w1)`, written directly to
+  `0x11818068 + 4*selector`, the native mix scalar column.
+- `u = 0.028690999373793602 * w2`.
+- Four temporary values: `SP+12 = m * G0`, `SP+4 = m * G2`,
+  `SP+16 = u * G1`, and `SP+8 = u * G3`, where `G0..G3` are float32 words
+  at `0x11817db8`, `0x11817dbc`, `0x11817dc0`, and `0x11817dc4`.
+
+After the separate decoder supplies a signed 16-bit sample `d`, original
+`0x11810ed6..0x11810f68` forms the common term
+`q = G4 * (0.037296999245882034 * (float32(d) * 2^-15))`, with `G4` at
+`0x11817dc8`. It writes `0.25 * (SP+12 + SP+16) + q` into
+`0x11818058 + 4*selector`, and `0.25 * (SP+4 + SP+8) + q` into
+`0x11818060 + 4*selector`. Every addition and multiplication rounds separately
+to float32; these expressions are not permission to fuse or reorder operations.
+The opposite column is untouched by these two stores.
+
+The generator scaling passes 240 supplied-wave cases; scalar combination
+passes 320 cases including both signed sample extremes. Independent arithmetic,
+write bounds and wrong-latency negative controls check both. Another 192 groups
+pass actual scaled values through original scalar combination, corrected mix
+staging and native publication. With main/auxiliary inputs zero, only the first
+returned wave contributes directly to the native mix when its gate is enabled.
+The second wave and decoded sample still affect the neighboring filtered stack
+outputs. Their later consumers are not included in these connected fixtures,
+so this is not proof of global independence from native output.
+
+The two `0x11801108` results, envelope, five gains and decoded sample remain
+supplied boundaries. The helper's waveform/envelope implementation, the earlier
+control updates inside `0x1180f708`, the sample decoder and complete caller still
+require qualification. No physical source, calibrated gain or UI meaning is
+assigned to these scalar paths from arithmetic alone.
