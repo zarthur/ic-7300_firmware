@@ -164,7 +164,7 @@ bit. Thus indexes 0, 2 and 4 permit this path, while 1 and 3 reject it. These
 are software indexes, not identified UI labels.
 
 The private `cpu-af-eligibility-trial` passes 12,800 fixtures through the
-selected path and all four original predicate/getter helper routines. It
+selected path and the original predicate and getter routines. It
 checks every combination of the represented guard classes, both request states,
 all four mode subflags, five source indexes and raw mode indexes 0–7. The
 unselected setting bytes are poisoned and explicitly checked as unread.
