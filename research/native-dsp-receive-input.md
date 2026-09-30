@@ -677,6 +677,35 @@ interleavings, whole-loop backpressure and command-handler effects remain
 separate qualifications. An audio diagnostic must not infer a complete control
 history merely from queue consumption or a nominal audio sample cadence.
 
+## Deferred handler state and downstream update boundaries
+
+The original handlers for command types `0x20`, `0x21` and `0x25` each copy
+the old command to a history word and store the new command before comparing
+for equality. Identical words return without the downstream update. Changed
+words reach these boundaries:
+
+| Type | Current / previous command | Downstream entry and arguments |
+| --- | --- | --- |
+| `0x20` | `0x11817b30` / `0x11818510` | `0x11808bb0`: A4 is 1 when the old word is `0xffffffff` or bit 22/23 changed, otherwise 0 |
+| `0x21` | `0x11817b34` / `0x11818514` | `0x11807ea0`: A4 is 1 when any bit in mask `0x63f` changed; B4 is new bit 10 |
+| `0x25` | `0x11817b44` / `0x11818524` | `0x11806004`: A4 retains the complete new command |
+
+The private `dsp-deferred-handler-trial` executes 630 original-wrapper fixtures:
+six payload patterns per type, equal words, the `0xffffffff` invalidation value,
+and every individual bit difference. It verifies the ordered current/history
+writes, unchanged returns, stack state and changed-path call arguments. Changed
+paths stop at the actual downstream entry; no helper return or successful
+coefficient update is synthesized.
+
+Consequently, reading a current-command word proves that this wrapper stored it,
+but does not prove that the downstream update completed, that filter state is
+settled, or that the corresponding behavior has reached the audio wire. The
+bit masks above describe original software decisions; physical UI-control and
+calibrated-gain meanings require the CPU packing and downstream processing
+chains. The first two paths also have later static stores invalidating the other
+current-command word after their helper returns; those stores are outside the
+changed-path execution check described here.
+
 ## Scope of the evidence
 
 Private exact-image models and reports include `dsp-rx-param-trial`,
