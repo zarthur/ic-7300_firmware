@@ -445,6 +445,36 @@ left native stream A present in the tested USB-D capture is consistent with
 separate direct output lanes, but neither observation proves independence for
 every mode, transition or control setting.
 
+### AF-derived peak and shared status publication
+
+Within `0x1180a2e4`, the incoming AF-processed value is retained in B10.
+The nonzero-counter path at `0x1180ab64..0x1180abb4` and
+`0x1180acb8..0x1180acd4` accumulates
+`abs(float32(float32(0.3) * B10))` into the maximum at B14+1412. A companion
+peak at B14+1408 accumulates the absolute value supplied at SP+40. The counter
+at B14+1420 decrements once. The private `dsp-af-peak-trial` executes these
+original instructions in 567 finite-input fixtures, including both signs,
+zero, peak replacement/retention and counters 1, 2 and 96. It checks complete
+memory against an independent reference; the counter-zero path is excluded.
+
+A separate original slice, `0x1180ac6c..0x1180acac`, compares the saved
+AF-derived peak at B14+1412 against the threshold at B14+1380. If the peak is
+strictly greater, it sets bit 4 of the byte at `0x11817ba8`; a nonzero byte at
+B14+1389 additionally clears bit 5. Otherwise it clears bit 4 and preserves
+the other supplied status bits. `dsp-af-status-trial` executes 6,912 fixtures
+covering all 256 status bytes, threshold equality and both gate states,
+including signed-byte value 255. Complete memory is checked, and both trials
+reject an incorrect load latency.
+
+These are separate slices with supplied state, not uninterrupted execution of
+the helper. The static intervening path evaluates the accumulated state when
+the counter is zero, reloads the counter to 96, then clears both peaks. Its
+complete execution and cadence remain unqualified. The evidence establishes
+an AF-derived shared-status dependency, so separate direct output lanes are
+insufficient to prove independence. Consumers of this status, indirect callbacks,
+and any resulting effect on native samples still require qualification; no UI
+function or transmit-control meaning is assigned to the status bits here.
+
 ## DSP completion dispatch and ordering
 
 The original service prefix `0x11812680..0x118126d8` reads the EDMA3 global
