@@ -212,6 +212,30 @@ It stops before the call to `0x1180d190` and the parallel cursor publication at
 `0x1180d86c`. Those effects, the surrounding parameter lifecycle and remaining
 output routing are still open.
 
+### Energy measurement for gain feedback
+
+The enabled-processing prefix of `0x1180d190` consumes the four current samples
+from the working buffer. For each sample it forms a float32 sum of its square
+and the previous sample's square, then updates a smoothed value as
+`float32(e + float32(float32(sum - e) * coefficient))`. It uses the rise
+coefficient when `e < sum`, otherwise the fall coefficient. Original tables
+at `0x11825180` and `0x11825190` contain, respectively, `[1, 0.02, 0.5, 0.5]`
+and `[1, 0.02, 0.1, 0.1]` rounded to float32. The qualified selector is
+`B14+72 + 2*command_bit7`, with B14+72 supplied as zero or one.
+
+The routine retains the final square at B14+184, the smoothed sum at B14+168,
+and half that sum at B14+152. Original-code fixtures pass 192 cases and four
+32-group sequences using those table values. Four further 32-group sequences
+feed actual modeled history-stage working-buffer values into this prefix.
+They preserve the cross-group sample-square state; they do not close the
+feedback loop because the upstream target gain is still supplied.
+
+This execution uses command bit 8 set, command 01 bit 0 clear, and a zero
+holdoff halfword at B14+2. It stops at `0x1180d39c`, before the threshold,
+hold/release, metering and nonlinear mapping that produces the return factor.
+Those later effects and the final gain applied to subsequent groups remain
+unqualified; the table selector is not yet assigned a radio UI meaning.
+
 ## Scope of the evidence
 
 Private exact-image models and reports include `dsp-rx-param-trial`,
@@ -227,6 +251,7 @@ Ordinary-path evidence is retained in `dsp-ordinary-sample-layout-trial` and
 The following zero-output branch is covered by `dsp-ordinary-zero-output-trial`
 and `dsp-envelope-table-trial`.
 The history branch is covered by `dsp-ordinary-history-trial`.
+Its energy-feedback prefix is covered by `dsp-feedback-energy-trial`.
 They retain firmware hashes and explicit boundaries. Firmware, decoded code,
 manual crops and generated original-image reports remain private.
 
