@@ -1027,7 +1027,7 @@ explain the following conditional branches: an incoming B16 of zero selects
 `0x1181116c`; one selects `0x11811024`; other values fall through to
 `0x11810f74`. This is local selector decoding, not execution of the preceding
 producer, the selected processing bodies, or proof of the reachable counter
-values. The mix-buffer producer still needs numerical and stateful checks.
+values. The numerical and stateful checks of these bodies are documented below.
 
 The private audit preserves the original disassembly and reports 60 differing
 operand decodes in the linear listing for these three formats. That listing
@@ -1038,3 +1038,54 @@ bounded models. This only clears those ranges of these three discrepancies;
 it does not validate all decoder formats, earlier source-map models, or their
 complete callers. New interpretation must check compact register fields
 against the manual rather than treating the raw listing as authoritative.
+
+## Mix staging and its native-publication gate
+
+With the two compact operands corrected as above, a restricted model now runs
+`0x11810f68..0x11811250` and the original filter at `0x118007cc`. Let `s` be
+B16 at entry and let `j` select a word within each two-word scalar pair:
+
+| Entry selector | Four scalar indices `j` | Stored next selector |
+| --- | --- | --- |
+| `s = 0` | `0, 0, 0, 0` | `1` |
+| `s = 1` | `0, 0, 1, 1` | `2` |
+| Other values | `1, 1, 1, 1` | `s - 2`, modulo 32 bits |
+
+The body stores that next value at B14+404. Reachability and the preceding
+scalar producer are not established by supplying these entry values.
+For each of four iterations, it performs these separate operations:
+
+- Add scalar `0x11818058 + 4*j` to stack input `SP+120+4*i`, using float32
+  arithmetic. Filter through descriptor `0x11817ea0` and duplicate the result
+  into `SP+184+8*i` and the next word. Its initialization template is
+  `0x11817d88`, with five sections and gain `4.217493915348314e-5`.
+- Add scalar `0x11818060 + 4*j` to each of the two words at `SP+136+8*i`.
+  Filter those two sums consecutively through descriptor `0x11817ec8` and
+  store them at `SP+216+8*i` and the next word. Its initialization template is
+  `0x11817d94`, with five sections and gain `1.5692590750404634e-5`.
+- Copy scalar `0x11818068 + 4*j` directly to `SP+248+4*i`. This third path
+  supplies the mix input of the native publication formula documented above.
+
+After all twelve filter calls, command word `0x11817b20` bit 23 determines
+whether the four mix slots are retained or zeroed. Both neighboring filters
+have already advanced their states regardless of this bit. The gate does not
+remove the main or auxiliary contributions to native publication, and it does
+not clear the publication filter's history. It is therefore not evidence of
+an instantaneous stream mute or a physical RX/TX/PTT control.
+
+Validation covers 320 supplied-input cases, including both interrupt states,
+zero/nonzero filter history, all three selector branches and unrelated command
+bits; three 48-group sequences check carried state. Independent arithmetic
+references check all filter inputs, outputs, states, mix slots and counter
+updates. Memory guards and callee preservation pass, and deliberately wrong
+load/FP latencies are rejected. Sixteen static byte bindings connect the
+supplied descriptor templates and zero registers to original initialization.
+
+Another 288 connected groups pass actual auxiliary staging through this mix
+model and then actual mix slots through original native publication. They
+exercise mix enabled/disabled/toggled and main/auxiliary contributions while
+the mix gate is off. The toggled case retains a nonzero filter tail after the
+mix slots are cleared. These are connected bounded slices: six global scalar
+values and main staging remain supplied, and the preceding producer and full
+caller are not executed. Physical source identity, calibrated gain, buffer
+ownership and hardware acceptance remain open.
