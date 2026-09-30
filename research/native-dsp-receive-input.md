@@ -236,6 +236,34 @@ hold/release, metering and nonlinear mapping that produces the return factor.
 Those later effects and the final gain applied to subsequent groups remain
 unqualified; the table selector is not yet assigned a radio UI meaning.
 
+### Threshold and hold/release updates
+
+The next slice, `0x1180d39c..0x1180d50c`, subtracts the original float32
+threshold 0.14 from the half-energy measurement and floors the result at zero.
+It compares this target with the prior value at B14+164. With command bit 7
+clear, a rise limits the difference to 2 or 1 and multiplies it by 0.004 or
+0.0003, respectively, for the qualified B14+72 values zero or one. It adds that
+increment to the prior value and clears the counter at B14+4.
+
+On a fall or equality, the signed counter is compared with the limit at B14+36.
+Below the limit it increments and uses the original pair approximately
+`(4.1e-6, 1.5e-7)`. At or above the limit it is set to the limit and uses the
+pair stored at `0x11817be0`. The update subtracts both a coefficient times the
+difference and an additive decrement, with separate float32 roundings, then
+floors the result at zero. Bit 7 instead selects a 0.003 rise coefficient and
+a mixed single/double-precision 0.03 fall calculation; its falling path leaves
+the counter unchanged. Both paths publish the result at B14+160 and B14+164.
+
+Original instruction execution passes 300 cases spanning threshold equality,
+counter boundaries, wrap-adjacent signed values and both command-bit states,
+plus four 64-group sequences. The release pair's writer at `0x11806aa4` selects
+two words from `0x11824088 + 8*(command & 15)`. Its supplied command register is
+statically associated with the preceding load of `0x11817b3c`. All 16 original
+table entries pass 64 publication cases and 384 connected threshold cases.
+These tests qualify coefficient use without assigning UI meanings or physical
+hold times. The subsequent RF-dependent floor, meter aggregation and nonlinear
+mapping still separate this state update from the returned feedback factor.
+
 ## Scope of the evidence
 
 Private exact-image models and reports include `dsp-rx-param-trial`,
@@ -252,6 +280,8 @@ The following zero-output branch is covered by `dsp-ordinary-zero-output-trial`
 and `dsp-envelope-table-trial`.
 The history branch is covered by `dsp-ordinary-history-trial`.
 Its energy-feedback prefix is covered by `dsp-feedback-energy-trial`.
+Threshold and release-table evidence is retained in `dsp-feedback-threshold-trial`
+and `dsp-feedback-release-table-trial`.
 They retain firmware hashes and explicit boundaries. Firmware, decoded code,
 manual crops and generated original-image reports remain private.
 
