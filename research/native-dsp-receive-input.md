@@ -742,6 +742,40 @@ field-level software relationships, not calibrated gain or physical UI units.
 Earlier record selection, command delivery, downstream coefficient updates and
 target behavior remain outside this CPU packing test.
 
+## Selected-record and mode provenance for filter commands
+
+The command packer's original entry selects R5 as
+`0x203def00 + 0x30c + 56 * byte[0x20390730]`. The associated raw mode comes
+from `0x204159c0 + 16*index + 8`. For supplied raw modes 0–7, original helper
+`0x200130a0` produces `[0, 0, 1, 1, 2, 2, 3, 4]`. Table `0x20335f60` then
+selects descriptor indexes `[0, 2, 4, 6, 7]`. A nonzero record byte at `+0x1e`
+advances the descriptor index by one only for the first three normalized modes.
+The three-byte descriptors reside at `0x20335f6d`.
+
+| Raw mode | Record `+0x1e` zero | Record `+0x1e` nonzero |
+| --- | --- | --- |
+| 0–5 | Type `0x20`, signed endpoint fields | Type `0x21`, W/50 path |
+| 6 | Type `0x20` | Type `0x20` |
+| 7 | Type `0x21`, `(W-500)/500 + 10` path | Same path |
+
+The flag passed into the packing formulas comes from record byte `+0x2e`:
+0 and 1 survive, while values greater than 1 become zero. The selection flag
+is equality between the descriptor's first byte and the raw mode. In these
+fixtures it is one for modes 0, 2 and 4, and zero for modes 1, 3, 5, 6 and 7.
+The cached gate at `0x203906ca` clears descriptor flag bits 4–6 when zero;
+it does not change the format-selecting low three bits.
+
+The private `band-selection-trial` passes 384 original-code fixtures spanning
+modes 0–7, record indexes 0/1, selector zero/nonzero values, flag normalization
+and the cached gate. Selection, descriptor and packing slices connect through
+checked register values, and execute the original mode/division helpers. The
+intervening unrelated packing is omitted, with the output-array pointer supplied
+at its known boundary; this is not uninterrupted execution of the whole packer.
+Selected records remain unchanged and only the expected output word is written
+outside private stack storage. Numeric mode identities and field provenance
+are established here; UI labels, field setters/units and actual signal response
+remain separate evidence requirements.
+
 ## Scope of the evidence
 
 Private exact-image models and reports include `dsp-rx-param-trial`,
