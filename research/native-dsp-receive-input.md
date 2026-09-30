@@ -646,6 +646,37 @@ prove that a control transition occurred on the target or that the complete
 firmware has no recovery mechanism. Audio continuity and command continuity
 remain separate properties to qualify.
 
+## Command consumer: immediate and deferred application
+
+The original selected-consumer body `0x11812864..0x1181293c` advances the
+consumer counter/index before deciding how to apply the fetched word. The
+restricted `dsp-command-pop-trial` checks all 256 command high bytes at both
+ends of the 256-word ring and three counter positions, including signed and
+unsigned rollover (1,536 cases). Every memory byte is compared with a separate
+reference. The original initialized handler table supplies indirect targets;
+execution stops at the handler entry rather than inventing a successful return.
+
+| Command high byte | Consumer action |
+| --- | --- |
+| `0x20`, `0x21` | Store the complete word at `B14+620`, then return to the DMA poll |
+| `0x25` | Store the complete word at `B14+628`, then return to the DMA poll |
+| All others | Pass the word in A4 and dispatch through `0x11818100 + 4*high_byte` |
+
+The two commands sharing `B14+620` can replace one another before deferred
+application. Consuming a queue entry therefore does not by itself prove that
+its handler ran. The earlier service branch reaches the deferred-application
+path when its queue-state check finds no pending entry: it compares `+620`
+with the last-applied word at `+624`, and separately compares `+628` with
+`+632`. These later calls remain a static trace, not part of the consumer-body
+execution test. No application-time or latency bound follows from this result.
+
+Fixtures supply the register snapshot at the selected-consumer boundary. They
+do not execute the preceding nonempty gate or establish that every supplied
+counter-wrap state is reachable in the complete service loop. Interrupt
+interleavings, whole-loop backpressure and command-handler effects remain
+separate qualifications. An audio diagnostic must not infer a complete control
+history merely from queue consumption or a nominal audio sample cadence.
+
 ## Scope of the evidence
 
 Private exact-image models and reports include `dsp-rx-param-trial`,
