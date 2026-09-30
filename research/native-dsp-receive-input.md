@@ -1009,3 +1009,32 @@ ownership, stack/timing margins and v2 target lifecycle capture remain required.
 The [target capture](native-receive-target-capture.md) independently establishes
 the tested CPU stream's relationship to recorder audio; it does not prove all
 of the DSP source-side assumptions above.
+
+## Compact-register decoding caveat at the remaining mix selector
+
+A byte-level audit found a GNU binutils 2.44 operand-decoding discrepancy in
+three compact formats when the fetch header selects the high register set.
+TI SPRUFE8B section 3.10.2.2 (page 93) applies that selection to three-bit data
+register fields. Figure D-9 (page 738) explicitly restricts the one-bit `Lx3c`
+comparison destination to A0/A1 or B0/B1. Figures G-1/G-2 (page 759) encode one
+side of compact `MV` with a full five-bit register number. Applying an extra
+16 to those destinations or full-width operands changes the instruction.
+
+At `0x11810f68`, opcode `0x004f` under header `0xe0880010` therefore moves
+B16 to **B0**, rather than B16 to B16. The parallel `0x2827` at `0x11810f6a`
+compares B16 with 1 and writes **B1**, rather than B17. These two results
+explain the following conditional branches: an incoming B16 of zero selects
+`0x1181116c`; one selects `0x11811024`; other values fall through to
+`0x11810f74`. This is local selector decoding, not execution of the preceding
+producer, the selected processing bodies, or proof of the reachable counter
+values. The mix-buffer producer still needs numerical and stateful checks.
+
+The private audit preserves the original disassembly and reports 60 differing
+operand decodes in the linear listing for these three formats. That listing
+may include data, so this is not a count of executed instructions. None falls
+within the selected filter, main interpolation, auxiliary producer, native
+publication, common-output/wrapper, or input-mixer ranges used by the recent
+bounded models. This only clears those ranges of these three discrepancies;
+it does not validate all decoder formats, earlier source-map models, or their
+complete callers. New interpretation must check compact register fields
+against the manual rather than treating the raw listing as authoritative.
