@@ -776,6 +776,42 @@ outside private stack storage. Numeric mode identities and field provenance
 are established here; UI labels, field setters/units and actual signal response
 remain separate evidence requirements.
 
+## Endpoint geometry and publication into the selected record
+
+Original helper `0x20027aa8` derives the fields used above. It reads an unsigned
+step byte at `0x203deec8+4` and signed bias byte at `+6`. With supplied offset
+arguments P and Q, width B and center C, its arithmetic is:
+
+```text
+D1 = (P + bias) * step
+D2 = (Q + bias) * step
+L  = C + max(D1, D2) - floor(B / 2)
+U  = C + min(D1, D2) + floor(B / 2)
+W  = U - L
+S  = trunc((L + U) / 2)
+```
+
+It also calculates `trunc((D1 + D2) / 2)`. Results are stored as halfwords in
+the working structure beginning at `0x203deec8+0x0c`. The caller's static tail
+copies 16 bytes to `+0x1c`; original publication slice
+`0x200529cc..0x20052a10` copies these fields into the selected 56-byte record:
+D1/D2 at `+0x20/+0x22`, L/U at `+0x24/+0x26`, W/S at `+0x28/+0x2a`, and
+the mean displacement at `+0x2c`. The selector byte maps to record `+0x1e`.
+
+The private `filter-geometry-trial` executes the original arithmetic, original
+ARM-to-Thumb copy routine and publication slice sequentially in 972 fixtures.
+It checks complete source/destination memory against an independent reference,
+including negative offsets, odd widths and crossed endpoints. Odd B loses one
+unit through the two half-width truncations. The helper does not clamp crossed
+endpoints in these fixtures, and its stores retain the low 16 bits. This does
+not establish that the UI admits every supplied combination.
+
+This connects the packed endpoint/width/center fields to their generating
+arithmetic. The full callers, sources of B/C/P/Q, physical units, permitted UI
+ranges, update atomicity and actual filter response are not inferred from the
+isolated chain. In particular, the structure publication is distinct from both
+command dispatch and downstream DSP update completion.
+
 ## Scope of the evidence
 
 Private exact-image models and reports include `dsp-rx-param-trial`,
