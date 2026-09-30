@@ -166,6 +166,23 @@ publication remain static evidence; setup and processing were executed as
 separate slices with the same table data. This does not establish current radio
 selection, allocation behavior, or the other handler at `0x11808bb0`.
 
+### Zero output with continuing envelope updates
+
+The next call, `0x1180d638`, receives the four samples at stack+136 and writes
+stack+8. In its initialized, unchanged-parameter path, bit 5 of command
+`0x11817b20` selects a loop that filters each input's absolute value through
+descriptor `0x11818700`, while writing four zero words to the output. Filter
+state therefore continues to change during this zero-output branch. The
+remaining metering tail is outside the executed slice.
+
+The initialized template at `0x118186f0` specifies one section with gain
+approximately 0.001023218. Separate original setup and processing slices using
+its exact coefficients pass four setup cases and 512 filter calls with retained
+state, matching an independent recurrence. Another 128 cases cover supplied
+filter state, unrelated command bits and interrupt-enable restoration. Reset,
+parameter changes, the bit-5-clear processing branch, current radio selection
+and subsequent output routing remain unqualified.
+
 ## Scope of the evidence
 
 Private exact-image models and reports include `dsp-rx-param-trial`,
@@ -178,6 +195,8 @@ Transition evidence is retained in `input-mute-request-trial`,
 Ordinary-path evidence is retained in `dsp-ordinary-sample-layout-trial` and
 `dsp-ordinary-filter-wrapper-trial`, with original table data qualified by
 `dsp-ordinary-table-filter-trial`.
+The following zero-output branch is covered by `dsp-ordinary-zero-output-trial`
+and `dsp-envelope-table-trial`.
 They retain firmware hashes and explicit boundaries. Firmware, decoded code,
 manual crops and generated original-image reports remain private.
 
