@@ -416,9 +416,79 @@ it does not resolve physical FIFO phase or the CPU's retained frame alignment.
 `dsp-output-publication-trial` passes 128 cases and three 32-group stateful
 sequences, including both clipping limits. It verifies filter arguments,
 filter state, duplicated stores and unchanged surrounding memory against an
-independent reference; incorrect load/FP latencies are rejected. Preceding
-mode/control processing, the two additional buffer producers, DMA ownership,
-and physical gain calibration remain separate qualifications.
+independent reference; incorrect load/FP latencies are rejected. The auxiliary producer and the other serializer-4 context region are qualified
+below. Generation of the source scalars and mix buffer, preceding mode/control
+processing, DMA ownership and physical gain calibration remain separate
+qualifications.
+
+
+## Auxiliary input and the second serializer-4 context region
+
+The contiguous original body `0x11810aa4..0x11810c70`, including calls to the
+original filter at `0x118007cc`, now qualifies the auxiliary buffer producer and
+publication into context 416–447. The model supplies initialized descriptors
+from original cinit templates, two floating-point context scalars, and two groups
+of signed context words. It executes twelve original filter calls per group;
+no filter result is stubbed. Original allocation/setup and the producers of those
+supplied context values are outside the boundary.
+
+The first two filters each receive one scaled scalar followed by three zeros:
+
+| Context input | Initial multiplier, rounded float32 | Descriptor / template | Filter sections | Destination |
+| --- | --- | --- | ---: | --- |
+| +576 | `42.375999450683594` | `0x11818008` / `0x11817d58` | 4 | Four floats at SP+88..100 |
+| +628 | `93.19309997558594` | `0x11817fe0` / `0x11817d88` | 5 | Four floats at SP+104..116 |
+
+The corresponding template gains are `0.0005997947882860899` and
+`0.00004217493915348314`. Each zero input still advances its filter state; these
+are not four independent copies of the scalar. The descriptor/template associations
+are statically bound to the original setup call sites by
+`dsp-auxiliary-bindings-audit`. That audit does not execute setup or prove runtime
+coefficient immutability.
+
+SP+88..100 supplies the auxiliary term of the previously qualified publication
+loop, which adds main and mix contributions before another five-section filter
+and conversion into context 384–415. SP+104..116 follows a different path:
+`0x11810c24..0x11810c68` clips each value to ±`0.9999899864196777`, writes a
+clipped value back to its scratch slot when needed, multiplies by float32
+`2126008832.0`, truncates toward zero, and writes an identical pair at
+context `416+8*i` and `420+8*i`. This region is the other eight-word region for
+serializer 4 in the routing map. These address relationships do not identify
+physical left/right slots or equate either region unconditionally with CPU A/B.
+
+The same executed body also stages two signed-word inputs for later processing.
+For `i=0..3`, it converts context word `64+8*i` to float32, scales by `2^-31`
+and `0.13790999352931976` with separate roundings, and writes SP+120+4*i.
+SP+136+8*i receives the float32 sum of that result with itself; the following
+word is zero. Context word `96+8*i` is converted and scaled by `2^-31`, passed
+through descriptor `0x11817f68` using template `0x11817d88`, multiplied by
+`1.472499966621399`, and stored at SP+168+4*i. Their later routing/mixing and
+physical source identity remain separate work.
+
+`dsp-auxiliary-output-trial` passes 196 fixtures with both interrupt-enable
+states, positive/negative/zero scalars, zero/nonzero filter state and signed-word
+extremes. Both conversion clipping limits are reached. Three 32-group sequences
+check stateful impulse, step and alternating inputs. Filter arguments, state,
+all scratch outputs, duplicated context stores and unchanged surrounding memory
+match an independent arithmetic reference. Incorrect load and floating-point
+latencies are rejected.
+
+`dsp-auxiliary-publication-linked-trial` connects actual outputs from the original
+receive interpolation, auxiliary producer and publication models across 384
+groups. Separate arithmetic/state references check the combined outputs. The
+fixtures include main-only, auxiliary-only, second-region-only and combined
+inputs, plus clipping. With main and mix zero, a nonzero +576 input can reach
+context 384–415; a +628-only fixture reaches 416–447 while 384–415 stays zero.
+Mix is supplied zero and the signed-word banks are zero in these linked cases.
+Intervening caller instructions and source generation are not executed, so this
+is a connected-slice qualification, not a whole audio-task simulation.
+
+The source scalars must not be treated as invariant zeros or independent taps.
+Static bindings show that the later call to `0x1180a2e4` receives the same context
+pointer and contains stores clearing offsets 576 and 628, followed by further
+processing. Its complete contribution and other producers remain unqualified.
+This finding preserves the need to trace shared state before claiming global
+AF independence or an all-mode gain contract.
 
 ## AF-controlled output and the native publication boundary
 
