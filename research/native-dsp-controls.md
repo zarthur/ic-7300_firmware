@@ -109,6 +109,39 @@ request gating. It does not establish that the gate changes native samples,
 nor that the receive diagnostic introduces a route to PTT. All execution is
 offline against synthetic memory, with no radio, serial or card operation.
 
+### Request hold and connection to the state dispatcher
+
+Original getter `0x2006c794` returns bit 5 of `0x203904c8`. The selected
+caller path at `0x20065580..0x2006561c` executes this getter. When asserted,
+it clears byte `0x203fc61f` and ORs bit 14 into the aggregate request being
+built on the stack. If the getter is clear but the previous request had bit 14,
+the path retains that bit while the counter at `0x203fc61f` is below a threshold.
+Otherwise it leaves the current aggregate unchanged.
+
+For settings base `0x203de4cc`, the threshold starts as
+`(2 + 10 * byte[+0x27e]) & 255`. If halfword `0x203903fa` has bit 14 set,
+it adds the original lookup entry selected by byte `+0x27f`, again retaining
+the low byte. The four entries tested at `0x2019e53c` are 0, 5, 10 and 20.
+The allowed UI settings and elapsed time represented by the counter are not
+established by this arithmetic.
+
+The private `cpu-af-request-trial` passes 4,584 original-instruction fixtures
+covering assertion, release, threshold boundaries, unrelated aggregate bits and
+byte wrapping. It then runs original publication at `0x20065790`, which writes
+the changed aggregate halfword to `0x203903f4`, followed by the original request
+load, snapshot bookkeeping and state-zero dispatcher path at `0x20065908`.
+With state index zero, a resulting zero request preserves index zero; a nonzero
+request selects index one and resets transition counter `0x203903c8`. Exact
+state/history writes, input preservation and surrounding guards are checked.
+
+This connects the gated request to the existing state machine under supplied
+caller conditions. Earlier eligibility guards and intervening aggregate edits
+are explicitly omitted; no helper is replaced by a fabricated success value.
+Other state handlers, physical transition effects and the upstream wire mapping
+are outside this connected fixture. The AF-derived status therefore cannot be
+classified as UI-only, but neither state index one nor request bit 14 is assigned
+a physical TX meaning here.
+
 ## Relation to receive audio
 
 Private inspection of the separately decoded DSP program connects tag 0 to
