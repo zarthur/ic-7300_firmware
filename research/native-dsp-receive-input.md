@@ -475,6 +475,48 @@ insufficient to prove independence. Consumers of this status, indirect callbacks
 and any resulting effect on native samples still require qualification; no UI
 function or transmit-control meaning is assigned to the status bits here.
 
+### Status-change staging and the separate control-data DMA path
+
+One consumer of the status containing the AF-derived bit is interrupt handler
+`0x11811e78`. Its static setup loads the first eight bytes at `0x11817ba8` and
+the previous snapshot at `0x11818588`. On the non-receive branch, the comparison
+at `0x11811f94` gives any difference in those eight bytes priority over the
+later status checks. The changed path at `0x11812082` reloads the first word
+from `0x11817ba8`, stores it at B14+1572 (`0x1183213c`), and copies the loaded
+eight-byte snapshot into `0x11818588`. An unchanged snapshot proceeds to the
+next comparison at `0x11811fa2`.
+
+The private `dsp-status-stage-trial` executes these comparison and changed-path
+instructions in 520 fixtures. Every single-bit difference in the 64-bit
+snapshot, equal snapshots and two memory poisons are covered. Exact memory
+checks establish the staged word and snapshot update; incorrect load latency
+is rejected. The register snapshots and pointers are supplied. Interrupt
+entry/MMIO, later priority branches and concurrent updates are not executed.
+In particular, updating the snapshot here does not prove delivery to the CPU,
+and changes can be coalesced before this path observes them.
+
+Static caller `0x11814770..0x11814788` supplies this staging address to original
+constructor `0x11814ae8`, with destination loaded from B14+1548. The original
+initialized value is `0x01d06000`, McASP1's data port (SPRS377F, pages 22 and
+123). `dsp-status-param-trial` executes that constructor and its original
+PaRAM-writing helper in eight fixtures, including relocated arguments and two
+memory poisons. For the actual caller arguments, both PaRAM indexes 3 and 36
+contain these eight words:
+
+```
+OPT       SRC         A_B_CNT   DST         BIDX  LINK_BCNTRLD  CIDX  CCNT
+00106000  1183213c    00010004  01d06000    0     00010480      0     1
+```
+
+This describes a four-byte, single-array transfer with zero address strides,
+link to PaRAM 36 and TCC 6. Both descriptors use the same staging word; the
+PaRAM-36 link points back to itself. It is a separate control-data path from
+the native McASP0 audio banks. Descriptor construction does not establish
+event enablement, successful bus transfers, wire timing, CPU interpretation or
+alignment with a particular native sample. The reporting consumer therefore
+narrows the shared-status investigation without proving that other consumers
+cannot affect receive processing.
+
 ## DSP completion dispatch and ordering
 
 The original service prefix `0x11812680..0x118126d8` reads the EDMA3 global
