@@ -81,12 +81,45 @@ saving its predecessor at `0x11818504`. Connected fixtures verify publication,
 handler storage and branch selection. Physical transport, live flag meaning,
 and complete transition semantics remain outside these fixtures.
 
+### Transition request and release
+
+The original request helper `0x200b3718` acts only while `0x2039077e` bit 6 is
+set. It computes `(100 - 2*argument) & 255`. If the pending byte `0x203906d4` is
+zero, or counter `0x2039076e` exceeds this threshold, it writes the threshold,
+sets pending to one, and calls the command setter. An equal counter does not
+refresh the request. The previously traced RXS-state mismatch supplies argument
+2, hence threshold 96; this does not itself identify physical signal settling.
+
+Release helper `0x200b376c` clears a nonzero pending byte when state bit 6 clears
+or the counter reaches at least 100. Independently, it mirrors forced-mute byte
+`0x203906f0` into `0x20390718`. Either change invokes the setter. Clearing pending
+therefore leaves command bit 0 asserted when forced mute remains nonzero.
+
+The counter prefix at `0x200b7910` increments four adjacent bytes independently,
+including `0x2039076e`, with modulo-256 wrapping and no carry between bytes.
+The timer-service parity gate at `0x20005bb4` reaches the call at `0x20005bd0`
+on every second service. Combined with the [timer configuration](native-receive-timing.md),
+this gives an intended counter cadence of 500 microseconds. Four increments
+from 96 to 100 span two milliseconds of nominal scheduled cadence, **not a
+guaranteed request-to-unmute duration**. Initial phase, interrupt delivery,
+release polling, other writers, forced mute, and DSP delivery remain relevant.
+
+Original-code fixtures cover 720 requests, 648 releases, 2,048 counter-prefix
+cases, and all 256 parity-gate values. Twelve composed sequences execute request,
+counter increments and release against shared synthetic state, verifying the
+four-increment threshold and forced-mute retention. The parity probe stops
+before the intervening call at `0x20005bcc`; the full interrupt routine and its
+ordering relative to release polling are not executed by these fixtures.
+
 ## Scope of the evidence
 
 Private exact-image models and reports include `dsp-rx-param-trial`,
 `dsp-rx-lane-model`, `dsp-rx-format-audit`, `dsp-routing-source-trial`,
 `dsp-source-conversion-trial`, `dsp-input-ramp-trial`,
 `dsp-input-ramp-gate-trial`, and `dsp-mute-command-bridge-trial`.
+Transition evidence is retained in `input-mute-request-trial`,
+`input-mute-release-trial`, `input-mute-counter-trial`, and
+`input-mute-cadence-trial`.
 They retain firmware hashes and explicit boundaries. Firmware, decoded code,
 manual crops and generated original-image reports remain private.
 
