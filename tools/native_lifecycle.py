@@ -117,6 +117,223 @@ def configuration_probe(app, mode_values):
     return rows
 
 
+
+def start_probe(app, cases):
+    """Run the complete original start routine with scripted input observations.
+
+    Cases are (timeout_phase, retries_per_phase, old_gate, timer_count, irq_mask).
+    Phase -1 never expires; 0..19 expire at a pin wait; 20 at the final check.
+    Private MMIO values model reads only, not peripheral effects or elapsed time.
+    All callees execute original instructions, including the timer setup/clear.
+    """
+    if not isinstance(cases, (list, tuple)) or not cases:
+        raise ValueError('Require nonempty start fixtures')
+    for case in cases:
+        if (not isinstance(case, (list, tuple)) or len(case) != 5 or
+                any(type(v) is not int for v in case) or
+                not -1 <= case[0] <= 20 or not 0 <= case[1] <= 4 or
+                not 0 <= case[2] <= 255 or not 0 <= case[3] <= 65535 or
+                case[4] not in (0, 1)):
+            raise ValueError('Invalid start fixture')
+    gate, timer_flag, timer = 0x2039038c, 0x203903ac, 0xfcff0305
+    pins = (0xfcfe3208, 0xfcfe320c)
+    regions = [(0xe820b000, 0x24), (0xe820b800, 0x24),
+               (0xe82000e8, 4), (0xe8200128, 4), (0xe8200168, 4),
+               (pins[0], 2), (pins[1], 2), (timer_flag, 1), (gate, 1), (timer, 5)]
+    h = Isolated(app, [(0x2006003c, 0x200604c4), (0x20063448, 0x200634a8),
+                      (0x20360adc, 0x20360af4), (0x20360b0c, 0x20360b34)], regions)
+    phases = list(range(0x20060074, 0x20060254, 0x30))+list(range(0x20060294, 0x20060474, 0x30))
+    state = {}
+    stack = STACK+0xf000
+
+    def stimulus(uc, address, size, unused):
+        if address in phases:
+            phase = phases.index(address)
+            state['phase'] = phase
+            count = state['polls'][phase]
+            expired = state['timeout'] >= 0 and phase >= state['timeout']
+            matched = not expired and count >= state['retries']
+            bit = 0x200 if phase < 10 else 0x20
+            high = bool(phase % 2) if matched else not bool(phase % 2)
+            value = (0xa5a5 & ~bit) | (bit if high else 0)
+            ptr = pins[phase // 10]
+            uc.mem_write(ptr, struct.pack('<H', value))
+            state['external'][ptr] = struct.pack('<H', value)
+            state['polls'][phase] += 1
+        elif address == 0x20060488:
+            state['phase'] = 20
+        elif address == 0x20360b24:
+            expired = state['timeout'] >= 0 and state['phase'] >= state['timeout']
+            value = 0xa4 | int(expired)
+            uc.mem_write(timer, bytes([value]))
+            state['external'][timer] = bytes([value])
+            state['timeout_reads'].append(state['phase'])
+
+    def writes(uc, kind, address, size, value, unused):
+        if STACK <= address < STACK+0x10000:
+            if not stack-32 <= address or address+size > stack:
+                raise ValueError('Unexpected original start stack footprint')
+            return
+        state['writes'].append((address, size, value & ((1 << (8*size))-1)))
+
+    h.uc.hook_add(h.u.UC_HOOK_CODE, stimulus)
+    h.uc.hook_add(h.u.UC_HOOK_MEM_WRITE, writes)
+    rows = []
+    for timeout, retries, old_gate, timer_count, masked in cases:
+        state.clear()
+        state.update(timeout=timeout, retries=retries, phase=-1, polls=[0]*20,
+                     external={}, writes=[], timeout_reads=[])
+        for lo, size in regions:
+            h.uc.mem_write(lo, b'\xa4'*size)
+        # CHCTRL command bits read as zero (RZ/A1H manual, section 9.4.8).
+        for ptr in (0xe82000e8, 0xe8200128, 0xe8200168):
+            h.uc.mem_write(ptr, bytes(4))
+        h.uc.mem_write(gate, bytes([old_gate]))
+        h.uc.mem_write(timer+1, struct.pack('<H', timer_count))
+        before = {lo: bytearray(h.uc.mem_read(lo, size)) for lo, size in regions}
+        h.uc.mem_write(stack-96, b'\xa5'*128)
+        preserved = {getattr(h.a, 'UC_ARM_REG_R'+str(n)): 0x11223300+n for n in range(4, 12)}
+        h.uc.reg_write(h.a.UC_ARM_REG_CPSR, 0xa0000053 | (masked << 7))
+        for reg, value in preserved.items():
+            h.uc.reg_write(reg, value)
+        h.accesses.clear()
+        result = h.run(0x2006003c)
+        expected = [(0xe820b010, 4, 0xcc), (0xe820b000, 4, 0x3c2b0033),
+                    (0xe820b018, 4, 0), (timer_flag, 1, 1),
+                    (timer+3, 2, (timer_count+32000) & 65535), (timer, 1, 0xa4),
+                    (0xe8200128, 4, 1), (0xe82000e8, 4, 1),
+                    (0xe820b810, 4, 0xc4), (0xe820b800, 4, 0x0c2b0031),
+                    (0xe8200168, 4, 1)]
+        if timeout == -1:
+            expected.append((gate, 1, 1))
+        expected.append((timer_flag, 1, 0))
+        expected_polls = [1 if timeout >= 0 and i >= timeout else retries+1 for i in range(20)]
+        expected_reads = [i for i in range(20) for _ in range(
+            1 if timeout >= 0 and i >= timeout else retries)]+[20]
+        if (state['writes'] != expected or state['polls'] != expected_polls or
+                state['timeout_reads'] != expected_reads):
+            raise ValueError('Unexpected original start writes or polling flow')
+        for lo, data in before.items():
+            for address, size, value in expected:
+                if lo <= address and address+size <= lo+len(data):
+                    data[address-lo:address-lo+size] = value.to_bytes(size, 'little')
+            for address, value in state['external'].items():
+                if lo <= address and address+len(value) <= lo+len(data):
+                    data[address-lo:address-lo+len(value)] = value
+            if bytes(h.uc.mem_read(lo, len(data))) != bytes(data):
+                raise ValueError('Unexpected start input or register change')
+        if (h.uc.reg_read(h.a.UC_ARM_REG_SP) != stack or
+                any(h.uc.reg_read(reg) != value for reg, value in preserved.items()) or
+                h.uc.reg_read(h.a.UC_ARM_REG_CPSR) & 0x80 or
+                bytes(h.uc.mem_read(stack-96, 64))+bytes(h.uc.mem_read(stack, 32)) != b'\xa5'*96):
+            raise ValueError('Unexpected original start return ABI')
+        rows.append({'timeout_phase': timeout, 'retries_per_phase': retries,
+                     'previous_gate': old_gate, 'timer_count': timer_count,
+                     'initial_irq_mask': masked, 'gate': 1 if timeout == -1 else old_gate,
+                     'polls': state['polls'], 'timeout_reads': state['timeout_reads'],
+                     'writes': [{'address': a, 'size': n, 'value': v} for a, n, v in expected],
+                     'return_irq_mask': 0, 'instructions': result['instructions']})
+    return rows
+
+def stop_probe(app, cases):
+    """Execute complete original stop with supplied SSI-idle/expiry observations.
+
+    Cases use the start probe shape, with timeout phases -1 (none), 0 or 1.
+    CHCTRL reads are zero per the hardware manual, not retained command words.
+    Peripheral side effects, request withdrawal and DMA completion are unmodeled.
+    """
+    if not isinstance(cases, (list, tuple)) or not cases:
+        raise ValueError('Require nonempty stop fixtures')
+    for case in cases:
+        if (not isinstance(case, (list, tuple)) or len(case) != 5 or
+                any(type(v) is not int for v in case) or
+                case[0] not in (-1, 0, 1) or not 0 <= case[1] <= 4 or
+                not 0 <= case[2] <= 255 or not 0 <= case[3] <= 65535 or
+                case[4] not in (0, 1)):
+            raise ValueError('Invalid stop fixture')
+    gate, flag, timer = 0x2039038c, 0x203903ac, 0xfcff0305
+    controls = (0xe82000e8, 0xe8200128, 0xe8200168)
+    regions = [(0xe820b000, 0x24), (0xe820b800, 0x24),
+               *((p, 4) for p in controls), (0xfcfe0440, 1),
+               (flag, 1), (gate, 1), (timer, 5)]
+    h = Isolated(app, [(0x200604c4, 0x200605e4), (0x20063448, 0x200634a8),
+                      (0x20360adc, 0x20360af4), (0x20360b0c, 0x20360b34)], regions)
+    state = {}
+    stack = STACK+0xf000
+
+    def stimulus(uc, address, size, unused):
+        if address in (0x20060528, 0x20060574):
+            phase = int(address == 0x20060574)
+            state['phase'] = phase
+            expired = state['timeout'] >= 0 and phase >= state['timeout']
+            ready = not expired and state['polls'][phase] >= state['retries']
+            value = (0xa4a4a4a4 & ~(1 << 25)) | ((1 << 25) if ready else 0)
+            uc.mem_write(0xe820b004+phase*0x800, struct.pack('<I', value))
+            state['polls'][phase] += 1
+        elif address == 0x20360b24:
+            expired = state['timeout'] >= 0 and state['phase'] >= state['timeout']
+            uc.mem_write(timer, bytes([0xa4 | int(expired)]))
+            state['timeout_reads'].append(state['phase'])
+
+    def writes(uc, kind, address, size, value, unused):
+        if STACK <= address < STACK+0x10000:
+            if not stack-48 <= address or address+size > stack:
+                raise ValueError('Unexpected original stop stack footprint')
+        else:
+            state['writes'].append((address, size, value & ((1 << (8*size))-1)))
+
+    h.uc.hook_add(h.u.UC_HOOK_CODE, stimulus)
+    h.uc.hook_add(h.u.UC_HOOK_MEM_WRITE, writes)
+    rows = []
+    for timeout, retries, old_gate, count, masked in cases:
+        state.clear()
+        state.update(timeout=timeout, retries=retries, phase=-1, polls=[0, 0],
+                     timeout_reads=[], writes=[])
+        for lo, size in regions:
+            h.uc.mem_write(lo, b'\xa4'*size)
+        for ptr in controls:
+            h.uc.mem_write(ptr, bytes(4))
+        h.uc.mem_write(gate, bytes([old_gate]))
+        h.uc.mem_write(timer+1, struct.pack('<H', count))
+        before = {lo: bytearray(h.uc.mem_read(lo, size)) for lo, size in regions}
+        h.uc.reg_write(h.a.UC_ARM_REG_CPSR, 0xa0000053 | (masked << 7))
+        saved = {getattr(h.a, 'UC_ARM_REG_R'+str(n)): 0x11223300+n for n in range(4, 12)}
+        for reg, value in saved.items():
+            h.uc.reg_write(reg, value)
+        h.uc.mem_write(stack-96, b'\xa5'*128)
+        h.accesses.clear()
+        result = h.run(0x200604c4)
+        expected = [(flag, 1, 1), (timer+3, 2, (count+32000) & 65535), (timer, 1, 0xa4),
+                    *((ptr, 4, 0) for ptr in controls),
+                    (0xe820b010, 4, 0xc0), (0xe820b000, 4, 0x022b0030), (0xe820b004, 4, 0),
+                    (0xe820b810, 4, 0xc0), (0xe820b800, 4, 0x022b0030), (0xe820b804, 4, 0),
+                    (0xfcfe0440, 1, 0xb4), (0xfcfe0440, 1, 0xb4), (gate, 1, 0), (flag, 1, 0)]
+        if (state['writes'] != expected or
+                state['polls'] != [1 if timeout >= 0 and i >= timeout else retries+1 for i in range(2)] or
+                state['timeout_reads'] != [i for i in range(2) for _ in range(
+                    1 if timeout >= 0 and i >= timeout else retries)]):
+            raise ValueError('Unexpected original stop writes or polling flow')
+        for lo, data in before.items():
+            for address, size, value in expected:
+                if lo <= address and address+size <= lo+len(data):
+                    data[address-lo:address-lo+size] = value.to_bytes(size, 'little')
+            if lo == timer and state['timeout_reads']:
+                data[0] = 0xa4 | int(timeout >= 0)
+            if bytes(h.uc.mem_read(lo, len(data))) != bytes(data):
+                raise ValueError('Unexpected stop input or register change')
+        if (h.uc.reg_read(h.a.UC_ARM_REG_SP) != stack or
+                any(h.uc.reg_read(reg) != value for reg, value in saved.items()) or
+                (h.uc.reg_read(h.a.UC_ARM_REG_CPSR) >> 7) & 1 != masked or
+                bytes(h.uc.mem_read(stack-96, 48))+bytes(h.uc.mem_read(stack, 32)) != b'\xa5'*80):
+            raise ValueError('Unexpected original stop return ABI')
+        rows.append({'timeout_phase': timeout, 'retries_per_phase': retries,
+                     'previous_gate': old_gate, 'timer_count': count, 'initial_irq_mask': masked,
+                     'gate': 0, 'polls': state['polls'], 'timeout_reads': state['timeout_reads'],
+                     'writes': [{'address': a, 'size': n, 'value': v} for a, n, v in expected],
+                     'return_irq_mask': masked, 'instructions': result['instructions']})
+    return rows
+
+
 def tool_hashes():
     return dict(receive_hashes(), native_lifecycle=digest(Path(__file__).read_bytes()))
 
@@ -129,14 +346,21 @@ def _report(image):
             'queue_resets': {f'{op}_{w}_{r}': queue_reset_probe(app, op, w, r)
                              for op in ('initialize','flush') for w in range(8) for r in range(8)},
             'configuration': configuration_probe(app, [0, 1, 0x100, 0x101, 0xffffffff]),
+            'start': start_probe(app, [(phase, retries, gate, count, mask)
+                for phase in range(-1, 21) for retries in (0, 2) for gate in (0, 1)
+                for count in (0, 65535) for mask in (0, 1)]),
+            'stop': stop_probe(app, [(phase, retries, gate, count, mask)
+                for phase in (-1, 0, 1) for retries in (0, 2) for gate in (0, 1, 255)
+                for count in (0, 65535) for mask in (0, 1)]),
             'original_flow': {name: walk(app, APP_BASE, lo, hi) for name, lo, hi in (
                 ('cold_start',0x200605fc,0x20060614), ('shared_restart',RESTART,0x200605fc),
                 ('service_gate_and_dispatch',0x20005bd4,0x20005bf0))},
             'limits': ['Status words are supplied fixtures, not progressing DMA hardware.',
                        'Handler execution stops before acknowledgment/cache/data processing or at shared restart entry.',
-                       'The shared restart body is statically walked; its callees and physical completion are not simulated.',
+                       'The shared restart body is statically walked; its complete callee chain and physical completion are not executed.',
                        'Queue reset tests execute original stores only in private synthetic RAM.',
                        'Configuration slices execute separately against synthetic register memory; waits, reset effects and DMA startup are not simulated.',
+                       'Start and stop execute their full original routines and callees with scripted pin/SSI status and timeout observations; DMA completion, clock duration and physical framing are not simulated.',
                        'Aligned direct callers are evidence, not an exhaustive indirect-call inventory.']}
 
 

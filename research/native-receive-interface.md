@@ -154,7 +154,10 @@ Therefore it is a better investigation point, not yet an invariant gain tap.
   clear. A restart must invalidate an adapter's continuity epoch. The
   [lifecycle follow-up](native-receive-lifecycle.md) establishes that all three
   serviced DMA channels can request the same transport restart; A-queue flushing
-  is a separate consumer operation.
+  is a separate consumer operation. The complete original start/stop probes also
+  show that a timeout need not clear an old start gate, while stop does not
+  check DMA inactivity. Neither a return nor a service flag transfers ownership
+  of the native DMA buffers to a new consumer.
 - `0x20005c08` registers `0x20005b98` for interrupt ID `0x9a`. This service
   checks the flag at `0x2039038c`, calls the DMA handler, and advances the MTU2
   channel-3 compare at `0xfcff0218` by 8000 timer ticks. Those ticks are not

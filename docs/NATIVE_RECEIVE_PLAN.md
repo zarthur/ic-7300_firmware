@@ -117,3 +117,10 @@ in a checked disjoint layout. This is not an installed candidate: runtime storag
 ownership, target timing, single-file v2 recovery and hardware lifecycle evidence
 remain open. Continue those qualifications alongside DSP producer/gain tracing;
 keep issue #15 open until the interface requirements above are supported.
+
+The [DSP receive-input map](../research/native-dsp-receive-input.md) connects
+original receive descriptors, bank extraction, signed-word conversion and input
+ramp controls. Schematic review identifies serializer 3 at the FPGA's `DFR_MOD`
+connection. The slot association remains conditional on FIFO/frame alignment;
+complete downstream processing, live ownership and target lifecycle acceptance
+remain open. This source-side milestone does not complete the adapter contract.

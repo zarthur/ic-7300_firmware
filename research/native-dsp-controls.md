@@ -65,6 +65,153 @@ its full numerical gain, or identify it as native A/B. Changing an ACC/USB level
 is therefore a possible discriminating experiment, not yet a qualified native
 receive control contract.
 
+## CPU status publication and a downstream request gate
+
+Original receive-word slice `0x200b0dc4..0x200b0e00` reads a supplied word
+from `0x203906b8+24`, uses its top nibble as an index into the 16-word table
+at `0x20414c48`, and aliases nibble 9 to index 1. The word itself is stored
+unchanged. The private `cpu-dsp-status-trial` executes 1,024 cases covering
+all high bytes and four payload patterns. This establishes software dispatch
+after a word is available, not the wire framing, physical transport or source
+of that word.
+
+The publication slice `0x200b50a8..0x200b50bc` copies bits 5 and 4 of the
+first table byte into `0x203def54` and `0x203def55`, respectively. All 256
+input bytes are checked, with exact writes and unchanged source memory. The
+supplied source and destination bases match the enclosing caller's literals.
+Consequently, a nibble-zero status word carrying the DSP's AF-derived bit 4
+has a software path into shared byte `0x203def55`. Actual receipt of the DSP
+word on this CPU path remains a transport qualification.
+
+One consumer is the original slice `0x2006c704..0x2006c790`. It takes a prior
+request in R4 and uses these states:
+
+- `0x203903f1` bit 6 enables the gate.
+- `0x203def55` nonzero sets gate bit 6 in `0x203904c8` and clears counter byte
+  `0x203fc620` when enabled.
+- With the input clear, an already-set gate remains until that counter reaches
+  20. Disabling the gate clears its bit immediately.
+- Final request bit 5 in `0x203904c8` is set only when the supplied R4 request
+  is nonzero and gate bit 6 is clear. Other flag bits are preserved.
+
+The original slice passes 8,192 fixtures spanning every initial flag byte,
+enable/input combinations, counters 0/19/20/255 and both supplied requests.
+Another 1,024 linked fixtures run dispatch, publication and gating sequentially
+with a nibble-zero word; they use the preceding slice's actual memory output.
+The intervening callers, prior-request calculation, timer advancement and
+later request consumers are not executed. Twenty is a counter threshold,
+not a measured duration. No physical RX/TX label or UI function is assigned
+to these bytes by these checks.
+
+This extends the [AF-status investigation](native-dsp-receive-input.md) beyond
+a reporting-only interpretation: CPU software can use the received bit in
+request gating. It does not establish that the gate changes native samples,
+nor that the receive diagnostic introduces a route to PTT. All execution is
+offline against synthetic memory, with no radio, serial or card operation.
+
+### Request hold and connection to the state dispatcher
+
+Original getter `0x2006c794` returns bit 5 of `0x203904c8`. The selected
+caller path at `0x20065580..0x2006561c` executes this getter. When asserted,
+it clears byte `0x203fc61f` and ORs bit 14 into the aggregate request being
+built on the stack. If the getter is clear but the previous request had bit 14,
+the path retains that bit while the counter at `0x203fc61f` is below a threshold.
+Otherwise it leaves the current aggregate unchanged.
+
+For settings base `0x203de4cc`, the threshold starts as
+`(2 + 10 * byte[+0x27e]) & 255`. If halfword `0x203903fa` has bit 14 set,
+it adds the original lookup entry selected by byte `+0x27f`, again retaining
+the low byte. The four entries tested at `0x2019e53c` are 0, 5, 10 and 20.
+The allowed UI settings and elapsed time represented by the counter are not
+established by this arithmetic.
+
+The private `cpu-af-request-trial` passes 4,584 original-instruction fixtures
+covering assertion, release, threshold boundaries, unrelated aggregate bits and
+byte wrapping. It then runs original publication at `0x20065790`, which writes
+the changed aggregate halfword to `0x203903f4`, followed by the original request
+load, snapshot bookkeeping and state-zero dispatcher path at `0x20065908`.
+With state index zero, a resulting zero request preserves index zero; a nonzero
+request selects index one and resets transition counter `0x203903c8`. Exact
+state/history writes, input preservation and surrounding guards are checked.
+
+This connects the gated request to the existing state machine under supplied
+caller conditions. Earlier eligibility guards and intervening aggregate edits
+are explicitly omitted; no helper is replaced by a fabricated success value.
+Other state handlers, physical transition effects and the upstream wire mapping
+are outside this connected fixture. The AF-derived status therefore cannot be
+classified as UI-only, but neither state index one nor request bit 14 is assigned
+a physical TX meaning here.
+
+### Eligibility of the selected request path
+
+The selected path begins at `0x20065530`, before the getter/hold slice above.
+Let C be control base `0x203de174`, M be mode base `0x203deeb8`, S be settings
+base `0x203de4cc`, and B be helper state base `0x203902c9`. The original code
+reaches the request getter only when all of these conditions hold:
+
+- C+11 is neither `0x52` nor `0x61`.
+- B+2 and B+3 are not both nonzero.
+- The low two bits of M+12 are zero.
+- The source predicate returned by `0x2001fc60` is nonzero.
+- Bit 6 of C+1 is set.
+
+The source predicate executes original helper `0x20013108` and a mode-indexed
+table to choose among setting bytes S+`0x53..0x56`. On this selected path, the
+preceding M+12 test ensures that the chosen offset is always `0x53`, including
+when the helper permits a mode subindex. Original table `0x2018c540` maps the
+five tested setting indexes 0–4 to bytes 1–5; the predicate returns their low
+bit. Thus indexes 0, 2 and 4 permit this path, while 1 and 3 reject it. These
+are software indexes; their menu labels are qualified below.
+
+The private `cpu-af-eligibility-trial` passes 12,800 fixtures through the
+selected path and the original predicate and getter routines. It
+checks every combination of the represented guard classes, both request states,
+all four mode subflags, five source indexes and raw mode indexes 0–7. The
+unselected setting bytes are poisoned and explicitly checked as unread.
+Input memory and unrelated stack fields remain unchanged; counter clearing
+occurs only for an eligible asserted request. Hold behavior is separated by
+supplying a counter above its threshold, and is covered by the preceding trial.
+
+Earlier full-function checks and the branch selecting this mode family remain
+outside the entry boundary. Supplying every raw mode to this slice does not
+establish that each can reach it in the complete caller. These conditions
+constrain the software dependency; they do not yet provide user-facing settings
+for a hardware acceptance test or prove receive-stream gain independence.
+
+### Named modulation-source settings
+
+`tools/native_dsp_controls.py` now executes the original menu-label selector,
+the option-selection slice before rendering, and source predicate `0x2001fc60`.
+The report's `modulation_settings` section identifies:
+
+| Menu index | Label | Value byte |
+| --- | --- | --- |
+| 83 | DATA OFF MOD | `0x203de51f` (S+`0x53`) |
+| 84 | DATA MOD | `0x203de520` (S+`0x54`) |
+
+Both menus use the same five options. The original option lookup is checked
+with both language-bit values and unrelated language-byte bits set:
+
+| Value | Option | Original source predicate |
+| --- | --- | --- |
+| 0 | MIC | 1 |
+| 1 | ACC | 0 |
+| 2 | MIC,ACC | 1 |
+| 3 | USB | 0 |
+| 4 | MIC,USB | 1 |
+
+For a supplied raw mode index zero, the predicate selects DATA OFF MOD when
+the low mode subflags are zero and DATA MOD when they are one. The unselected
+setting is poisoned and checked as unread. The tested AF-related request path
+rejects nonzero subflags before calling the predicate, so its qualified setting
+is specifically DATA OFF MOD. This identifies a microphone-source eligibility
+condition; it does not establish live microphone routing, native capture gain,
+the other enable bit's UI name or complete request eligibility.
+
+The probe rejects unrecognized firmware, verifies the descriptor/value-pointer
+relationship and checks that these lookups modify no non-stack state. It stops
+before rendering and does not change settings or submit commands to the radio.
+
 ## Relation to receive audio
 
 Private inspection of the separately decoded DSP program connects tag 0 to

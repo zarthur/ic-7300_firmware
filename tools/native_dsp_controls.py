@@ -114,6 +114,63 @@ def level_settings_probe(app):
     return rows
 
 
+def modulation_settings_probe(app):
+    """Execute menu/option lookup and the original source predicate, offline.
+
+    The predicate alone does not establish request eligibility or live routing.
+    Rendering, settings changes and transport are outside the executed slices.
+    """
+    settings, mode, language = 0x203de51f, 0x203deeb8, 0x203ff76c
+    h = Isolated(app, [(0x20086000, 0x20086098), (0x20086604, 0x20086640),
+                      (0x2001fc60, 0x2001fca8), (0x20013108, 0x20013120)],
+                 [(SOURCE, 12), (settings, 2), (mode, 13), (language+7, 1)])
+    labels = ('MIC', 'ACC', 'MIC,ACC', 'USB', 'MIC,USB')
+    rows = []
+    for selection, name in enumerate(('DATA OFF MOD', 'DATA MOD')):
+        index = 83+selection
+        record = 0x20190ecc+index*64
+        fields = struct.unpack_from('<16I', app, record-APP_BASE)
+        h.uc.mem_write(SOURCE, bytes(8)+struct.pack('<BBH', 2, 0, index))
+        h.accesses.clear()
+        label_result = h.run(0x20086000, (SOURCE, 0, 0, 0))['r0']
+        offset = label_result-APP_BASE
+        if (fields[0] != settings+selection or label_result != fields[10] or
+                app[offset:offset+len(name)+1] != name.encode()+b'\0' or
+                any(k == h.u.UC_MEM_WRITE for k, _, _ in h.accesses)):
+            raise ValueError('Unexpected modulation setting descriptor')
+        options = []
+        for value, label in enumerate(labels):
+            values = bytearray(b'\xff\xff')
+            values[selection] = value
+            mode_bytes = bytearray(b'\xa5'*13)
+            mode_bytes[11], mode_bytes[12] = 3, selection
+            h.uc.mem_write(settings, bytes(values))
+            h.uc.mem_write(mode, bytes(mode_bytes))
+            for language_byte in (0, 1, 254, 255):
+                h.uc.mem_write(language+7, bytes([language_byte]))
+                h.uc.reg_write(h.a.UC_ARM_REG_R4, record)
+                h.uc.reg_write(h.a.UC_ARM_REG_R5, 0)
+                h.accesses.clear()
+                option = h.run(0x20086604, stop=0x20086640)['r0']
+                offset = option-APP_BASE
+                if (app[offset:offset+len(label)+1] != label.encode()+b'\0' or
+                        any(k == h.u.UC_MEM_WRITE for k, _, _ in h.accesses)):
+                    raise ValueError('Unexpected modulation option lookup')
+            h.accesses.clear()
+            predicate = h.run(0x2001fc60)['r0']
+            if (predicate not in (0, 1) or
+                    bytes(h.uc.mem_read(settings, 2)) != bytes(values) or
+                    bytes(h.uc.mem_read(mode, 13)) != bytes(mode_bytes) or
+                    any(k == h.u.UC_MEM_WRITE for k, _, _ in h.accesses) or
+                    any(k == h.u.UC_MEM_READ and a <= settings+1-selection < a+n
+                        for k, a, n in h.accesses)):
+                raise ValueError('Unexpected modulation source predicate access')
+            options.append({'value': value, 'label': label, 'source_predicate': predicate})
+        rows.append({'index': index, 'label': name, 'address': settings+selection,
+                     'options': options})
+    return rows
+
+
 def level_probe(app, cases):
     """Cases: (output_select, AF level, IF level, command high byte, low byte).
 
@@ -177,6 +234,7 @@ def _report(image):
     return {'image_sha256': digest(data), 'application_sha256': digest(app),
             'gates': gate_probe(app, cases), 'publication': publication_probe(app, list(range(256))),
             'level_settings': level_settings_probe(app), 'levels': level_probe(app, levels),
+            'modulation_settings': modulation_settings_probe(app),
             'limits': ['Original CPU slices with synthetic state, not a whole-task or DSP execution.',
                        'Refresh and packing are separate bounded calls; intervening command construction and submission are not executed.',
                        'No physical TX/RX label, timer units, serializer identity or control-independent audio gain is established.',
