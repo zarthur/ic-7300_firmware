@@ -497,6 +497,36 @@ Private `dsp-tx-param-trial` and `dsp-param-completion-audit` retain the origina
 constructor results and decoded option fields. These are constructor and manual
 semantics checks, not measured peripheral execution or runtime PaRAM ownership.
 
+## Service-loop scheduling boundary
+
+Static call tracing distinguishes initialization from repeated servicing. Entry
+`0x118160b0` calls initialization at `0x11813560`, then enters service routine
+`0x11812668`. The initialization contains context clearing, peripheral setup and
+the descriptor-construction call. Within the service routine, five backward
+branches return directly to the pending-register poll at `0x11812680`; they do
+not return through that initialization call.
+
+Between polls, three indirect call sites (`0x11812816`, `0x1181284e`,
+`0x11812922`) dispatch command words through table `0x11818100`. Their byte
+offset calculation `(command >> 22) & ~3` selects the high-byte command index
+multiplied by four. The full set of handlers and their worst-case durations are
+not qualified here. Consequently, instruction counts for the buffer-copy slice
+cannot be used as an upper bound on the interval between completion polls.
+
+A separate helper at `0x11815128` forms `1 << requested_code`, polls IPR until
+that bit is set, then calls `0x11814fd8` to acknowledge the requested bit.
+There is no direct call to this helper or the standalone IPR reader
+`0x11815008` in the inspected service loop. That bounded static observation
+does not exclude indirect calls, other synchronization or runtime resets.
+In particular, the existence of the wait helper is not evidence that this
+receive-driven copy path waits for TX completion.
+
+`dsp-service-order-audit` pins the reviewed instruction bytes, startup calls,
+five poll backedges and three indirect dispatch sites, and checks 768 command
+index examples. It is a static audit, not a full-service execution or a timing
+measurement. A bounded adapter still needs explicit service-latency and buffer
+reuse evidence, including the effect of command work and asynchronous activity.
+
 ## Scope of the evidence
 
 Private exact-image models and reports include `dsp-rx-param-trial`,
