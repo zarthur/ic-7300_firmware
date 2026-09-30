@@ -527,6 +527,30 @@ index examples. It is a static audit, not a full-service execution or a timing
 measurement. A bounded adapter still needs explicit service-latency and buffer
 reuse evidence, including the effect of command work and asynchronous activity.
 
+## DSP buffer memory and coherency scope
+
+The C6745 memory map identifies `0x11800000..0x1183ffff` as the 256 KiB L2
+RAM window (SPRS377F, page 25). Both RX banks, both TX banks and the 736-byte
+processing context are disjoint and fit entirely within its lower 128 KiB.
+`dsp-buffer-memory-audit` checks these address bounds; it does not classify any
+unmapped space as available storage.
+
+For CPU data accesses and DMA transfers through L2 SRAM, TI describes hardware
+snoop writes that update cached input data and snoop reads that forward dirty
+output data to DMA. These rules differ from external-memory coherency rules.
+See [SPRUG82A, sections 2.4.1–2.4.2 and Appendix A](https://www.ti.com/lit/ug/sprug82a/sprug82a.pdf).
+The guide also distinguishes memory assigned to SRAM from memory assigned to
+cache. Address placement alone does not establish the active partition; the
+runtime L2CFG value at `0x01840000` remains unmeasured.
+
+The recovered bank boundaries are not 64-byte aligned. Manual cache operations
+must not be added on the assumption that a whole line belongs to one bank.
+Hardware coherency, where its documented conditions apply, still does not
+establish exclusive ownership, an atomic whole-bank snapshot, correct frame
+phase, or completion before reuse. Those remain separate acceptance properties.
+The private audit records manual hashes and labels its result as geometry and
+manual semantics, not hardware execution.
+
 ## Scope of the evidence
 
 Private exact-image models and reports include `dsp-rx-param-trial`,
