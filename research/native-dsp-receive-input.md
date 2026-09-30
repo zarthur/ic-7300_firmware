@@ -292,6 +292,44 @@ an exact result bit pattern. Clearing part of that result's high word at
 therefore cannot be presented as verified original-helper execution. Its
 numerical result and the final returned gain factor remain open.
 
+## Mode-selected output callback
+
+The ordinary caller at `0x1180ee50` dispatches through B14+748 with the
+context in A4 and a four-sample buffer at SP+24 in B4. It retains the returned
+float, writes `float32(returned_value * 7.5)` to context+684, and passes the
+unscaled return to `0x1180de18`. This is static dataflow; it does not yet tie
+that value to a particular physical output lane.
+
+The mode handler indexes the original table at `0x11832270` with command
+bits 15..8. All 17 entries have audited straight-line setup constants:
+
+| Command mode byte | Processor stored at B14+484 |
+| --- | --- |
+| 0–9, 14 | `0x1180a140` |
+| 10 | `0x11802b84` |
+| 11–13, 16 | `0x11803128` |
+| 15 | `0x11802e30` |
+
+Bytes greater than 16 branch to the same setup as entries 6–9 and 14.
+Modes 4 and 5 additionally select secondary callback `0x1180282c` at
+B14+204; the other table entries select `0x1180a12c`. Mode 10 sets B14+72
+to one; all other entries set it to zero. These are command encodings,
+not independently established UI labels.
+
+Each setup writes countdown 60 at B14+756 and transition callback
+`0x11804350` at B14+748. That callback compares the signed countdown with
+zero: positive values decrement; nonpositive values install B14+484 as
+the next callback and clear the countdown. Both paths return zero. Thus,
+with no intervening setter or concurrent change, starting at 60 gives 60
+decrementing calls, then one call that installs the processor while still
+returning zero. The processor can run on the following dispatch. This is
+a call-count inference from the instructions, not a measured mute interval.
+
+`dsp-output-callback-audit` pins the original table and instruction bytes and
+checks the setup constants. It is a static audit, not execution of the
+complete mode handler or the selected processors. Their numerical behavior,
+subsequent routing and runtime transition timing remain open.
+
 ## Scope of the evidence
 
 Private exact-image models and reports include `dsp-rx-param-trial`,
