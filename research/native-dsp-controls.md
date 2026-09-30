@@ -65,6 +65,50 @@ its full numerical gain, or identify it as native A/B. Changing an ACC/USB level
 is therefore a possible discriminating experiment, not yet a qualified native
 receive control contract.
 
+## CPU status publication and a downstream request gate
+
+Original receive-word slice `0x200b0dc4..0x200b0e00` reads a supplied word
+from `0x203906b8+24`, uses its top nibble as an index into the 16-word table
+at `0x20414c48`, and aliases nibble 9 to index 1. The word itself is stored
+unchanged. The private `cpu-dsp-status-trial` executes 1,024 cases covering
+all high bytes and four payload patterns. This establishes software dispatch
+after a word is available, not the wire framing, physical transport or source
+of that word.
+
+The publication slice `0x200b50a8..0x200b50bc` copies bits 5 and 4 of the
+first table byte into `0x203def54` and `0x203def55`, respectively. All 256
+input bytes are checked, with exact writes and unchanged source memory. The
+supplied source and destination bases match the enclosing caller's literals.
+Consequently, a nibble-zero status word carrying the DSP's AF-derived bit 4
+has a software path into shared byte `0x203def55`. Actual receipt of the DSP
+word on this CPU path remains a transport qualification.
+
+One consumer is the original slice `0x2006c704..0x2006c790`. It takes a prior
+request in R4 and uses these states:
+
+- `0x203903f1` bit 6 enables the gate.
+- `0x203def55` nonzero sets gate bit 6 in `0x203904c8` and clears counter byte
+  `0x203fc620` when enabled.
+- With the input clear, an already-set gate remains until that counter reaches
+  20. Disabling the gate clears its bit immediately.
+- Final request bit 5 in `0x203904c8` is set only when the supplied R4 request
+  is nonzero and gate bit 6 is clear. Other flag bits are preserved.
+
+The original slice passes 8,192 fixtures spanning every initial flag byte,
+enable/input combinations, counters 0/19/20/255 and both supplied requests.
+Another 1,024 linked fixtures run dispatch, publication and gating sequentially
+with a nibble-zero word; they use the preceding slice's actual memory output.
+The intervening callers, prior-request calculation, timer advancement and
+later request consumers are not executed. Twenty is a counter threshold,
+not a measured duration. No physical RX/TX label or UI function is assigned
+to these bytes by these checks.
+
+This extends the [AF-status investigation](native-dsp-receive-input.md) beyond
+a reporting-only interpretation: CPU software can use the received bit in
+request gating. It does not establish that the gate changes native samples,
+nor that the receive diagnostic introduces a route to PTT. All execution is
+offline against synthetic memory, with no radio, serial or card operation.
+
 ## Relation to receive audio
 
 Private inspection of the separately decoded DSP program connects tag 0 to
