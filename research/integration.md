@@ -63,7 +63,7 @@ not callable APIs. Reproduce pointer searches with tools/trace.py.
 | Update flow | MD5 init callers 0x2002580c, 0x20025930, 0x20025d94, 0x20026040; file seek 0x2c and 16-byte comparisons visible | Determine header/trailer tests and bank selection |
 | Flash destination | At 0x20025de0..0x20025df4 selects 0x400000 or 0x10000; loader selects 0x18400000 or 0x18010000 | Possible alternate image banks; do not assume rollback/recovery |
 | Receive recording | [Native path study](native-receive-interface.md) follows 0x2006bfd4 file playback to the separate recording producer, SSIF0 DMA and PCM16 queues | Resolve channel/gain semantics, timer/sample alignment and owned diagnostic capture storage; nominal 48 kHz is inferred, not measured |
-| Voice playback | 0x2006a90c scans eight voice files; literal load 0x2006a944 and calls 0x20068c50/0x20068dfc | Recover stream format, queue ownership, start/stop and sample rate |
+| Voice playback | 0x2006a90c scans eight voice files; the [output queue study](native-playback-queues.md) separately maps two 12-byte rings to the existing output DMA consumer and defines a host-only queued/drained mock contract | Voice worker ownership of those rings, stream format/rate, abort/flush signals and PTT lifecycle remain unproven |
 | GUI/settings | Firmware Update, Time Set, PTT and voice controls have string/table references in address-map.json | Decode widget descriptors, callbacks and persistence layout |
 | DSP transport | Service diagram signals and recorder paths | Recover framing, handshakes and data ownership |
 | RTC/timers/scheduler | RTC identified; reset vector and startup calls mapped | Locate driver, timer frequency, task creation and priority scheme |

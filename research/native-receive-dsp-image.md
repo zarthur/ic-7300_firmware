@@ -69,10 +69,11 @@ layout and initialization counts and the command-table target. Report generation
 checks input, tool and source-revision stability; output creation refuses an
 existing path. The tool emits addresses and hashes, not original payload bytes.
 
-The next DSP boundary is the routing from the AF-controlled buffer through the
-packed DMA bank and serializers to the physical outputs. Parallel instruction
-packets and delayed loads must be respected when following register values.
-The board pin reading has not yet been reconciled with serializer configuration,
-so pin names are not used here to assert which lane is native receive audio.
+Private configuration review places the board's DSP pin 116 on transmit
+serializer 4. The [DSP-to-SSIF0 crosswalk](native-dsp-ssif0-bridge.md) links
+that map to the CPU receive path while preserving the unresolved FIFO phase,
+context-to-A/B relation and complete AF-control dependence. The next boundary
+is caller-to-serializer execution with actual caller-produced values; parallel
+instruction packets and delayed loads must be respected when following them.
 The [confirmed target capture](native-receive-target-capture.md) remains the
 direct evidence that minimum AF did not mute native A in the tested USB-D setup.

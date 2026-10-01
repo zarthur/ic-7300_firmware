@@ -86,6 +86,45 @@ def stream_statistics(records):
     return result
 
 
+def raw_observation_summary(records):
+    """Summarize observed words without assigning peripheral semantics to them."""
+    observations = [row['observations'] for row in records]
+
+    def counts(values):
+        return {str(value): count for value, count in sorted(Counter(values).items())}
+
+    def raw_word_counts(index):
+        return {f'0x{value:08x}': count
+                for value, count in sorted(Counter(row[index] for row in observations).items())}
+
+    def value_range(index):
+        values = [row[index] for row in observations]
+        return [min(values), max(values)] if values else None
+
+    tick_deltas = [((b[0] - a[0]) & 0xffffffff)
+                   for a, b in zip(observations, observations[1:])]
+    counter_snapshot_deltas = [row[1] - row[4] for row in observations]
+    return {
+        'records': len(observations),
+        'tick_before_after_equal_records': sum(row[0] == row[3] for row in observations),
+        'tick_delta_between_records_counts': counts(tick_deltas),
+        'counter_before_range': value_range(1),
+        'counter_after_range': value_range(4),
+        'counter_before_minus_after_counts': counts(counter_snapshot_deltas),
+        'pending_before_raw_counts': raw_word_counts(2),
+        'pending_after_raw_counts': raw_word_counts(5),
+        'pending_bit_6_set_records': {
+            'before': sum(bool(row[2] & 64) for row in observations),
+            'after': sum(bool(row[5] & 64) for row in observations),
+        },
+        'ssi_raw_register_counts': {
+            name: raw_word_counts(index) for index, name in zip(range(7, 12),
+                ('ssicr', 'ssifcr', 'ssisr', 'ssifsr', 'ssitdmr'))
+        },
+        'interpretation': 'Raw per-record snapshots only; SSI reads are non-atomic and no register-bit or DMA-phase meaning is inferred here.',
+    }
+
+
 def recorder_matches(prefix, records, segments):
     matches = []
     for segment in segments:
@@ -105,8 +144,13 @@ def recorder_matches(prefix, records, segments):
                     count = 60
                     while count < len(values) and at+(count+1)*2 <= len(prefix) and prefix[at+count*2:at+(count+1)*2] == raw[count*2:(count+1)*2]:
                         count += 1
+                    matched_records = (count + 5) // 6
                     matches.append({'stream': name, 'stride': 6, 'phase': 0, 'gain': gain,
-                                    'first_capture_sequence': first, 'last_capture_sequence': last,
+                                    'first_capture_sequence': first,
+                                    'last_capture_sequence': first + matched_records - 1,
+                                    'segment_first_capture_sequence': first,
+                                    'segment_last_capture_sequence': last,
+                                    'matching_records': matched_records,
                                     'wav_sample_index': at//2, 'matching_samples': count})
     return matches
 
@@ -125,7 +169,7 @@ def analyze(data):
               'excluded_records': excluded, 'boundaries': boundaries}
     if project: timing['sample_rate_hz'] = segments[0]['sample_rate_hz']
     first_frame = audio.find(MAGIC)
-    return {'schema_version': 2, 'recording_sha256': sha(data), 'recording_bytes': len(data),
+    return {'schema_version': 3, 'recording_sha256': sha(data), 'recording_bytes': len(data),
             'wav': {'chunks': chunks, 'audio_bytes': len(audio), 'duration_seconds': len(audio)/16000},
             'capture_sha256': sha(storage), 'capture_bytes': len(storage),
             'export_complete': True, 'capture_status': decoded['status'],
@@ -134,7 +178,8 @@ def analyze(data):
             'flag_counts': {name: sum(bool(row['flags']&bit) for row in records) for bit,name in FLAG_NAMES.items()},
             'bank_counts': {hex(k):v for k,v in Counter(o[6] for o in observations).items()},
             'adjacent_same_bank': sum(a[6]==b[6] for a,b in zip(observations,observations[1:])),
-            'raw_streams': stream_statistics(records), 'timing': timing,
+            'raw_streams': stream_statistics(records),
+            'raw_observation_summary': raw_observation_summary(records), 'timing': timing,
             'recorder_matches': recorder_matches(audio[:first_frame],records,segments),
             'observation_fields': OBSERVATION_FIELDS, 'epoch_fields': ['number','reason','exhausted'],
             'record_details': records,
