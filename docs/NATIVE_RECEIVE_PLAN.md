@@ -86,6 +86,19 @@ in USB-D. Owner reports normal restart/reception at 7.074 MHz with no settings
 changes. Continue with gain/control dependence and lifecycle/discontinuity
 semantics; do not mistake this bounded success for all-mode/runtime qualification.
 
+The [v2 follow-up](../research/native-receive-v2-target-capture.md) adds raw timer
+and SSI observations from another full capture. The owner confirms the planned
+7.074 MHz USB-D setup at minimum AF volume, with other settings unknown but
+unchanged between captures, and reports normal operation without freezes or
+unexpected restarts. Stream A remains nonzero and matches ordinary recorder
+samples at unity; stream B remains all-zero. This is not a gain curve or an
+explanation of stream B, and the observed timer/SSI values do not establish
+buffer ownership or exclude missed banks.
+
+The [DSP-to-SSIF0 crosswalk](../research/native-dsp-ssif0-bridge.md) joins the
+existing DSP processing/output-context map to the CPU extraction and capture.
+The complete caller-to-serializer phase and global gain dependence remain open.
+
 The [lifecycle follow-up](../research/native-receive-lifecycle.md) tests all three
 native DMA handlers at their decision boundaries and separates common transport
 restart from A-queue backlog discard. An adapter epoch must cover the shared

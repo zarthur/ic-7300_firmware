@@ -2,9 +2,12 @@
 
 The lead at `0x2006bfd4` reads a **stored file**. Following the separate recorder
 producer upstream identifies a live SSIF0 receive DMA path, two software sample
-queues and a recorder ring. This interface map now has a [timestamped target capture](native-receive-target-capture.md)
-confirming the recorder relationship and cadence in USB-D. It is not a callable
-extension API; gain/control dependence and lifecycle requirements keep #15 open.
+queues and a recorder ring. Target captures include the [v1 receive observations](native-receive-target-capture.md)
+and a [v2 diagnostic capture](native-receive-v2-target-capture.md), which
+corroborates stream-A recorder alignment and nominal cadence. This is not a
+callable extension API. The [DSP-to-SSIF0 crosswalk](native-dsp-ssif0-bridge.md)
+ties the source maps to these captures but leaves DSP frame phase, B-stream
+identity, global gain dependence and lifecycle requirements open for #15.
 
 ## Scope and reproduction
 

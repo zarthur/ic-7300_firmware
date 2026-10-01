@@ -11,7 +11,7 @@ from native_capture_v2 import STORAGE_SIZE, MAGIC as STORAGE_MAGIC
 from native_transport_v2 import MAGIC, checksum
 
 
-def recording(status=2,count=512,changes=None,wrap=False,zero=False):
+def recording(status=2,count=512,changes=None,wrap=False,zero=False,prefix_samples=300):
     records=[]
     for i in range(count):
         tick=((0xfffffff0 if wrap else 100)+(i*24000)//32001)&0xffffffff
@@ -29,7 +29,8 @@ def recording(status=2,count=512,changes=None,wrap=False,zero=False):
     for offset in range(0,STORAGE_SIZE,192):
         payload=storage[offset:offset+192]
         frames.append(MAGIC+struct.pack('<4I',STORAGE_SIZE,offset,len(payload),checksum(payload))+payload.ljust(192,b'\0'))
-    prefix=struct.pack('<300h',*([0]*300 if zero else [((i*6)*97)%60000-30000 for i in range(300)]))
+    prefix=struct.pack('<'+'h'*prefix_samples,
+        *([0]*prefix_samples if zero else [((i*6)*97)%60000-30000 for i in range(prefix_samples)]))
     audio=prefix+b''.join(frames)
     fmt=b'fmt '+struct.pack('<IHHIIHH',16,1,1,8000,16000,2,16)
     body=b'WAVE'+fmt+b'data'+struct.pack('<I',len(audio))+audio
@@ -45,8 +46,35 @@ class CaptureV2ReportTests(unittest.TestCase):
             self.assertEqual(r['timing']['sample_rate_hz'],48000)
             self.assertEqual(r['timing']['segments'][0]['records'],512)
             self.assertEqual(r['recorder_matches'],[dict(stream='stream_a',stride=6,phase=0,gain='unity',
-                first_capture_sequence=0,last_capture_sequence=511,wav_sample_index=0,matching_samples=300)])
+                first_capture_sequence=0,last_capture_sequence=49,segment_first_capture_sequence=0,
+                segment_last_capture_sequence=511,matching_records=50,
+                wav_sample_index=0,matching_samples=300)])
             self.assertEqual(r['raw_streams']['stream_b']['zero_samples'],18432)
+            raw=r['raw_observation_summary']
+            self.assertEqual(raw['tick_before_after_equal_records'],512)
+            self.assertEqual(raw['tick_delta_between_records_counts'],{'0':128,'1':383})
+            self.assertEqual(raw['pending_bit_6_set_records'],{'before':0,'after':0})
+            self.assertEqual(raw['ssi_raw_register_counts']['ssicr'],{'0x3c2b0033':512})
+
+    def test_recorder_match_range_stops_at_carrier_not_segment_end(self):
+        r=report.analyze(recording(prefix_samples=3024))
+        match=r['recorder_matches'][0]
+        self.assertEqual(match['matching_samples'],3024)
+        self.assertEqual(match['matching_records'],504)
+        self.assertEqual((match['first_capture_sequence'],match['last_capture_sequence']),(0,503))
+        self.assertEqual((match['segment_first_capture_sequence'],match['segment_last_capture_sequence']),(0,511))
+
+    def test_raw_observation_summary_preserves_varying_ssi_words(self):
+        def change(i,row):
+            if i>=256:
+                row['observations'][9]=0x20000002
+                row['observations'][10]=0x03000101
+        raw=report.analyze(recording(changes=change))['raw_observation_summary']
+        self.assertEqual(raw['ssi_raw_register_counts']['ssisr'],
+            {'0x00000002':256,'0x20000002':256})
+        self.assertEqual(raw['ssi_raw_register_counts']['ssifsr'],
+            {'0x00010301':256,'0x03000101':256})
+        self.assertIn('non-atomic',raw['interpretation'])
 
     def test_empty_and_one_record_aborts_are_export_success_without_projection(self):
         for status,count,outcome in ((6,0,'aborted_without_record'),(6,1,'aborted_without_record'),(5,1,'aborted_with_record')):
@@ -69,7 +97,8 @@ class CaptureV2ReportTests(unittest.TestCase):
         self.assertEqual(r['timing']['boundaries'],[{'before_sequence':128,'reasons':['between_record_epoch_change']}])
         self.assertFalse(r['timing']['full_capture_projection_available'])
         self.assertNotIn('sample_rate_hz',r['timing'])
-        self.assertEqual(r['recorder_matches'][0]['last_capture_sequence'],127)
+        self.assertEqual(r['recorder_matches'][0]['last_capture_sequence'],49)
+        self.assertEqual(r['recorder_matches'][0]['segment_last_capture_sequence'],127)
 
     def test_within_record_epoch_change_retained_but_excluded(self):
         def change(i,row):
@@ -117,6 +146,7 @@ class CaptureV2ReportTests(unittest.TestCase):
         r=report.analyze(recording(5,32))
         self.assertEqual(r['timing']['segments'][0]['last_sequence'],30)
         self.assertEqual(r['recorder_matches'][0]['matching_samples'],31*6)
+        self.assertEqual(r['recorder_matches'][0]['last_capture_sequence'],30)
         self.assertFalse(r['timing']['full_capture_projection_available'])
         self.assertEqual(report.analyze(recording(zero=True))['recorder_matches'],[])
 

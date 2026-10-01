@@ -197,10 +197,12 @@ def planned_steps(profile, output, jt9):
         ('python-tests-no-skips', [python, 'tools/development_check.py', '--test-worker', profile, '--test-report', str(output / 'tests.json')]),
         ('qso', [str(build / 'test_qso')]),
         ('codec', [str(build / 'test_codec')]),
+        ('station', [str(build / 'test_station')]),
         ('simulation', [str(build / 'ft8_proto'), 'simulate']),
         ('sanitizer-build', ['make', '-j4', f'BUILD={sanitize}', f'CFLAGS={flags}', 'all']),
         ('sanitizer-qso', [str(sanitize / 'test_qso')]),
         ('sanitizer-codec', [str(sanitize / 'test_codec')]),
+        ('sanitizer-station', [str(sanitize / 'test_station')]),
         ('sanitizer-wav', [python, 'tools/development_check.py', '--test-worker', 'wav', '--test-report', str(output / 'sanitizer-tests.json')]),
     ]
     if profile == 'full':
@@ -272,7 +274,7 @@ def execute_run(profile, output, jt9, timeout):
             if dependency_issues and report['outcome'] == 'PASS':
                 report.update(outcome='FAIL', error='; '.join(dependency_issues))
             report['executables'] = {str(path.relative_to(output)): hashlib.sha256(path.read_bytes()).hexdigest()
-                                     for folder in ('build', 'sanitize') for name in ('ft8_proto', 'test_qso', 'test_codec')
+                                     for folder in ('build', 'sanitize') for name in ('ft8_proto', 'test_qso', 'test_codec', 'test_station')
                                      for path in [output / folder / name] if path.is_file()}
         except Exception as exc:
             report.update(outcome='FAIL', finalization_error=str(exc))

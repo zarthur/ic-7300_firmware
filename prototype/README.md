@@ -49,13 +49,20 @@ limit counts additional attempts per state. A tick in slot milliseconds 500..600
 reserves transmission; missed windows are skipped. Integrators should prepare
 waveforms earlier and use hardware timestamps for accurate start time.
 
-`station.h` joins reservations and waveform generation. Each audio pull validates
-the reservation generation, so cancel or a clock jump suppresses subsequent
-chunks. All calls run in one serialized event loop. A hardware adapter must also
-flush already-enqueued DMA samples and release PTT immediately on cancellation;
-this offline prototype has no DMA/PTT backend. Call `qso_tx_finished` only after
-playback actually finishes, not when generation is complete. TX generation is
-not a substitute for a radio output-completion callback.
+`station.h` joins reservations and waveform generation to a host-side backend
+report contract. The adapter reports monotonic cumulative sample counts as PCM
+is queued and drained; only 151,680 generated, queued and drained samples finish
+the reservation. Generation or queue acceptance alone never advances the QSO.
+Duplicate progress is ignored, while out-of-order counts, stale tickets and
+backend failures cancel the reservation. Cancellation waits for an abort report;
+pending audio also requires an explicit flush confirmation before another
+reservation may start. These reports are exercised by a test-local mock backend.
+
+All station calls run in one serialized event loop. No radio backend is mapped
+or implemented here. The meaning of a real drain/flush signal, DMA ownership,
+PTT release and RF cessation remain unresolved; a flush report only records the
+mock contract's assertion that queued samples were discarded. It is not evidence
+that transmitted audio stopped on a radio.
 
 The codec allocation wrapper measures requested heap and aborts on allocation
 failure, matching the host-only prototype. Before embedded use, replace upstream

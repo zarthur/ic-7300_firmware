@@ -27,6 +27,9 @@ int main(void){
     qso_enable(&station.qso);assert(station_tick(&station,500,500,1000));
     assert(station_audio(&station,buffer,960)==960);station_cancel(&station);
     assert(station_audio(&station,buffer,960)==0);
+    /* The host backend must acknowledge cancellation before reuse. */
+    assert(station_backend_report(&station,&station.reservation,
+                                 STATION_BACKEND_ABORTED,0));
     assert(qso_init(&station.qso,"K1ABC","FN42","W9XYZ",-10,0,2));qso_enable(&station.qso);
     assert(station_tick(&station,500,500,1000));assert(!station_tick(&station,2000,1000,1000));
     assert(station_audio(&station,buffer,960)==0);

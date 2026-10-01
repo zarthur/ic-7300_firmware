@@ -320,6 +320,12 @@ full, aborted-with-record and aborted-without-record captures, including an empt
 abort. Raw statistics include flagged records; empty statistics are null rather
 than invented zeros. Nested-callback samples can be mixed.
 
+The report schema also emits raw timer and SSI word histograms without assigning
+register-bit meanings. Recorder matches distinguish the eligible timing segment
+from the records actually represented by an exact sample prefix; the reported
+last capture sequence is the last record with matched samples, while
+`segment_last_capture_sequence` is only the search boundary.
+
 Timing is projected separately within segments. A segment excludes unknown or
 exhausted lifecycle state, within-record epoch changes, nested callbacks and
 ambiguous timer snapshots. It also ends at an epoch change between records,

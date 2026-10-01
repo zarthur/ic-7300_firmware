@@ -5,6 +5,10 @@ sample context consumed by `0x1180e918`. This is a source-side map. It does not
 by itself establish the complete transformation to the CPU's native receive
 queues or qualify a production capture adapter.
 
+The [DSP-to-SSIF0 crosswalk](native-dsp-ssif0-bridge.md) connects the reviewed
+source slices to the v2 A/B observations while keeping serializer phase, stream
+identity and global gain dependence explicitly unresolved.
+
 ## Board connection and configured format
 
 Visual review of the IC-7300 service manual, PDF pages 66 and 68, identifies
