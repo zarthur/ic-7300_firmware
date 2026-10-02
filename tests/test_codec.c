@@ -24,14 +24,19 @@ int main(void){
     assert(!ft8_tx_init(&tx,"CQ K1ABC FN42",NAN));assert(!ft8_tx_init(&tx,"CQ K1ABC FN42",0));
     ft8_rx_init(&rx,0);assert(!ft8_rx_push(&rx,buffer,10,1));buffer[0]=NAN;assert(!ft8_rx_push(&rx,buffer,1,0));ft8_rx_free(&rx);
     ft8_station station={0};assert(qso_init(&station.qso,"K1ABC","FN42","W9XYZ",-10,0,2));
-    qso_enable(&station.qso);assert(station_tick(&station,500,500,1000));
-    assert(station_audio(&station,buffer,960)==960);station_cancel(&station);
-    assert(station_audio(&station,buffer,960)==0);
+    assert(qso_set_time_policy(&station.qso,1000,20));qso_enable(&station.qso);
+    qso_clock_sample clock={500,500,500,0,true};
+    assert(station_tick(&station,&clock,1000));
+    assert(station_audio(&station,&clock,buffer,960)==960);station_cancel(&station);
+    assert(station_audio(&station,&clock,buffer,960)==0);
     /* The host backend must acknowledge cancellation before reuse. */
     assert(station_backend_report(&station,&station.reservation,
-                                 STATION_BACKEND_ABORTED,0));
-    assert(qso_init(&station.qso,"K1ABC","FN42","W9XYZ",-10,0,2));qso_enable(&station.qso);
-    assert(station_tick(&station,500,500,1000));assert(!station_tick(&station,2000,1000,1000));
-    assert(station_audio(&station,buffer,960)==0);
+                                 STATION_BACKEND_ABORTED,0,&clock));
+    assert(qso_init(&station.qso,"K1ABC","FN42","W9XYZ",-10,0,2));
+    assert(qso_set_time_policy(&station.qso,1000,20));qso_enable(&station.qso);
+    assert(station_tick(&station,&clock,1000));
+    qso_clock_sample jumped={2000,1000,1000,0,true};
+    assert(!station_tick(&station,&jumped,1000));
+    assert(station_audio(&station,&jumped,buffer,960)==0);
     puts("codec tests passed: streaming loopback, symbol sync, sample continuity, bounds, cancellation");
 }

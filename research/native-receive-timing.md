@@ -83,3 +83,85 @@ The next offline work is to resolve the DSP stream/gain controls and identify
 owned storage plus an insertion/export mechanism for a concrete diagnostic
 candidate. Timestamped target capture remains required for #15. No timer, radio,
 SD card or installed firmware was changed by this investigation.
+
+## Host transmit time-quality gate
+
+The portable FT8 sequencer now requires an explicit policy before
+`qso_enable()` can arm a session. Each `qso_clock_sample` supplies current UTC
+and monotonic milliseconds, the monotonic time of the last successful UTC
+synchronization, a conservative current uncertainty bound, and a source-valid
+flag. The sequencer rejects unknown/invalid source state, future or stale sync
+epochs, uncertainty above the configured ceiling, backward UTC/monotonic values,
+and UTC-versus-monotonic discontinuities above the existing 250 ms prototype
+bound. TX validity is checked against current monotonic time at audio generation
+and backend queue/drain reports; each receives a fresh UTC/monotonic quality
+sample, so expiry or a newly observed clock fault cancels the reservation and
+requests backend abort.
+
+No default time-quality budget is selected. Unit tests use synthetic limits to
+prove gate behavior; those values are not a radio recommendation. This is a
+software contract only: the target RTC/monotonic association, conservative error
+growth during holdover, physical clock accuracy, and safe time-setting procedure
+remain unmeasured. The issue needs those measurements before an owner can choose
+radio limits. No radio clock was changed.
+
+## Passive clock measurement plan (not performed)
+
+**State:** Phase 2 receive-only observation, TX unauthorized. The procedure has
+not been run. It requires a separately authorized session and an operator
+present. Do not connect a PTT control, set the radio clock, install firmware, use
+the SD card, or add an internal connection.
+
+**Capture fields:** For each host sample, record UTC milliseconds, monotonic
+milliseconds, last successful UTC-sync monotonic milliseconds, current
+conservative UTC uncertainty in milliseconds, source-valid state, source/provider
+identity, and the observation sequence number. Compute synchronization age as
+`monotonic_ms - last_sync_monotonic_ms` and offset change as
+`(UTC_i - UTC_0) - (monotonic_i - monotonic_0)`. Also record the radio's
+read-only displayed time, date, timezone/UTC offset and display resolution if
+available. Missing or unbounded fields must be recorded as unknown, never
+inferred from a displayed clock.
+
+**Steps and instrumentation:** The foreground scaffolding is
+`tools/clock_sample_logger.py`. A one-sample local check is:
+
+```sh
+python3 tools/clock_sample_logger.py --output /tmp/clock-sample.jsonl --count 1
+python3 tools/clock_sample_logger.py --verify /tmp/clock-sample.jsonl
+```
+
+The standard-library provider brackets `time.time_ns()` with
+`time.monotonic_ns()` reads and records the pairing span, source identity and
+clock implementation/resolution. It explicitly marks last-sync time and a
+conservative UTC uncertainty as unavailable, and synchronization validity as
+unknown. It therefore emits an **unqualified** host record and refuses to map it
+to the C `qso_clock_sample`; it does not infer quality from a successful clock
+read. `--provider fixture --fixture FILE` injects deterministic samples for
+offline gate scenarios. Optional age/uncertainty limits have no defaults. The
+JSONL log has contiguous sequence numbers and a SHA-256 hash chain; this detects
+record edits but does not attest the source clock. No background service is
+installed. Actual observation would still use the host logger once per second
+for one hour and note any radio display at the start and every five minutes.
+Use only the host and radio already in the setup; no external timing instrument
+is specified or assumed.
+
+**Interpretation:** A missing radio display or unknown timezone/resolution allows
+host-clock observation only, not a radio comparison. Complete host fields with
+valid source and forward UTC/monotonic progression allow a progression report;
+they do not qualify accuracy or establish a policy limit. Invalid source,
+backward time, an observed step, or unbounded uncertainty is an adverse result:
+preserve the log and do not arm. A UTC/monotonic difference over 250 ms may be
+reported as crossing the current software heuristic, but it is not a radio
+acceptance threshold. Maximum sample-age and uncertainty limits remain unset.
+
+The selected Python standard-library backend has no API for last successful UTC
+sync, source-valid state or conservative UTC uncertainty. A verified host OS
+provider for those fields remains a specific implementation gap. The existing
+firmware evidence likewise does not expose a coherent externally readable
+UTC/monotonic sample with last-sync time, source validity and uncertainty; its
+mapped hardware counters have different epochs, wraps and service limitations.
+No new flash is needed for a coarse, read-only display observation, but the
+current host backend and existing firmware do not provide enough data to
+qualify the radio time-quality gate. There is no executable target-clock
+qualification procedure until a read-only telemetry provider supplies those
+fields, and no hardware/TX test is ready.
