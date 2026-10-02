@@ -198,11 +198,13 @@ def planned_steps(profile, output, jt9):
         ('qso', [str(build / 'test_qso')]),
         ('codec', [str(build / 'test_codec')]),
         ('station', [str(build / 'test_station')]),
+        ('ui-state', [str(build / 'test_ui_state')]),
         ('simulation', [str(build / 'ft8_proto'), 'simulate']),
         ('sanitizer-build', ['make', '-j4', f'BUILD={sanitize}', f'CFLAGS={flags}', 'all']),
         ('sanitizer-qso', [str(sanitize / 'test_qso')]),
         ('sanitizer-codec', [str(sanitize / 'test_codec')]),
         ('sanitizer-station', [str(sanitize / 'test_station')]),
+        ('sanitizer-ui-state', [str(sanitize / 'test_ui_state')]),
         ('sanitizer-wav', [python, 'tools/development_check.py', '--test-worker', 'wav', '--test-report', str(output / 'sanitizer-tests.json')]),
     ]
     if profile == 'full':
