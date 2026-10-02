@@ -49,6 +49,18 @@ limit counts additional attempts per state. A tick in slot milliseconds 500..600
 reserves transmission; missed windows are skipped. Integrators should prepare
 waveforms earlier and use hardware timestamps for accurate start time.
 
+Transmission stays disabled until the caller sets an explicit time-quality policy
+with maximum sample age and UTC uncertainty. Every clock input carries source
+validity, a conservative uncertainty bound, current UTC/monotonic values and the
+monotonic instant of the last successful UTC synchronization. Unknown quality,
+excess uncertainty, stale synchronization, backward time or a UTC/monotonic jump
+over 250 ms cancels the QSO. The existing 250 ms discontinuity bound is a
+prototype heuristic, not a measured radio limit. The host tests use synthetic
+limits only; no policy value is recommended for the radio. Audio and backend
+progress checks also require a current UTC/monotonic quality sample so a
+reservation cannot continue past its configured freshness bound or a newly
+observed clock fault.
+
 `station.h` joins reservations and waveform generation to a host-side backend
 report contract. The adapter reports monotonic cumulative sample counts as PCM
 is queued and drained; only 151,680 generated, queued and drained samples finish

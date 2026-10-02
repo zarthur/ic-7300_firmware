@@ -31,11 +31,14 @@ typedef struct {
     bool backend_flush_confirmed;
 } ft8_station;
 
-/* Caller initializes qso, selects peer, and explicitly enables transmission.
- * All methods run on one serialized event loop; not interrupt/thread safe.
+/* Caller initializes qso, installs a time-quality policy, selects peer, and
+ * explicitly enables transmission. Pass a current UTC/monotonic quality sample
+ * to audio and backend-progress callbacks; expired or invalid quality
+ * invalidates the ticket. All methods run on one serialized event loop; not
+ * interrupt/thread safe.
  * This is a host-side contract only; no radio backend is implemented here. */
-bool station_tick(ft8_station *,int64_t utc_ms,int64_t monotonic_ms,float frequency_hz);
-size_t station_audio(ft8_station *,float *,size_t);
+bool station_tick(ft8_station *,const qso_clock_sample *,float frequency_hz);
+size_t station_audio(ft8_station *,const qso_clock_sample *,float *,size_t);
 /* Invalidates local audio/QSO state; an active backend must still report abort
  * and, when needed, confirm its output queue was flushed. */
 void station_cancel(ft8_station *);
@@ -48,5 +51,5 @@ void station_cancel(ft8_station *);
  * progress returns false without state change; stale or out-of-order reports
  * cancel the reservation and fail closed. */
 bool station_backend_report(ft8_station *,const qso_tx *,station_backend_event,
-                            size_t cumulative_samples);
+                            size_t cumulative_samples,const qso_clock_sample *);
 #endif

@@ -70,11 +70,17 @@ static int generate(const char *text,const char *path,float hz){
     printf("{\"tx_context_bytes\":%zu,\"samples\":%d}\n",sizeof(tx),FT8_SIGNAL_SAMPLES);return failed?2:0;
 }
 static int simulate(void){
-    qso_t q;qso_tx tx;if(!qso_init(&q,"K1ABC","FN42","W9XYZ",-10,0,2))return 2;qso_enable(&q);
+    qso_t q;qso_tx tx;
+    /* Ideal, freshly synchronized input for this desktop demonstration only. */
+    if(!qso_init(&q,"K1ABC","FN42","W9XYZ",-10,0,2)
+       || !qso_set_time_policy(&q,0,0))return 2;
+    qso_enable(&q);
     for(int step=0;step<3;step++){
-        if(!qso_tick(&q,500+step*30000,500+step*30000,&tx))return 2;
+        int64_t now=500+step*30000;
+        qso_clock_sample clock={now,now,now,0,true};
+        if(!qso_tick(&q,&clock,&tx))return 2;
         printf("TX @ %lld ms: %s\n",(long long)tx.start_utc_ms,tx.text);
-        qso_tx_finished(&q,&tx,true);
+        qso_tx_finished(&q,&tx,&clock,true);
         if(step<2){const char *rx=step?"K1ABC W9XYZ RR73":"K1ABC W9XYZ -12";printf("RX: %s\n",rx);if(!qso_receive(&q,rx,1+step*2))return 2;}
     }return q.state==QSO_COMPLETE?0:2;
 }

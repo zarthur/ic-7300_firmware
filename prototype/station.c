@@ -31,14 +31,14 @@ static void fail_closed(ft8_station *s) {
     s->backend_flush_confirmed=false;
 }
 
-bool station_tick(ft8_station *s,int64_t utc,int64_t mono,float hz){
+bool station_tick(ft8_station *s,const qso_clock_sample *clock,float hz){
     if(!s)return false;
     if (s->tx_state==STATION_TX_ABORT_REQUESTED
         || ((s->tx_state==STATION_TX_ABORTED || s->tx_state==STATION_TX_FAILED)
             && !s->backend_flush_confirmed)) return false;
     bool was_output_active=output_active(s);
-    if(!qso_tick(&s->qso,utc,mono,&s->reservation)){
-        if(was_output_active && !qso_tx_valid(&s->qso,&s->reservation))request_abort(s);
+    if(!qso_tick(&s->qso,clock,&s->reservation)){
+        if(was_output_active && !qso_tx_valid_at(&s->qso,&s->reservation,clock))request_abort(s);
         return false;
     }
     s->generated_samples=s->queued_samples=s->drained_samples=0;
@@ -52,10 +52,11 @@ bool station_tick(ft8_station *s,int64_t utc,int64_t mono,float hz){
     return true;
 }
 
-size_t station_audio(ft8_station *s,float *output,size_t count){
+size_t station_audio(ft8_station *s,const qso_clock_sample *clock,
+                     float *output,size_t count){
     if(!s || !output || !count || s->tx_state!=STATION_TX_GENERATING)return 0;
     /* Validate on every chunk: cancellation/clock changes invalidate generated PCM. */
-    if(!qso_tx_valid(&s->qso,&s->reservation)){request_abort(s);return 0;}
+    if(!qso_tx_valid_at(&s->qso,&s->reservation,clock)){request_abort(s);return 0;}
     if(s->generated_samples>=FT8_SIGNAL_SAMPLES)return 0;
     size_t n=ft8_tx_pull(&s->waveform,output,count);
     if(n>FT8_SIGNAL_SAMPLES-s->generated_samples){fail_closed(s);return 0;}
@@ -72,7 +73,8 @@ void station_cancel(ft8_station *s){
 }
 
 bool station_backend_report(ft8_station *s,const qso_tx *ticket,
-                            station_backend_event event,size_t samples){
+                            station_backend_event event,size_t samples,
+                            const qso_clock_sample *clock){
     if(!s || !ticket)return false;
     if(!ticket_matches(ticket,&s->reservation)){
         if(output_active(s))fail_closed(s);
@@ -119,7 +121,7 @@ bool station_backend_report(ft8_station *s,const qso_tx *ticket,
     if(s->tx_state==STATION_TX_DRAINED || s->tx_state==STATION_TX_ABORT_REQUESTED
        || s->tx_state==STATION_TX_ABORTED || s->tx_state==STATION_TX_FLUSHED
        || s->tx_state==STATION_TX_FAILED)return false;
-    if(!qso_tx_valid(&s->qso,&s->reservation)){
+    if(!qso_tx_valid_at(&s->qso,&s->reservation,clock)){
         request_abort(s);
         return false;
     }
@@ -141,7 +143,7 @@ bool station_backend_report(ft8_station *s,const qso_tx *ticket,
                || s->generated_samples!=FT8_SIGNAL_SAMPLES
                || s->queued_samples!=FT8_SIGNAL_SAMPLES){fail_closed(s);return false;}
             s->drained_samples=samples;
-            qso_tx_finished(&s->qso,&s->reservation,true);
+            qso_tx_finished(&s->qso,&s->reservation,clock,true);
             s->tx_state=STATION_TX_DRAINED;
             return true;
         }
