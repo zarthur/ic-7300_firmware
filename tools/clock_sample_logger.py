@@ -5,6 +5,8 @@ The system provider records a paired host wall-clock/monotonic observation, but
 does not assert that the wall clock is synchronized or has a known error bound.
 No function in this module changes clock configuration or feeds radio I/O.
 """
+from __future__ import annotations
+
 from dataclasses import dataclass
 import argparse
 import hashlib

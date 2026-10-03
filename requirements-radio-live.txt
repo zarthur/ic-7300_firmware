@@ -1,0 +1,2 @@
+# Optional host-only dependency for the manually preflighted CI-V live path.
+pyserial==3.5

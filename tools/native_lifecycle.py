@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """Exact-image DMA decision and receive-queue reset probes; no hardware access."""
+from __future__ import annotations
+
 import argparse
 from pathlib import Path
 import struct

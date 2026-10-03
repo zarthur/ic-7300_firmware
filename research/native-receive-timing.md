@@ -140,10 +140,13 @@ read. `--provider fixture --fixture FILE` injects deterministic samples for
 offline gate scenarios. Optional age/uncertainty limits have no defaults. The
 JSONL log has contiguous sequence numbers and a SHA-256 hash chain; this detects
 record edits but does not attest the source clock. No background service is
-installed. Actual observation would still use the host logger once per second
-for one hour and note any radio display at the start and every five minutes.
-Use only the host and radio already in the setup; no external timing instrument
-is specified or assumed.
+installed. The bounded CI-V scaffold in [`issue17-civ-measurement.md`](issue17-civ-measurement.md)
+reads the radio's reported date, minute-resolution time and UTC offset. Two
+approved port opens are documented there: an initial decoder failure and a
+later six-query logged acquisition. The latter is a radio-reported observation
+with unqualified host provenance, not an error bound. No one-hour collection
+or new hardware connection was made. Any future live session must first
+complete that document's USB control-line preflight and obtain fresh approval.
 
 **Interpretation:** A missing radio display or unknown timezone/resolution allows
 host-clock observation only, not a radio comparison. Complete host fields with
@@ -155,13 +158,19 @@ reported as crossing the current software heuristic, but it is not a radio
 acceptance threshold. Maximum sample-age and uncertainty limits remain unset.
 
 The selected Python standard-library backend has no API for last successful UTC
-sync, source-valid state or conservative UTC uncertainty. A verified host OS
-provider for those fields remains a specific implementation gap. The existing
-firmware evidence likewise does not expose a coherent externally readable
-UTC/monotonic sample with last-sync time, source validity and uncertainty; its
-mapped hardware counters have different epochs, wraps and service limitations.
-No new flash is needed for a coarse, read-only display observation, but the
-current host backend and existing firmware do not provide enough data to
-qualify the radio time-quality gate. There is no executable target-clock
-qualification procedure until a read-only telemetry provider supplies those
-fields, and no hardware/TX test is ready.
+sync, source-valid state or conservative UTC uncertainty. The new CI-V route
+provides a concrete read-only observation of the radio's calendar and configured
+offset, but CI-V does not provide host reference quality, a coherent monotonic
+sample, firmware clock-cache latency, or an RTC sync/set event. Thus the
+host-to-radio UTC error bound remains unknown and the native `qso_clock_sample`
+gate still refuses qualification. The existing firmware counters have distinct
+epochs, wraps and service limitations; they are not substituted for an RTC
+mapping. Two explicitly approved port opens are documented in
+[`issue17-civ-measurement.md`](issue17-civ-measurement.md): the first sent three
+clock queries before the old offset decoder failed; the second completed six
+queries and logged the radio's report of 2000-01-10 19:26 at UTC-04:00. That
+second acquisition's whole query bracket was 76.3 ms, with individual
+round-trips of 12.3–13.2 ms. These transport times do not bound host UTC error
+or firmware clock-cache latency, so the result remains unqualified. No
+one-hour collection, RTC setting, SD access, or TX test occurred; physical
+no-TX behavior was not verified.
