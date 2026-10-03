@@ -16,7 +16,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 SYNTHETIC_TESTS = (
-    'test_cli', 'test_compare_receive', 'test_capture_batch', 'test_cancellation_core',
+    'test_cli', 'test_civ_clock_measurement', 'test_compare_receive', 'test_capture_batch', 'test_cancellation_core',
     'test_study_cancellation', 'test_study_likelihood', 'test_control_flow', 'test_development_check',
     'test_emulation.EngineTests', 'test_firmware',
     'test_platform_evidence', 'test_receive_capture', 'test_targets',

@@ -74,3 +74,10 @@ No Unicorn binary/source is vendored, shipped in a radio image, or linked into
 the C FT8 prototype. Its upstream license is not replaced by this repository's
 MIT license. Any future bundled distribution requires the existing dependency
 and distribution review.
+
+## PySerial host CI-V transport
+
+The optional host-only CI-V read command uses separately installed PySerial
+3.5; no PySerial source is vendored or included in a radio image. The upstream
+package is BSD-3-Clause; see its pinned
+[LICENSE.txt](https://github.com/pyserial/pyserial/blob/v3.5/LICENSE.txt).
