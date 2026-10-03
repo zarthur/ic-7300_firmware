@@ -89,6 +89,10 @@ python3 tools/civ_clock_measurement.py parse-reply --kind date \
   --radio-address 94 --hex 'FE FE E0 94 1A 05 00 94 20 26 10 02 FD'
 ```
 
+## Host-reference interval model
+
+The pure, offline radio-minus-host interval and drift model, its evidence requirements, and its current provider/cache limitations are documented in [`issue17-host-reference-intervals.md`](issue17-host-reference-intervals.md). It does not turn this observation into an RTC synchronization event or a qualified UTC bound.
+
 ## Hardware interaction record and future preflight
 
 ### First trial: offset decoder failure, 2026-10-02
