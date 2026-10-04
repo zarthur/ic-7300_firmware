@@ -35,10 +35,14 @@ void ft8_rx_init(ft8_rx *rx,int64_t utc) {
     monitor_init(&rx->monitor,&cfg);
 }
 bool ft8_rx_push(ft8_rx *rx,const float *samples,size_t count,int64_t first) {
+    if(!rx || rx->samples>FT8_SLOT_SAMPLES || rx->pending>=1920 || (count && !samples)) return false;
     if(first!=(int64_t)rx->samples || count>FT8_SLOT_SAMPLES-rx->samples) return false;
     for(size_t i=0;i<count;i++) if(!isfinite(samples[i])) return false;
-    for(size_t i=0;i<count;i++) {
-        rx->frame[rx->pending++]=samples[i]; rx->samples++;
+    while(count) {
+        size_t room=1920-rx->pending;
+        size_t take=count<room?count:room;
+        memcpy(rx->frame+rx->pending,samples,take*sizeof(*samples));
+        rx->pending+=take;rx->samples+=take;samples+=take;count-=take;
         if(rx->pending==1920) {monitor_process(&rx->monitor,rx->frame);rx->pending=0;}
     }
     return true;

@@ -29,7 +29,9 @@ typedef struct {
     double phase; float hz; size_t sample;
     bool cancelled;
 } ft8_tx;
-/* Mono float PCM, 12 kHz. Caller supplies one aligned UTC slot at a time. */
+/* Mono float PCM, 12 kHz. Caller supplies one aligned UTC slot at a time.
+ * Non-empty blocks must be non-null, finite, contiguous and within 15 seconds.
+ * Rejected blocks leave receiver state unchanged; block sizes are unrestricted. */
 void ft8_rx_init(ft8_rx *,int64_t slot_utc_ms);
 bool ft8_rx_push(ft8_rx *,const float *,size_t count,int64_t first_sample_index);
 int ft8_rx_finish(ft8_rx *,ft8_message_cb,void *);
