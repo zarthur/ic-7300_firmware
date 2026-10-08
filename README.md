@@ -126,6 +126,26 @@ parity. Counts represent unique decoded text per slot; repeated transmissions in
 different slots count again. Candidate proximity alone does not establish why a
 particular signal was missed. See [the receive study](research/receive-study.md).
 
+### Offline FT8 decode around a native diagnostic carrier
+
+`tools/native_capture_decode.py` accepts a complete mono PCM16/8 kHz WAVE file
+containing one complete v1 native diagnostic carrier. It validates frame order,
+length, checksums and padding, removes only the verified carrier, and decodes
+the intact recorder-audio segments on each side independently. Each segment is
+resampled to 12 kHz and scanned with overlapping 15-second windows; audio is
+never joined across the carrier. Unknown carrier versions fail closed.
+
+```sh
+make -j4
+python3 tools/native_capture_decode.py artifacts/RECORDING.wav \
+  --output artifacts/ft8-recorder-replay/report.json
+```
+
+The report contains decoded message text and must remain in ignored local
+artifacts. Window positions are relative to each intact segment and carry no
+UTC or FT8 slot-phase mapping. This replays ordinary recorder audio; it does not
+decode the native sample stream or qualify on-radio FT8.
+
 ## Verification and development
 
 For unattended validation of the **current working tree**, including uncommitted
