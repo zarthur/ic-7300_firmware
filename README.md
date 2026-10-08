@@ -146,6 +146,17 @@ artifacts. Window positions are relative to each intact segment and carry no
 UTC or FT8 slot-phase mapping. This replays ordinary recorder audio; it does not
 decode the native sample stream or qualify on-radio FT8.
 
+### Native stream-A decoder ingress (host-side)
+
+`tools/native_stream_decode.py` is a separate host API for explicitly labeled
+native `stream_a` PCM16 blocks. It requires a supplied sample rate and
+contiguous sequence/sample indices, then reports `insufficient_samples` until
+it receives a complete 15-second decoder window. The current fixed v2 export
+contains only 512 records (18,432 samples per stream), so one export is much
+shorter than a slot and separate exports are never joined without proven sample
+continuity. See the [stream-A ingress contract](docs/NATIVE_STREAM_A_INGRESS.md)
+for the input and diagnostic capture requirements.
+
 ## Verification and development
 
 For unattended validation of the **current working tree**, including uncommitted
